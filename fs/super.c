@@ -47,6 +47,8 @@ static char *sb_writers_name[SB_FREEZE_LEVELS] = {
 	"sb_internal",
 };
 
+extern int fs_trace_enable;
+extern int fs_super_trace_enable;
 /*
  * One thing we have to be careful of with a per-sb shrinker is that we don't
  * drop the last active reference to the superblock from within the shrinker.
@@ -65,6 +67,10 @@ static unsigned long super_cache_scan(struct shrinker *shrink,
 	long	inodes;
 
 	sb = container_of(shrink, struct super_block, s_shrink);
+
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " super_cache_scan \n");
+    }
 
 	/*
 	 * Deadlock avoidance.  We may hold various FS locks, and we don't want
@@ -117,6 +123,9 @@ static unsigned long super_cache_count(struct shrinker *shrink,
 	struct super_block *sb;
 	long	total_objects = 0;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " super_cache_count \n");
+    }
 	sb = container_of(shrink, struct super_block, s_shrink);
 
 	/*
@@ -153,6 +162,9 @@ static void destroy_super_work(struct work_struct *work)
 							destroy_work);
 	int i;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " destroy_super_work \n");
+    }
 	for (i = 0; i < SB_FREEZE_LEVELS; i++)
 		percpu_free_rwsem(&s->s_writers.rw_sem[i]);
 	kfree(s);
@@ -170,6 +182,9 @@ static void destroy_unused_super(struct super_block *s)
 {
 	if (!s)
 		return;
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " destroy_unused_super \n");
+    }
 	up_write(&s->s_umount);
 	list_lru_destroy(&s->s_dentry_lru);
 	list_lru_destroy(&s->s_inode_lru);
@@ -197,6 +212,9 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags,
 	static const struct super_operations default_op;
 	int i;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " alloc_super \n");
+    }
 	if (!s)
 		return NULL;
 
@@ -278,6 +296,9 @@ fail:
  */
 static void __put_super(struct super_block *s)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " __put_super \n");
+    }
 	if (!--s->s_count) {
 		list_del_init(&s->s_list);
 		WARN_ON(s->s_dentry_lru.node);
@@ -299,6 +320,9 @@ static void __put_super(struct super_block *s)
  */
 static void put_super(struct super_block *sb)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO "put_super  \n");
+    }
 	spin_lock(&sb_lock);
 	__put_super(sb);
 	spin_unlock(&sb_lock);
@@ -319,6 +343,9 @@ static void put_super(struct super_block *sb)
 void deactivate_locked_super(struct super_block *s)
 {
 	struct file_system_type *fs = s->s_type;
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO "deactivate_locked_super  \n");
+    }
 	if (atomic_dec_and_test(&s->s_active)) {
 		cleancache_invalidate_fs(s);
 		unregister_shrinker(&s->s_shrink);
@@ -351,6 +378,9 @@ EXPORT_SYMBOL(deactivate_locked_super);
  */
 void deactivate_super(struct super_block *s)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " deactivate_super \n");
+    }
         if (!atomic_add_unless(&s->s_active, -1, 1)) {
 		down_write(&s->s_umount);
 		deactivate_locked_super(s);
@@ -374,6 +404,9 @@ EXPORT_SYMBOL(deactivate_super);
  */
 static int grab_super(struct super_block *s) __releases(sb_lock)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " grab_super \n");
+    }
 	s->s_count++;
 	spin_unlock(&sb_lock);
 	down_write(&s->s_umount);
@@ -433,6 +466,9 @@ void generic_shutdown_super(struct super_block *sb)
 {
 	const struct super_operations *sop = sb->s_op;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO "generic_shutdown_super  \n");
+    }
 	if (sb->s_root) {
 		shrink_dcache_for_umount(sb);
 		sync_filesystem(sb);
@@ -489,6 +525,9 @@ struct super_block *sget_userns(struct file_system_type *type,
 	struct super_block *old;
 	int err;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " sget_userns \n");
+    }
 	if (!(flags & (SB_KERNMOUNT|SB_SUBMOUNT)) &&
 	    !(type->fs_flags & FS_USERNS_MOUNT) &&
 	    !capable(CAP_SYS_ADMIN))
@@ -552,6 +591,9 @@ struct super_block *sget(struct file_system_type *type,
 {
 	struct user_namespace *user_ns = current_user_ns();
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " sget \n");
+    }
 	/* We don't yet pass the user namespace of the parent
 	 * mount through to here so always use &init_user_ns
 	 * until that changes.
@@ -570,6 +612,9 @@ EXPORT_SYMBOL(sget);
 
 void drop_super(struct super_block *sb)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " drop_super \n");
+    }
 	up_read(&sb->s_umount);
 	put_super(sb);
 }
@@ -578,6 +623,9 @@ EXPORT_SYMBOL(drop_super);
 
 void drop_super_exclusive(struct super_block *sb)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO "  drop_super_exclusive \n");
+    }
 	up_write(&sb->s_umount);
 	put_super(sb);
 }
@@ -595,6 +643,9 @@ void iterate_supers(void (*f)(struct super_block *, void *), void *arg)
 {
 	struct super_block *sb, *p = NULL;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO "iterate_supers  \n");
+    }
 	spin_lock(&sb_lock);
 	list_for_each_entry(sb, &super_blocks, s_list) {
 		if (hlist_unhashed(&sb->s_instances))
@@ -631,6 +682,9 @@ void iterate_supers_type(struct file_system_type *type,
 {
 	struct super_block *sb, *p = NULL;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " iterate_supers_type \n");
+    }
 	spin_lock(&sb_lock);
 	hlist_for_each_entry(sb, &type->fs_supers, s_instances) {
 		sb->s_count++;
@@ -657,6 +711,9 @@ static struct super_block *__get_super(struct block_device *bdev, bool excl)
 {
 	struct super_block *sb;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " __get_super \n");
+    }
 	if (!bdev)
 		return NULL;
 
@@ -705,6 +762,9 @@ EXPORT_SYMBOL(get_super);
 static struct super_block *__get_super_thawed(struct block_device *bdev,
 					      bool excl)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " __get_super_thawed \n");
+    }
 	while (1) {
 		struct super_block *s = __get_super(bdev, excl);
 		if (!s || s->s_writers.frozen == SB_UNFROZEN)
@@ -730,6 +790,9 @@ static struct super_block *__get_super_thawed(struct block_device *bdev,
  */
 struct super_block *get_super_thawed(struct block_device *bdev)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " get_super_thawed \n");
+    }
 	return __get_super_thawed(bdev, false);
 }
 EXPORT_SYMBOL(get_super_thawed);
@@ -745,6 +808,9 @@ EXPORT_SYMBOL(get_super_thawed);
  */
 struct super_block *get_super_exclusive_thawed(struct block_device *bdev)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " get_super_exclusive_thawed \n");
+    }
 	return __get_super_thawed(bdev, true);
 }
 EXPORT_SYMBOL(get_super_exclusive_thawed);
@@ -761,6 +827,9 @@ struct super_block *get_active_super(struct block_device *bdev)
 {
 	struct super_block *sb;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " get_active_super \n");
+    }
 	if (!bdev)
 		return NULL;
 
@@ -784,6 +853,9 @@ struct super_block *user_get_super(dev_t dev)
 {
 	struct super_block *sb;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " user_get_super \n");
+    }
 	spin_lock(&sb_lock);
 rescan:
 	list_for_each_entry(sb, &super_blocks, s_list) {
@@ -821,6 +893,9 @@ int do_remount_sb(struct super_block *sb, int sb_flags, void *data, int force)
 	int retval;
 	int remount_ro;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " do_remount_sb \n");
+    }
 	if (sb->s_writers.frozen != SB_UNFROZEN)
 		return -EBUSY;
 
@@ -894,6 +969,9 @@ static void do_emergency_remount(struct work_struct *work)
 {
 	struct super_block *sb, *p = NULL;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " do_emergency_remount \n");
+    }
 	spin_lock(&sb_lock);
 	list_for_each_entry(sb, &super_blocks, s_list) {
 		if (hlist_unhashed(&sb->s_instances))
@@ -925,6 +1003,9 @@ void emergency_remount(void)
 {
 	struct work_struct *work;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " emergency_remount \n");
+    }
 	work = kmalloc(sizeof(*work), GFP_ATOMIC);
 	if (work) {
 		INIT_WORK(work, do_emergency_remount);
@@ -949,6 +1030,9 @@ int get_anon_bdev(dev_t *p)
 	int dev;
 	int error;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " get_anon_bdev \n");
+    }
  retry:
 	if (ida_pre_get(&unnamed_dev_ida, GFP_ATOMIC) == 0)
 		return -ENOMEM;
@@ -979,6 +1063,9 @@ EXPORT_SYMBOL(get_anon_bdev);
 void free_anon_bdev(dev_t dev)
 {
 	int slot = MINOR(dev);
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " free_anon_bdev \n");
+    }
 	spin_lock(&unnamed_dev_lock);
 	ida_remove(&unnamed_dev_ida, slot);
 	if (slot < unnamed_dev_start)
@@ -989,6 +1076,9 @@ EXPORT_SYMBOL(free_anon_bdev);
 
 int set_anon_super(struct super_block *s, void *data)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " set_anon_super \n");
+    }
 	return get_anon_bdev(&s->s_dev);
 }
 
@@ -997,6 +1087,9 @@ EXPORT_SYMBOL(set_anon_super);
 void kill_anon_super(struct super_block *sb)
 {
 	dev_t dev = sb->s_dev;
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " kill_anon_super \n");
+    }
 	generic_shutdown_super(sb);
 	free_anon_bdev(dev);
 }
@@ -1005,6 +1098,9 @@ EXPORT_SYMBOL(kill_anon_super);
 
 void kill_litter_super(struct super_block *sb)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " kill_litter_super \n");
+    }
 	if (sb->s_root)
 		d_genocide(sb->s_root);
 	kill_anon_super(sb);
@@ -1014,11 +1110,17 @@ EXPORT_SYMBOL(kill_litter_super);
 
 static int ns_test_super(struct super_block *sb, void *data)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " ns_test_super \n");
+    }
 	return sb->s_fs_info == data;
 }
 
 static int ns_set_super(struct super_block *sb, void *data)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " ns_set_super \n");
+    }
 	sb->s_fs_info = data;
 	return set_anon_super(sb, NULL);
 }
@@ -1029,6 +1131,9 @@ struct dentry *mount_ns(struct file_system_type *fs_type,
 {
 	struct super_block *sb;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " mount_ns \n");
+    }
 	/* Don't allow mounting unless the caller has CAP_SYS_ADMIN
 	 * over the namespace.
 	 */
@@ -1059,6 +1164,9 @@ EXPORT_SYMBOL(mount_ns);
 #ifdef CONFIG_BLOCK
 static int set_bdev_super(struct super_block *s, void *data)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " set_bdev_super \n");
+    }
 	s->s_bdev = data;
 	s->s_dev = s->s_bdev->bd_dev;
 	s->s_bdi = bdi_get(s->s_bdev->bd_bdi);
@@ -1068,6 +1176,9 @@ static int set_bdev_super(struct super_block *s, void *data)
 
 static int test_bdev_super(struct super_block *s, void *data)
 {
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " test_bdev_super \n");
+    }
 	return (void *)s->s_bdev == data;
 }
 
@@ -1080,6 +1191,9 @@ struct dentry *mount_bdev(struct file_system_type *fs_type,
 	fmode_t mode = FMODE_READ | FMODE_EXCL;
 	int error = 0;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " mount_bdev \n");
+    }
 	if (!(flags & SB_RDONLY))
 		mode |= FMODE_WRITE;
 
@@ -1174,6 +1288,9 @@ void kill_block_super(struct super_block *sb)
 	struct block_device *bdev = sb->s_bdev;
 	fmode_t mode = sb->s_mode;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO "kill_block_super  \n");
+    }
 	bdev->bd_super = NULL;
 	generic_shutdown_super(sb);
 	sync_blockdev(bdev);
@@ -1196,6 +1313,9 @@ struct dentry *mount_nodev(struct file_system_type *fs_type,
 	int error;
 	struct super_block *s = sget(fs_type, NULL, set_anon_super, flags, NULL);
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " mount_nodev \n");
+    }
 	if (IS_ERR(s))
 		return ERR_CAST(s);
 
@@ -1221,6 +1341,9 @@ struct dentry *mount_single(struct file_system_type *fs_type,
 	struct super_block *s;
 	int error;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " mount_single \n");
+    }
 	s = sget(fs_type, compare_single, set_anon_super, flags, NULL);
 	if (IS_ERR(s))
 		return ERR_CAST(s);
@@ -1246,6 +1369,9 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
 	char *secdata = NULL;
 	int error = -ENOMEM;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " mount_fs \n");
+    }
 	if (data && !(type->fs_flags & FS_BINARY_MOUNTDATA)) {
 		secdata = alloc_secdata();
 		if (!secdata)
@@ -1309,6 +1435,9 @@ int super_setup_bdi_name(struct super_block *sb, char *fmt, ...)
 	int err;
 	va_list args;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " super_setup_bdi_name \n");
+    }
 	bdi = bdi_alloc(GFP_KERNEL);
 	if (!bdi)
 		return -ENOMEM;
@@ -1337,6 +1466,9 @@ int super_setup_bdi(struct super_block *sb)
 {
 	static atomic_long_t bdi_seq = ATOMIC_LONG_INIT(0);
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " super_setup_bdi \n");
+    }
 	return super_setup_bdi_name(sb, "%.28s-%ld", sb->s_type->name,
 				    atomic_long_inc_return(&bdi_seq));
 }
@@ -1361,6 +1493,9 @@ int __sb_start_write(struct super_block *sb, int level, bool wait)
 	bool force_trylock = false;
 	int ret = 1;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " __sb_start_write \n");
+    }
 #ifdef CONFIG_LOCKDEP
 	/*
 	 * We want lockdep to tell us about possible deadlocks with freezing
@@ -1472,6 +1607,9 @@ int freeze_super(struct super_block *sb)
 {
 	int ret;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " freeze_super \n");
+    }
 	atomic_inc(&sb->s_active);
 	down_write(&sb->s_umount);
 	if (sb->s_writers.frozen != SB_UNFROZEN) {
@@ -1541,6 +1679,9 @@ int thaw_super(struct super_block *sb)
 {
 	int error;
 
+    if( fs_trace_enable && fs_super_trace_enable  ){
+        printk(KERN_INFO " thaw_super \n");
+    }
 	down_write(&sb->s_umount);
 	if (sb->s_writers.frozen != SB_FREEZE_COMPLETE) {
 		up_write(&sb->s_umount);
