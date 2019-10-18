@@ -24,6 +24,9 @@
 #include <linux/rcupdate.h>
 #include <linux/workqueue.h>
 
+extern int fs_trace_enable;
+extern int fs_file_trace_enable;
+
 unsigned int sysctl_nr_open __read_mostly = 1024*1024;
 unsigned int sysctl_nr_open_min = BITS_PER_LONG;
 /* our min() is unusable in constant expressions ;-/ */
@@ -56,6 +59,9 @@ static void copy_fd_bitmaps(struct fdtable *nfdt, struct fdtable *ofdt,
 {
 	unsigned int cpy, set;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO "copy_fd_bitmaps \n " );
+    }
 	cpy = count / BITS_PER_BYTE;
 	set = (nfdt->max_fds - count) / BITS_PER_BYTE;
 	memcpy(nfdt->open_fds, ofdt->open_fds, cpy);
@@ -77,6 +83,9 @@ static void copy_fdtable(struct fdtable *nfdt, struct fdtable *ofdt)
 {
 	unsigned int cpy, set;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO "copy_fdtable \n " );
+    }
 	BUG_ON(nfdt->max_fds < ofdt->max_fds);
 
 	cpy = ofdt->max_fds * sizeof(struct file *);
@@ -92,6 +101,9 @@ static struct fdtable * alloc_fdtable(unsigned int nr)
 	struct fdtable *fdt;
 	void *data;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO "alloc_fdtable \n " );
+    }
 	/*
 	 * Figure out how many fds we actually want to support in this fdtable.
 	 * Allocation steps are keyed to the size of the fdarray, since it
@@ -156,6 +168,9 @@ static int expand_fdtable(struct files_struct *files, unsigned int nr)
 {
 	struct fdtable *new_fdt, *cur_fdt;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " expand_fdtable \n " );
+    }
 	spin_unlock(&files->file_lock);
 	new_fdt = alloc_fdtable(nr);
 
@@ -202,6 +217,9 @@ static int expand_files(struct files_struct *files, unsigned int nr)
 	struct fdtable *fdt;
 	int expanded = 0;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " expand_files\n " );
+    }
 repeat:
 	fdt = files_fdtable(files);
 
@@ -233,16 +251,25 @@ repeat:
 static inline void __set_close_on_exec(unsigned int fd, struct fdtable *fdt)
 {
 	__set_bit(fd, fdt->close_on_exec);
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __set_close_on_exec\n " );
+    }
 }
 
 static inline void __clear_close_on_exec(unsigned int fd, struct fdtable *fdt)
 {
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __clear_close_on_exec\n " );
+    }
 	if (test_bit(fd, fdt->close_on_exec))
 		__clear_bit(fd, fdt->close_on_exec);
 }
 
 static inline void __set_open_fd(unsigned int fd, struct fdtable *fdt)
 {
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __set_open_fd\n " );
+    }
 	__set_bit(fd, fdt->open_fds);
 	fd /= BITS_PER_LONG;
 	if (!~fdt->open_fds[fd])
@@ -251,6 +278,9 @@ static inline void __set_open_fd(unsigned int fd, struct fdtable *fdt)
 
 static inline void __clear_open_fd(unsigned int fd, struct fdtable *fdt)
 {
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __clear_open_fd\n " );
+    }
 	__clear_bit(fd, fdt->open_fds);
 	__clear_bit(fd / BITS_PER_LONG, fdt->full_fds_bits);
 }
@@ -260,6 +290,9 @@ static unsigned int count_open_files(struct fdtable *fdt)
 	unsigned int size = fdt->max_fds;
 	unsigned int i;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO "count_open_files \n " );
+    }
 	/* Find the last open fd */
 	for (i = size / BITS_PER_LONG; i > 0; ) {
 		if (fdt->open_fds[--i])
@@ -281,6 +314,9 @@ struct files_struct *dup_fd(struct files_struct *oldf, int *errorp)
 	unsigned int open_files, i;
 	struct fdtable *old_fdt, *new_fdt;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO "dup_fd \n " );
+    }
 	*errorp = -ENOMEM;
 	newf = kmem_cache_alloc(files_cachep, GFP_KERNEL);
 	if (!newf)
@@ -380,6 +416,9 @@ static struct fdtable *close_files(struct files_struct * files)
 	struct fdtable *fdt = rcu_dereference_raw(files->fdt);
 	unsigned int i, j = 0;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " close_files\n " );
+    }
 	for (;;) {
 		unsigned long set;
 		i = j * BITS_PER_LONG;
@@ -406,6 +445,9 @@ struct files_struct *get_files_struct(struct task_struct *task)
 {
 	struct files_struct *files;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " get_files_struct\n " );
+    }
 	task_lock(task);
 	files = task->files;
 	if (files)
@@ -417,6 +459,9 @@ struct files_struct *get_files_struct(struct task_struct *task)
 
 void put_files_struct(struct files_struct *files)
 {
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " put_files_struct\n " );
+    }
 	if (atomic_dec_and_test(&files->count)) {
 		struct fdtable *fdt = close_files(files);
 
@@ -432,6 +477,9 @@ void reset_files_struct(struct files_struct *files)
 	struct task_struct *tsk = current;
 	struct files_struct *old;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " reset_files_struct\n " );
+    }
 	old = tsk->files;
 	task_lock(tsk);
 	tsk->files = files;
@@ -443,6 +491,9 @@ void exit_files(struct task_struct *tsk)
 {
 	struct files_struct * files = tsk->files;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO "exit_files \n " );
+    }
 	if (files) {
 		task_lock(tsk);
 		tsk->files = NULL;
@@ -470,6 +521,9 @@ static unsigned int find_next_fd(struct fdtable *fdt, unsigned int start)
 	unsigned int maxbit = maxfd / BITS_PER_LONG;
 	unsigned int bitbit = start / BITS_PER_LONG;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " find_next_fd\n " );
+    }
 	bitbit = find_next_zero_bit(fdt->full_fds_bits, maxbit, bitbit) * BITS_PER_LONG;
 	if (bitbit > maxfd)
 		return maxfd;
@@ -488,6 +542,9 @@ int __alloc_fd(struct files_struct *files,
 	int error;
 	struct fdtable *fdt;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO "__alloc_fd \n " );
+    }
 	spin_lock(&files->file_lock);
 repeat:
 	fdt = files_fdtable(files);
@@ -542,10 +599,16 @@ out:
 static int alloc_fd(unsigned start, unsigned flags)
 {
 	return __alloc_fd(current->files, start, rlimit(RLIMIT_NOFILE), flags);
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " alloc_fd \n " );
+    }
 }
 
 int get_unused_fd_flags(unsigned flags)
 {
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " get_unused_fd_flags\n " );
+    }
 	return __alloc_fd(current->files, 0, rlimit(RLIMIT_NOFILE), flags);
 }
 EXPORT_SYMBOL(get_unused_fd_flags);
@@ -553,6 +616,9 @@ EXPORT_SYMBOL(get_unused_fd_flags);
 static void __put_unused_fd(struct files_struct *files, unsigned int fd)
 {
 	struct fdtable *fdt = files_fdtable(files);
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __put_unused_fd \n " );
+    }
 	__clear_open_fd(fd, fdt);
 	if (fd < files->next_fd)
 		files->next_fd = fd;
@@ -561,6 +627,9 @@ static void __put_unused_fd(struct files_struct *files, unsigned int fd)
 void put_unused_fd(unsigned int fd)
 {
 	struct files_struct *files = current->files;
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " put_unused_fd \n " );
+    }
 	spin_lock(&files->file_lock);
 	__put_unused_fd(files, fd);
 	spin_unlock(&files->file_lock);
@@ -593,6 +662,9 @@ void __fd_install(struct files_struct *files, unsigned int fd,
 {
 	struct fdtable *fdt;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __fd_install \n " );
+    }
 	rcu_read_lock_sched();
 
 	if (unlikely(files->resize_in_progress)) {
@@ -614,6 +686,9 @@ void __fd_install(struct files_struct *files, unsigned int fd,
 
 void fd_install(unsigned int fd, struct file *file)
 {
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " fd_install\n " );
+    }
 	__fd_install(current->files, fd, file);
 }
 
@@ -627,6 +702,9 @@ int __close_fd(struct files_struct *files, unsigned fd)
 	struct file *file;
 	struct fdtable *fdt;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __close_fd \n " );
+    }
 	spin_lock(&files->file_lock);
 	fdt = files_fdtable(files);
 	if (fd >= fdt->max_fds)
@@ -649,6 +727,9 @@ void do_close_on_exec(struct files_struct *files)
 	unsigned i;
 	struct fdtable *fdt;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " do_close_on_exec\n " );
+    }
 	/* exec unshares first */
 	spin_lock(&files->file_lock);
 	for (i = 0; ; i++) {
@@ -685,6 +766,9 @@ static struct file *__fget(unsigned int fd, fmode_t mask)
 	struct files_struct *files = current->files;
 	struct file *file;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __fget\n " );
+    }
 	rcu_read_lock();
 loop:
 	file = fcheck_files(files, fd);
@@ -705,12 +789,18 @@ loop:
 
 struct file *fget(unsigned int fd)
 {
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " fget \n " );
+    }
 	return __fget(fd, FMODE_PATH);
 }
 EXPORT_SYMBOL(fget);
 
 struct file *fget_raw(unsigned int fd)
 {
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " fget_raw \n " );
+    }
 	return __fget(fd, 0);
 }
 EXPORT_SYMBOL(fget_raw);
@@ -736,6 +826,9 @@ static unsigned long __fget_light(unsigned int fd, fmode_t mask)
 	struct files_struct *files = current->files;
 	struct file *file;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __fget_light \n " );
+    }
 	if (atomic_read(&files->count) == 1) {
 		file = __fcheck_files(files, fd);
 		if (!file || unlikely(file->f_mode & mask))
@@ -750,12 +843,18 @@ static unsigned long __fget_light(unsigned int fd, fmode_t mask)
 }
 unsigned long __fdget(unsigned int fd)
 {
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __fdget \n " );
+    }
 	return __fget_light(fd, FMODE_PATH);
 }
 EXPORT_SYMBOL(__fdget);
 
 unsigned long __fdget_raw(unsigned int fd)
 {
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __fdget_raw \n " );
+    }
 	return __fget_light(fd, 0);
 }
 
@@ -764,6 +863,9 @@ unsigned long __fdget_pos(unsigned int fd)
 	unsigned long v = __fdget(fd);
 	struct file *file = (struct file *)(v & ~3);
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " __fdget_pos \n " );
+    }
 	if (file && (file->f_mode & FMODE_ATOMIC_POS)) {
 		if (file_count(file) > 1) {
 			v |= FDPUT_POS_UNLOCK;
@@ -788,6 +890,9 @@ void set_close_on_exec(unsigned int fd, int flag)
 {
 	struct files_struct *files = current->files;
 	struct fdtable *fdt;
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " set_close_on_exec \n " );
+    }
 	spin_lock(&files->file_lock);
 	fdt = files_fdtable(files);
 	if (flag)
@@ -802,6 +907,9 @@ bool get_close_on_exec(unsigned int fd)
 	struct files_struct *files = current->files;
 	struct fdtable *fdt;
 	bool res;
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " get_close_on_exec \n " );
+    }
 	rcu_read_lock();
 	fdt = files_fdtable(files);
 	res = close_on_exec(fd, fdt);
@@ -816,6 +924,9 @@ __releases(&files->file_lock)
 	struct file *tofree;
 	struct fdtable *fdt;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " do_dup2\n " );
+    }
 	/*
 	 * We need to detect attempts to do dup2() over allocated but still
 	 * not finished descriptor.  NB: OpenBSD avoids that at the price of
@@ -832,6 +943,9 @@ __releases(&files->file_lock)
 	 */
 	fdt = files_fdtable(files);
 	tofree = fdt->fd[fd];
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " \n " );
+    }
 	if (!tofree && fd_is_open(fd, fdt))
 		goto Ebusy;
 	get_file(file);
@@ -858,6 +972,9 @@ int replace_fd(unsigned fd, struct file *file, unsigned flags)
 	int err;
 	struct files_struct *files = current->files;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " replace_fd \n " );
+    }
 	if (!file)
 		return __close_fd(files, fd);
 
@@ -881,6 +998,9 @@ SYSCALL_DEFINE3(dup3, unsigned int, oldfd, unsigned int, newfd, int, flags)
 	struct file *file;
 	struct files_struct *files = current->files;
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " dup3 \n " );
+    }
 	if ((flags & ~O_CLOEXEC) != 0)
 		return -EINVAL;
 
@@ -911,6 +1031,9 @@ out_unlock:
 
 SYSCALL_DEFINE2(dup2, unsigned int, oldfd, unsigned int, newfd)
 {
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " dup2 \n " );
+    }
 	if (unlikely(newfd == oldfd)) { /* corner case */
 		struct files_struct *files = current->files;
 		int retval = oldfd;
@@ -929,6 +1052,9 @@ SYSCALL_DEFINE1(dup, unsigned int, fildes)
 	int ret = -EBADF;
 	struct file *file = fget_raw(fildes);
 
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " dup \n " );
+    }
 	if (file) {
 		ret = get_unused_fd_flags(0);
 		if (ret >= 0)
@@ -942,6 +1068,9 @@ SYSCALL_DEFINE1(dup, unsigned int, fildes)
 int f_dupfd(unsigned int from, struct file *file, unsigned flags)
 {
 	int err;
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " f_dupfd \n " );
+    }
 	if (from >= rlimit(RLIMIT_NOFILE))
 		return -EINVAL;
 	err = alloc_fd(from, flags);
@@ -958,6 +1087,9 @@ int iterate_fd(struct files_struct *files, unsigned n,
 {
 	struct fdtable *fdt;
 	int res = 0;
+    if( fs_trace_enable && fs_file_trace_enable ){
+        printk(KERN_INFO " iterate_fd \n " );
+    }
 	if (!files)
 		return 0;
 	spin_lock(&files->file_lock);
