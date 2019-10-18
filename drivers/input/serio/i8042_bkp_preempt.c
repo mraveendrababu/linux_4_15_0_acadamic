@@ -28,7 +28,6 @@
 #include <linux/preempt.h>
 
 #include <asm/io.h>
-#include <linux/percpu.h>
 
 MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
 MODULE_DESCRIPTION("i8042 keyboard and mouse controller driver");
@@ -133,34 +132,21 @@ static char i8042_aux_firmware_id[128];
 
 #include "i8042.h"
 
-DEFINE_PER_CPU( int , kbd_per_cpu_counter );
-DEFINE_PER_CPU( int , mouse_per_cpu_counter);
 
-int mouse_tasklet_irq_counter=0;
-int kbd_tasklet_irq_counter=0;
 int mouse_irq_counter=0;
 int kbd_irq_counter=0;
 int kbd_mouse_total_irq_counter=0;
 int stop_kbd_int_loop=0;
 int thread_1_counter=0;
 int thread_2_counter=0;
-DEFINE_SPINLOCK(total_count_guard_lock);
-
 EXPORT_SYMBOL(stop_kbd_int_loop);
-EXPORT_SYMBOL(kbd_tasklet_irq_counter);
-EXPORT_SYMBOL(mouse_tasklet_irq_counter);
 EXPORT_SYMBOL(kbd_irq_counter);
 EXPORT_SYMBOL(mouse_irq_counter);
 EXPORT_SYMBOL(kbd_mouse_total_irq_counter);
 EXPORT_SYMBOL(thread_1_counter);
 EXPORT_SYMBOL(thread_2_counter);
-EXPORT_SYMBOL(total_count_guard_lock);
 //extern int mouse_irq_counter;
-EXPORT_PER_CPU_SYMBOL(kbd_per_cpu_counter);
-EXPORT_PER_CPU_SYMBOL(mouse_per_cpu_counter);
 
-void kbd_tasklet_fun(unsigned long );
-DECLARE_TASKLET(kbd_tasklet, kbd_tasklet_fun, 0);
 /*
  * i8042_lock protects serialization between i8042_command and
  * the interrupt handler.
@@ -536,21 +522,6 @@ static bool i8042_filter(unsigned char data, unsigned char str,
 	return false;
 }
 
-void kbd_tasklet_fun(unsigned long count ){
-
-    unsigned long flags;
-
-    printk(KERN_INFO "kbd_tasklet_fun : start \n" );
-	//spin_lock_irqsave(&total_count_guard_lock, flags);
-	spin_lock(&total_count_guard_lock);
-    kbd_tasklet_irq_counter = 1 + kbd_tasklet_irq_counter;    
-    kbd_mouse_total_irq_counter = 1 + kbd_mouse_total_irq_counter;
-    //spin_unlock_irqrestore(&total_count_guard_lock, flags);
-    spin_unlock(&total_count_guard_lock);
-    
-    printk(KERN_INFO "In kbd_tasklet    total:%d  kbd_irq_counter: %d kbd_tasklet_irq_counter : %d  mouse_irq_counter : %d  mouse_tasklet_irq_counter: %d   thread_1_counter: %d  thread_2_counter=%d  total_diff : %d \n", kbd_mouse_total_irq_counter, kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( kbd_mouse_total_irq_counter -( kbd_irq_counter+mouse_irq_counter + thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter + mouse_tasklet_irq_counter )) );
-
-}
 /*
  * i8042_interrupt() is the most important function in this driver -
  * it handles the interrupts from the i8042, and sends incoming bytes
@@ -568,30 +539,14 @@ static irqreturn_t i8042_interrupt(int irq, void *dev_id)
 	bool filtered;
 	int ret = 1;
     int i=0;
-    int cpu;
-    //unsigned long flags;
-
-
-
-    get_cpu_var(kbd_per_cpu_counter)++;
-    put_cpu_var(kbd_per_cpu_counter);
-
-    printk(KERN_INFO "i8042_interrupt :  the kbd_per_counter_values  : %d   :%d    %d    %d \n", per_cpu(kbd_per_cpu_counter, 0 ), per_cpu(kbd_per_cpu_counter, 1 ) ,  per_cpu(kbd_per_cpu_counter, 2 )  , per_cpu(kbd_per_cpu_counter, 3 ) );
-
-    printk(KERN_INFO " i8042_interrupt  : the mouse_per_counter_values  : %d   :%d    %d    %d \n", per_cpu(mouse_per_cpu_counter, 0 ), per_cpu(mouse_per_cpu_counter, 1 ) ,  per_cpu(mouse_per_cpu_counter, 2 )  , per_cpu(mouse_per_cpu_counter, 3 ) );
-    printk(KERN_INFO "i8042_interrupt : start \n" );
-    tasklet_schedule(&kbd_tasklet);
-    //preempt_disable();
-	//spin_lock_irqsave(&total_count_guard_lock, flags);
-	spin_lock(&total_count_guard_lock);
+    
+    preempt_disable();
     kbd_irq_counter = 1 + kbd_irq_counter;    
     kbd_mouse_total_irq_counter = 1 + kbd_mouse_total_irq_counter;
-    //spin_unlock_irqrestore(&total_count_guard_lock, flags);
-    spin_unlock(&total_count_guard_lock);
-    //preempt_enable();
+    preempt_enable();
 
     
-    printk(KERN_INFO "In i8042_interrupt ::     total:%d  kbd_irq_counter: %d kbd_tasklet_irq_counter : %d  mouse_irq_counter : %d  mouse_tasklet_irq_counter: %d   thread_1_counter: %d  thread_2_counter=%d  total_diff : %d \n", kbd_mouse_total_irq_counter, kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( kbd_mouse_total_irq_counter -( kbd_irq_counter+mouse_irq_counter + thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter + mouse_tasklet_irq_counter )) );
+    printk(KERN_INFO "i8042_interrupt    total:%d  kbd_irq_counter: %d  mouse_irq_counter : %d thread_1_counter: %d  thread_2_counter=%d  total_diff : %d \n", kbd_mouse_total_irq_counter, kbd_irq_counter, mouse_irq_counter, thread_1_counter, thread_2_counter, ( kbd_mouse_total_irq_counter -( kbd_irq_counter+mouse_irq_counter + thread_1_counter + thread_2_counter )) );
 
     while( i < 0 ){
         printk(KERN_INFO " i8042_interrupt  i :%d  \n", i );
@@ -613,7 +568,6 @@ static irqreturn_t i8042_interrupt(int irq, void *dev_id)
     }
     */
 
-    //tasklet_schedule(&kbd_tasklet);
 
 	spin_lock_irqsave(&i8042_lock, flags);
 

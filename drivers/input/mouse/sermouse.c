@@ -207,7 +207,7 @@ static irqreturn_t sermouse_interrupt(struct serio *serio,
 		unsigned char data, unsigned int flags)
 {
 	struct sermouse *sermouse = serio_get_drvdata(serio);
-
+    printk(KERN_INFO "sermouse_interrupt \n" );
 	if (time_after(jiffies, sermouse->last + HZ/10))
 		sermouse->count = 0;
 

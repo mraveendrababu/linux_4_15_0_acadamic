@@ -26,9 +26,9 @@
 #include <linux/slab.h>
 #include <linux/suspend.h>
 #include <linux/preempt.h>
-
+#include <linux/types.h>
 #include <asm/io.h>
-#include <linux/percpu.h>
+#include<linux/getcpu.h>
 
 MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
 MODULE_DESCRIPTION("i8042 keyboard and mouse controller driver");
@@ -133,14 +133,13 @@ static char i8042_aux_firmware_id[128];
 
 #include "i8042.h"
 
-DEFINE_PER_CPU( int , kbd_per_cpu_counter );
-DEFINE_PER_CPU( int , mouse_per_cpu_counter);
 
 int mouse_tasklet_irq_counter=0;
 int kbd_tasklet_irq_counter=0;
 int mouse_irq_counter=0;
 int kbd_irq_counter=0;
-int kbd_mouse_total_irq_counter=0;
+//int kbd_mouse_total_irq_counter=0;
+atomic_t kbd_mouse_total_irq_counter = ATOMIC_INIT(0);
 int stop_kbd_int_loop=0;
 int thread_1_counter=0;
 int thread_2_counter=0;
@@ -156,8 +155,6 @@ EXPORT_SYMBOL(thread_1_counter);
 EXPORT_SYMBOL(thread_2_counter);
 EXPORT_SYMBOL(total_count_guard_lock);
 //extern int mouse_irq_counter;
-EXPORT_PER_CPU_SYMBOL(kbd_per_cpu_counter);
-EXPORT_PER_CPU_SYMBOL(mouse_per_cpu_counter);
 
 void kbd_tasklet_fun(unsigned long );
 DECLARE_TASKLET(kbd_tasklet, kbd_tasklet_fun, 0);
@@ -537,18 +534,18 @@ static bool i8042_filter(unsigned char data, unsigned char str,
 }
 
 void kbd_tasklet_fun(unsigned long count ){
+    int cpu_num=0;
 
-    unsigned long flags;
-
-    printk(KERN_INFO "kbd_tasklet_fun : start \n" );
-	//spin_lock_irqsave(&total_count_guard_lock, flags);
+    cpu_num = get_cpu();
+    printk(KERN_INFO "kbd_tasklet_fun : start  on cpu_num : %d \n", cpu_num );
 	spin_lock(&total_count_guard_lock);
     kbd_tasklet_irq_counter = 1 + kbd_tasklet_irq_counter;    
-    kbd_mouse_total_irq_counter = 1 + kbd_mouse_total_irq_counter;
-    //spin_unlock_irqrestore(&total_count_guard_lock, flags);
+    //kbd_mouse_total_irq_counter = 1 + kbd_mouse_total_irq_counter;
+    atomic_inc(&kbd_mouse_total_irq_counter);
     spin_unlock(&total_count_guard_lock);
     
-    printk(KERN_INFO "In kbd_tasklet    total:%d  kbd_irq_counter: %d kbd_tasklet_irq_counter : %d  mouse_irq_counter : %d  mouse_tasklet_irq_counter: %d   thread_1_counter: %d  thread_2_counter=%d  total_diff : %d \n", kbd_mouse_total_irq_counter, kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( kbd_mouse_total_irq_counter -( kbd_irq_counter+mouse_irq_counter + thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter + mouse_tasklet_irq_counter )) );
+    cpu_num = get_cpu();
+    printk(KERN_INFO "In kbd_tasklet  on cpu_num: %d   total:%d  kbd_irq_counter: %d kbd_tasklet_irq_counter : %d  mouse_irq_counter : %d  mouse_tasklet_irq_counter: %d   thread_1_counter: %d  thread_2_counter=%d  total_diff : %d \n", cpu_num ,  atomic_read(&kbd_mouse_total_irq_counter), kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( atomic_read(&kbd_mouse_total_irq_counter) -( kbd_irq_counter+mouse_irq_counter + thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter + mouse_tasklet_irq_counter )) );
 
 }
 /*
@@ -568,30 +565,23 @@ static irqreturn_t i8042_interrupt(int irq, void *dev_id)
 	bool filtered;
 	int ret = 1;
     int i=0;
-    int cpu;
-    //unsigned long flags;
 
+    int cpu_num=0;
 
-
-    get_cpu_var(kbd_per_cpu_counter)++;
-    put_cpu_var(kbd_per_cpu_counter);
-
-    printk(KERN_INFO "i8042_interrupt :  the kbd_per_counter_values  : %d   :%d    %d    %d \n", per_cpu(kbd_per_cpu_counter, 0 ), per_cpu(kbd_per_cpu_counter, 1 ) ,  per_cpu(kbd_per_cpu_counter, 2 )  , per_cpu(kbd_per_cpu_counter, 3 ) );
-
-    printk(KERN_INFO " i8042_interrupt  : the mouse_per_counter_values  : %d   :%d    %d    %d \n", per_cpu(mouse_per_cpu_counter, 0 ), per_cpu(mouse_per_cpu_counter, 1 ) ,  per_cpu(mouse_per_cpu_counter, 2 )  , per_cpu(mouse_per_cpu_counter, 3 ) );
-    printk(KERN_INFO "i8042_interrupt : start \n" );
+    cpu_num = get_cpu();
+    printk(KERN_INFO "i8042_interrupt : start on cpu : %d \n", cpu_num );
     tasklet_schedule(&kbd_tasklet);
     //preempt_disable();
-	//spin_lock_irqsave(&total_count_guard_lock, flags);
-	spin_lock(&total_count_guard_lock);
+	//spin_lock(&total_count_guard_lock);
     kbd_irq_counter = 1 + kbd_irq_counter;    
-    kbd_mouse_total_irq_counter = 1 + kbd_mouse_total_irq_counter;
-    //spin_unlock_irqrestore(&total_count_guard_lock, flags);
-    spin_unlock(&total_count_guard_lock);
+    //kbd_mouse_total_irq_counter = 1 + kbd_mouse_total_irq_counter;
+    atomic_inc(&kbd_mouse_total_irq_counter);
+    //spin_unlock(&total_count_guard_lock);
     //preempt_enable();
 
+    printk(KERN_INFO "In i8042_interrupt     total:%d  kbd_irq_counter: %d kbd_tasklet_irq_counter : %d  mouse_irq_counter : %d  mouse_tasklet_irq_counter: %d   thread_1_counter: %d  thread_2_counter=%d  total_diff : %d \n", atomic_read(&kbd_mouse_total_irq_counter), kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( atomic_read(&kbd_mouse_total_irq_counter) -( kbd_irq_counter+mouse_irq_counter + thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter + mouse_tasklet_irq_counter )) );
     
-    printk(KERN_INFO "In i8042_interrupt ::     total:%d  kbd_irq_counter: %d kbd_tasklet_irq_counter : %d  mouse_irq_counter : %d  mouse_tasklet_irq_counter: %d   thread_1_counter: %d  thread_2_counter=%d  total_diff : %d \n", kbd_mouse_total_irq_counter, kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( kbd_mouse_total_irq_counter -( kbd_irq_counter+mouse_irq_counter + thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter + mouse_tasklet_irq_counter )) );
+    //printk(KERN_INFO "In i8042_interrupt ::     total:%d  kbd_irq_counter: %d kbd_tasklet_irq_counter : %d  mouse_irq_counter : %d  mouse_tasklet_irq_counter: %d   thread_1_counter: %d  thread_2_counter=%d  total_diff : %d \n", kbd_mouse_total_irq_counter, kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( kbd_mouse_total_irq_counter -( kbd_irq_counter+mouse_irq_counter + thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter + mouse_tasklet_irq_counter )) );
 
     while( i < 0 ){
         printk(KERN_INFO " i8042_interrupt  i :%d  \n", i );
@@ -690,7 +680,8 @@ static irqreturn_t i8042_interrupt(int irq, void *dev_id)
 	if (likely(serio && !filtered))
 		serio_interrupt(serio, data, dfl);
 
-    printk(KERN_INFO "i8042_interrupt : end of function  \n" );
+    cpu_num = get_cpu();
+    printk(KERN_INFO "i8042_interrupt : end of function on cpu_number : %d  \n", cpu_num );
  out:
 	return IRQ_RETVAL(ret);
 }

@@ -32,7 +32,7 @@
 #include <linux/pm_runtime.h>
 #include <linux/preempt.h>
 #include <linux/spinlock.h>
-#include <linux/getcpu.h>
+#include <linux/types.h>
 #include "i2c-designware-core.h"
 
 //int mouse_irq_counter=0;
@@ -40,14 +40,16 @@
 extern int kbd_tasklet_irq_counter;
 extern int mouse_tasklet_irq_counter;
 extern int kbd_irq_counter;
-extern int kbd_mouse_total_irq_counter;
+//extern int kbd_mouse_total_irq_counter;
+extern atomic_t kbd_mouse_total_irq_counter;
 extern int mouse_irq_counter;
 extern int thread_1_counter;
 extern int thread_2_counter;
 extern spinlock_t total_count_guard_lock;
-DECLARE_PER_CPU(int, kbd_per_cpu_counter );
-DECLARE_PER_CPU(int, mouse_per_cpu_counter );
 
+
+static int A=0;
+static int B=0;
 
 
 void mouse_tasklet_fun(unsigned long );
@@ -578,26 +580,32 @@ static u32 i2c_dw_read_clear_intrbits(struct dw_i2c_dev *dev)
 void mouse_tasklet_fun(unsigned long count){
     int i=0;
     int junk_counter=0;
-    int cpu_num=0;
-    unsigned long flags;
+    int C=0;
 
-    cpu_num = get_cpu();
-    printk(KERN_INFO "mouse_tasklet_fun : start  cpu_num : %d \n", cpu_num );
+    if( B == 20 ){
+        C = A;
+        if ( C == 0 ){
+            printk(KERN_INFO "BARRIER ERROR REPRODUCED  \n" );
+        }
+    }
+    printk(KERN_INFO "mouse_tasklet_fun : start A: %d  B : %d  C : %d  \n", A, B, C );
     while(i<50000){
      ++i;
      ++junk_counter;
     }
     printk(KERN_INFO "mouse_tasklet_fun : couting completed  \n" );
-	//spin_lock_irqsave(&total_count_guard_lock, flags);
-	spin_lock(&total_count_guard_lock);
+	//spin_lock(&total_count_guard_lock);
     mouse_tasklet_irq_counter = 1 + mouse_tasklet_irq_counter;
-    kbd_mouse_total_irq_counter = 1 + kbd_mouse_total_irq_counter;
-    //spin_unlock_irqrestore(&total_count_guard_lock, flags);
-    spin_unlock(&total_count_guard_lock);
+    //kbd_mouse_total_irq_counter = 1 + kbd_mouse_total_irq_counter;
+    atomic_inc(&kbd_mouse_total_irq_counter);
+    //spin_unlock(&total_count_guard_lock);
     //preempt_enable();
 
-    cpu_num = get_cpu();
-    printk(KERN_INFO " mouse_tasklet_fun   cpu_number : %d    : total:  %d  kbd_irq_counter: %d  kbd_tasklet_counter : %d   mouse_irq_counter: %d  mouse_tasklet_irq_counter: %d  thread_1_counter: %d  thread_2_counter : %d  total_diff : %d  \n", cpu_num,  kbd_mouse_total_irq_counter, kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( kbd_mouse_total_irq_counter - ( kbd_irq_counter+ mouse_irq_counter +thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter+mouse_tasklet_irq_counter )  ) );
+    printk(KERN_INFO " mouse_tasklet_fun  : total:  %d  kbd_irq_counter: %d  kbd_tasklet_counter : %d   mouse_irq_counter: %d  mouse_tasklet_irq_counter: %d  thread_1_counter: %d  thread_2_counter : %d  total_diff : %d  \n", atomic_read(&kbd_mouse_total_irq_counter), kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( atomic_read(&kbd_mouse_total_irq_counter) - ( kbd_irq_counter+ mouse_irq_counter +thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter+mouse_tasklet_irq_counter )  ) );
+
+    A=0;
+    mb();
+    B=0;
 
 }
 /*
@@ -607,29 +615,20 @@ void mouse_tasklet_fun(unsigned long count){
 static int i2c_dw_irq_handler_master(struct dw_i2c_dev *dev)
 {
 	u32 stat;
-    int cpu_num=0;
-    unsigned long flags;
-
-
-    get_cpu_var(mouse_per_cpu_counter)++;
-    put_cpu_var(mouse_per_cpu_counter);
-    printk(KERN_INFO " i2c_dw_irq_handler_master : the kbd_per_counter_values  : %d   :%d    %d    %d \n", per_cpu(kbd_per_cpu_counter, 0 ), per_cpu(kbd_per_cpu_counter, 1 ) ,  per_cpu(kbd_per_cpu_counter, 2 )  , per_cpu(kbd_per_cpu_counter, 3 ) );
-
-    printk(KERN_INFO " i2c_dw_irq_handler_master : the mouse_per_counter_values  : %d   :%d    %d    %d \n", per_cpu(mouse_per_cpu_counter, 0 ), per_cpu(mouse_per_cpu_counter, 1 ) ,  per_cpu(mouse_per_cpu_counter, 2 )  , per_cpu(mouse_per_cpu_counter, 3 ) );
-    cpu_num = get_cpu();
-    printk(KERN_INFO "i2c_dw_irq_handler_master : start  on cpu_number : %d \n", cpu_num );
+ 
+    printk(KERN_INFO "i2c_dw_irq_handler_master : start \n" );
     tasklet_schedule(&mouse_tasklet);
     //preempt_disable();
-	//spin_lock_irqsave(&total_count_guard_lock, flags);
-	spin_lock(&total_count_guard_lock);
+	//spin_lock(&total_count_guard_lock);
     mouse_irq_counter = 1+ mouse_irq_counter;
-    kbd_mouse_total_irq_counter = 1+kbd_mouse_total_irq_counter;
-    //spin_unlock_irqrestore(&total_count_guard_lock, flags);
-    spin_unlock(&total_count_guard_lock);
+    //kbd_mouse_total_irq_counter = 1+kbd_mouse_total_irq_counter;
+    atomic_inc(&kbd_mouse_total_irq_counter);
+    //spin_unlock(&total_count_guard_lock);
     //preempt_enable();
 
-    cpu_num = get_cpu();
-    printk(KERN_INFO "i2c_dw_irq_handler_master:  cpu_num : %d    total:  %d  kbd_irq_counter: %d  kbd_tasklet_counter : %d   mouse_irq_counter: %d  mouse_tasklet_irq_counter: %d  thread_1_counter: %d  thread_2_counter : %d  total_diff : %d  \n", cpu_num,  kbd_mouse_total_irq_counter, kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( kbd_mouse_total_irq_counter - ( kbd_irq_counter+ mouse_irq_counter +thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter+mouse_tasklet_irq_counter )  ) );
+    printk(KERN_INFO " i2c_dw_irq_handler_master:  : total:  %d  kbd_irq_counter: %d  kbd_tasklet_counter : %d   mouse_irq_counter: %d  mouse_tasklet_irq_counter: %d  thread_1_counter: %d  thread_2_counter : %d  total_diff : %d  \n", atomic_read(&kbd_mouse_total_irq_counter), kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( atomic_read(&kbd_mouse_total_irq_counter) - ( kbd_irq_counter+ mouse_irq_counter +thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter+mouse_tasklet_irq_counter )  ) );
+
+    //printk(KERN_INFO "i2c_dw_irq_handler_master: total:  %d  kbd_irq_counter: %d  kbd_tasklet_counter : %d   mouse_irq_counter: %d  mouse_tasklet_irq_counter: %d  thread_1_counter: %d  thread_2_counter : %d  total_diff : %d  \n", kbd_mouse_total_irq_counter, kbd_irq_counter, kbd_tasklet_irq_counter,  mouse_irq_counter, mouse_tasklet_irq_counter, thread_1_counter, thread_2_counter, ( kbd_mouse_total_irq_counter - ( kbd_irq_counter+ mouse_irq_counter +thread_1_counter + thread_2_counter + kbd_tasklet_irq_counter+mouse_tasklet_irq_counter )  ) );
 
     stat = i2c_dw_read_clear_intrbits(dev);
 	if (stat & DW_IC_INTR_TX_ABRT) {
@@ -673,6 +672,11 @@ static irqreturn_t i2c_dw_isr(int this_irq, void *dev_id)
 {
 	struct dw_i2c_dev *dev = dev_id;
 	u32 stat, enabled;
+
+    A=0;
+    mb();
+    B=0;
+
     printk(KERN_INFO "i2c_dw_isr in master: Raveendra \n" );
 	enabled = dw_readl(dev, DW_IC_ENABLE);
 	stat = dw_readl(dev, DW_IC_RAW_INTR_STAT);
@@ -680,8 +684,12 @@ static irqreturn_t i2c_dw_isr(int this_irq, void *dev_id)
 	if (!enabled || !(stat & ~DW_IC_INTR_ACTIVITY))
 		return IRQ_NONE;
 
-	i2c_dw_irq_handler_master(dev);
+    A=10;
+    mb();
+    B=20;
 
+	i2c_dw_irq_handler_master(dev);
+    printk(KERN_INFO "irqreturn_t at close  A : %d  \n", A);
 	return IRQ_HANDLED;
 }
 

@@ -1165,6 +1165,7 @@ static int cyapa_gen3_do_operational_check(struct cyapa *cyapa)
  */
 static bool cyapa_gen3_irq_cmd_handler(struct cyapa *cyapa)
 {
+    printk(KERN_INFO "cyapa_gen3_irq_cmd_handler \n" );
 	/* Not gen3 irq command response, skip for continue. */
 	if (cyapa->gen != CYAPA_GEN3)
 		return true;

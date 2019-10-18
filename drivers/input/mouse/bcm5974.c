@@ -715,6 +715,8 @@ static void bcm5974_irq_button(struct urb *urb)
 	struct bcm5974 *dev = urb->context;
 	struct usb_interface *intf = dev->intf;
 	int error;
+    
+    printk(KERN_INFO "bcm5974_irq_button \n" );
 
 	switch (urb->status) {
 	case 0:
@@ -747,6 +749,7 @@ static void bcm5974_irq_trackpad(struct urb *urb)
 	struct usb_interface *intf = dev->intf;
 	int error;
 
+    printk(KERN_INFO "bcm5974_irq_trackpad \n" );
 	switch (urb->status) {
 	case 0:
 		break;

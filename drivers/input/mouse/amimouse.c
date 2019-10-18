@@ -40,7 +40,8 @@ static irqreturn_t amimouse_interrupt(int irq, void *data)
 	struct input_dev *dev = data;
 	unsigned short joy0dat, potgor;
 	int nx, ny, dx, dy;
-
+    
+    printk(KERN_INFO "amimouse_interrupt \n" );
 	joy0dat = amiga_custom.joy0dat;
 
 	nx = joy0dat & 0xff;

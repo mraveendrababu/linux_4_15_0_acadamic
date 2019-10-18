@@ -309,7 +309,7 @@ static irqreturn_t psmouse_interrupt(struct serio *serio,
 		unsigned char data, unsigned int flags)
 {
 	struct psmouse *psmouse = serio_get_drvdata(serio);
-
+    printk(KERN_INFO "psmouse_interrupt \n" );
 	if (psmouse->state == PSMOUSE_IGNORE)
 		goto out;
 

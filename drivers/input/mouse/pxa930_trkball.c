@@ -54,7 +54,7 @@ static irqreturn_t pxa930_trkball_interrupt(int irq, void *dev_id)
 	struct pxa930_trkball *trkball = dev_id;
 	struct input_dev *input = trkball->input;
 	int tbcntr, x, y;
-
+    printk(KERN_INFO "pxa930_tkball_interrupt \n" );
 	/* According to the spec software must read TBCNTR twice:
 	 * if the read value is the same, the reading is valid
 	 */

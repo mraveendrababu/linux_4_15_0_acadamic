@@ -2606,6 +2606,7 @@ bool cyapa_pip_irq_cmd_handler(struct cyapa *cyapa)
 	struct cyapa_pip_cmd_states *pip = &cyapa->cmd_states.pip;
 	int length;
 
+    printk(KERN_INFO " cyapa_pip_irq_cmd_handler \n" );
 	if (atomic_read(&pip->cmd_issued)) {
 		/* Polling command response data. */
 		if (pip->is_irq_mode == false)
@@ -2767,6 +2768,7 @@ int cyapa_pip_irq_handler(struct cyapa *cyapa)
 	unsigned int report_len;
 	int ret;
 
+    printk(KERN_INFO " cyapa_pip_irq_handler \n" );
 	if (!cyapa_is_pip_app_mode(cyapa)) {
 		dev_err(dev, "invalid device state, gen=%d, state=0x%02x\n",
 			cyapa->gen, cyapa->state);

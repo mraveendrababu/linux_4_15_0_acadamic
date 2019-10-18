@@ -938,6 +938,7 @@ static irqreturn_t elan_isr(int irq, void *dev_id)
 	int error;
 	u8 report[ETP_MAX_REPORT_LEN];
 
+    printk(KERN_INFO "elan_isr \n");
 	/*
 	 * When device is connected to i2c bus, when all IAP page writes
 	 * complete, the driver will receive interrupt and must read

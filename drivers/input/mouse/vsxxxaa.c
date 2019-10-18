@@ -448,7 +448,7 @@ static irqreturn_t vsxxxaa_interrupt(struct serio *serio,
 				     unsigned char data, unsigned int flags)
 {
 	struct vsxxxaa *mouse = serio_get_drvdata(serio);
-
+    printk(KERN_INFO "vsxxxaa_interrupt \n" );
 	vsxxxaa_queue_byte(mouse, data);
 	vsxxxaa_parse_buffer(mouse);
 

@@ -679,6 +679,7 @@ static irqreturn_t cyapa_irq(int irq, void *dev_id)
 	struct device *dev = &cyapa->client->dev;
 	int error;
 
+    printk(KERN_INFO "cyapa_irq \n" );
 	if (device_may_wakeup(dev))
 		pm_wakeup_event(dev, 0);
 
