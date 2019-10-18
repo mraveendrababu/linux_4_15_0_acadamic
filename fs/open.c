@@ -43,6 +43,7 @@ int do_truncate(struct dentry *dentry, loff_t length, unsigned int time_attrs,
 	int ret;
 	struct iattr newattrs;
 
+    printk(KERN_INFO "do_truncate \n" );
 	/* Not pretty: "inode->i_size" shouldn't really be signed. But it is. */
 	if (length < 0)
 		return -EINVAL;
@@ -75,6 +76,7 @@ long vfs_truncate(const struct path *path, loff_t length)
 	struct dentry *upperdentry;
 	long error;
 
+    printk(KERN_INFO "vfs_truncate \n" );
 	inode = path->dentry->d_inode;
 
 	/* For directories it's -EISDIR, for other non-regulars - -EINVAL */
@@ -138,6 +140,7 @@ static long do_sys_truncate(const char __user *pathname, loff_t length)
 	struct path path;
 	int error;
 
+    printk(KERN_INFO "do_sys_truncate \n" );
 	if (length < 0)	/* sorry, but loff_t says... */
 		return -EINVAL;
 
@@ -156,6 +159,7 @@ retry:
 
 SYSCALL_DEFINE2(truncate, const char __user *, path, long, length)
 {
+    printk(KERN_INFO "truncate systemcall \n" );
 	return do_sys_truncate(path, length);
 }
 
@@ -173,6 +177,7 @@ static long do_sys_ftruncate(unsigned int fd, loff_t length, int small)
 	struct fd f;
 	int error;
 
+    printk(KERN_INFO " \n" );
 	error = -EINVAL;
 	if (length < 0)
 		goto out;
@@ -216,12 +221,14 @@ out:
 
 SYSCALL_DEFINE2(ftruncate, unsigned int, fd, unsigned long, length)
 {
+    printk(KERN_INFO " ftruncate \n" );
 	return do_sys_ftruncate(fd, length, 1);
 }
 
 #ifdef CONFIG_COMPAT
 COMPAT_SYSCALL_DEFINE2(ftruncate, unsigned int, fd, compat_ulong_t, length)
 {
+    printk(KERN_INFO "fruncate \n" );
 	return do_sys_ftruncate(fd, length, 1);
 }
 #endif
@@ -235,6 +242,7 @@ SYSCALL_DEFINE2(truncate64, const char __user *, path, loff_t, length)
 
 SYSCALL_DEFINE2(ftruncate64, unsigned int, fd, loff_t, length)
 {
+    printk(KERN_INFO "ftruncate64 \n" );
 	return do_sys_ftruncate(fd, length, 0);
 }
 #endif /* BITS_PER_LONG == 32 */
@@ -245,6 +253,7 @@ int vfs_fallocate(struct file *file, int mode, loff_t offset, loff_t len)
 	struct inode *inode = file_inode(file);
 	long ret;
 
+    printk(KERN_INFO " vfs_fallocate \n" );
 	if (offset < 0 || len <= 0)
 		return -EINVAL;
 
@@ -342,6 +351,7 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
 	struct fd f = fdget(fd);
 	int error = -EBADF;
 
+    printk(KERN_INFO "fallocate \n" );
 	if (f.file) {
 		error = vfs_fallocate(f.file, mode, offset, len);
 		fdput(f);
@@ -363,6 +373,7 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
 	int res;
 	unsigned int lookup_flags = LOOKUP_FOLLOW;
 
+    printk(KERN_INFO " faccessat  \n" );
 	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
 		return -EINVAL;
 
@@ -432,11 +443,13 @@ out:
 
 SYSCALL_DEFINE2(access, const char __user *, filename, int, mode)
 {
+    printk(KERN_INFO " access \n" );
 	return sys_faccessat(AT_FDCWD, filename, mode);
 }
 
 SYSCALL_DEFINE1(chdir, const char __user *, filename)
 {
+    printk(KERN_INFO " chdir\n" );
 	struct path path;
 	int error;
 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
@@ -466,6 +479,7 @@ SYSCALL_DEFINE1(fchdir, unsigned int, fd)
 	struct fd f = fdget_raw(fd);
 	int error;
 
+    printk(KERN_INFO " fchdir \n" );
 	error = -EBADF;
 	if (!f.file)
 		goto out;
@@ -488,6 +502,7 @@ SYSCALL_DEFINE1(chroot, const char __user *, filename)
 	struct path path;
 	int error;
 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
+    printk(KERN_INFO " chroot \n" );
 retry:
 	error = user_path_at(AT_FDCWD, filename, lookup_flags, &path);
 	if (error)
@@ -523,6 +538,7 @@ static int chmod_common(const struct path *path, umode_t mode)
 	struct iattr newattrs;
 	int error;
 
+    printk(KERN_INFO " chmod_common \n" );
 	error = mnt_want_write(path->mnt);
 	if (error)
 		return error;
@@ -550,6 +566,7 @@ SYSCALL_DEFINE2(fchmod, unsigned int, fd, umode_t, mode)
 	struct fd f = fdget(fd);
 	int err = -EBADF;
 
+    printk(KERN_INFO " fchmod \n" );
 	if (f.file) {
 		audit_file(f.file);
 		err = chmod_common(&f.file->f_path, mode);
@@ -563,6 +580,7 @@ SYSCALL_DEFINE3(fchmodat, int, dfd, const char __user *, filename, umode_t, mode
 	struct path path;
 	int error;
 	unsigned int lookup_flags = LOOKUP_FOLLOW;
+    printk(KERN_INFO " fchmodat \n" );
 retry:
 	error = user_path_at(dfd, filename, lookup_flags, &path);
 	if (!error) {
@@ -578,6 +596,7 @@ retry:
 
 SYSCALL_DEFINE2(chmod, const char __user *, filename, umode_t, mode)
 {
+    printk(KERN_INFO " chmod \n" );
 	return sys_fchmodat(AT_FDCWD, filename, mode);
 }
 
@@ -590,6 +609,7 @@ static int chown_common(const struct path *path, uid_t user, gid_t group)
 	kuid_t uid;
 	kgid_t gid;
 
+    printk(KERN_INFO " chown_common \n" );
 	uid = make_kuid(current_user_ns(), user);
 	gid = make_kgid(current_user_ns(), group);
 
@@ -630,6 +650,7 @@ SYSCALL_DEFINE5(fchownat, int, dfd, const char __user *, filename, uid_t, user,
 	int error = -EINVAL;
 	int lookup_flags;
 
+    printk(KERN_INFO " fchownat \n" );
 	if ((flag & ~(AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH)) != 0)
 		goto out;
 
@@ -657,11 +678,13 @@ out:
 
 SYSCALL_DEFINE3(chown, const char __user *, filename, uid_t, user, gid_t, group)
 {
+    printk(KERN_INFO " chown \n" );
 	return sys_fchownat(AT_FDCWD, filename, user, group, 0);
 }
 
 SYSCALL_DEFINE3(lchown, const char __user *, filename, uid_t, user, gid_t, group)
 {
+    printk(KERN_INFO "lchown \n" );
 	return sys_fchownat(AT_FDCWD, filename, user, group,
 			    AT_SYMLINK_NOFOLLOW);
 }
@@ -671,6 +694,7 @@ SYSCALL_DEFINE3(fchown, unsigned int, fd, uid_t, user, gid_t, group)
 	struct fd f = fdget(fd);
 	int error = -EBADF;
 
+    printk(KERN_INFO " fchown \n" );
 	if (!f.file)
 		goto out;
 
@@ -705,6 +729,7 @@ static int do_dentry_open(struct file *f,
 	static const struct file_operations empty_fops = {};
 	int error;
 
+    printk(KERN_INFO " do_dentry_open \n" );
 	f->f_mode = OPEN_FMODE(f->f_flags) | FMODE_LSEEK |
 				FMODE_PREAD | FMODE_PWRITE;
 
@@ -816,6 +841,7 @@ int finish_open(struct file *file, struct dentry *dentry,
 	int error;
 	BUG_ON(*opened & FILE_OPENED); /* once it's opened, it's opened */
 
+    printk(KERN_INFO " finish_open \n" );
 	file->f_path.dentry = dentry;
 	error = do_dentry_open(file, d_backing_inode(dentry), open,
 			       current_cred());
@@ -842,6 +868,7 @@ EXPORT_SYMBOL(finish_open);
  */
 int finish_no_open(struct file *file, struct dentry *dentry)
 {
+    printk(KERN_INFO " finish_no_open \n" );
 	file->f_path.dentry = dentry;
 	return 1;
 }
@@ -849,6 +876,7 @@ EXPORT_SYMBOL(finish_no_open);
 
 char *file_path(struct file *filp, char *buf, int buflen)
 {
+    printk(KERN_INFO "file_path \n" );
 	return d_path(&filp->f_path, buf, buflen);
 }
 EXPORT_SYMBOL(file_path);
@@ -864,6 +892,7 @@ int vfs_open(const struct path *path, struct file *file,
 {
 	struct dentry *dentry = d_real(path->dentry, NULL, file->f_flags, 0);
 
+    printk(KERN_INFO "vfs_open \n" );
 	if (IS_ERR(dentry))
 		return PTR_ERR(dentry);
 
@@ -877,6 +906,7 @@ struct file *dentry_open(const struct path *path, int flags,
 	int error;
 	struct file *f;
 
+    printk(KERN_INFO " dentry_open \n" );
 	validate_creds(cred);
 
 	/* We must always pass in a valid mount pointer. */
@@ -907,6 +937,7 @@ static inline int build_open_flags(int flags, umode_t mode, struct open_flags *o
 	int lookup_flags = 0;
 	int acc_mode = ACC_MODE(flags);
 
+    printk(KERN_INFO "build_open_flags \n" );
 	/*
 	 * Clear out all open flags we don't know about so that we don't report
 	 * them in fcntl(F_GETFD) or similar interfaces.
@@ -988,6 +1019,7 @@ struct file *file_open_name(struct filename *name, int flags, umode_t mode)
 {
 	struct open_flags op;
 	int err = build_open_flags(flags, mode, &op);
+    printk(KERN_INFO "file_open_name \n" );
 	return err ? ERR_PTR(err) : do_filp_open(AT_FDCWD, name, &op);
 }
 
@@ -1007,6 +1039,7 @@ struct file *filp_open(const char *filename, int flags, umode_t mode)
 	struct filename *name = getname_kernel(filename);
 	struct file *file = ERR_CAST(name);
 	
+    printk(KERN_INFO "flip_open \n" );
 	if (!IS_ERR(name)) {
 		file = file_open_name(name, flags, mode);
 		putname(name);
@@ -1020,6 +1053,7 @@ struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
 {
 	struct open_flags op;
 	int err = build_open_flags(flags, mode, &op);
+    printk(KERN_INFO " file_open_root \n" );
 	if (err)
 		return ERR_PTR(err);
 	return do_file_open_root(dentry, mnt, filename, &op);
@@ -1031,6 +1065,7 @@ struct file *filp_clone_open(struct file *oldfile)
 	struct file *file;
 	int retval;
 
+    printk(KERN_INFO " file_open_root  \n" );
 	file = get_empty_filp();
 	if (IS_ERR(file))
 		return file;
@@ -1052,6 +1087,7 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
 	int fd = build_open_flags(flags, mode, &op);
 	struct filename *tmp;
 
+    printk(KERN_INFO " do_sys_open \n" );
 	if (fd)
 		return fd;
 
@@ -1080,6 +1116,7 @@ SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, umode_t, mode)
 	if (force_o_largefile())
 		flags |= O_LARGEFILE;
 
+    printk(KERN_INFO "open \n" );
 	return do_sys_open(AT_FDCWD, filename, flags, mode);
 }
 
@@ -1089,6 +1126,7 @@ SYSCALL_DEFINE4(openat, int, dfd, const char __user *, filename, int, flags,
 	if (force_o_largefile())
 		flags |= O_LARGEFILE;
 
+    printk(KERN_INFO " \n" );
 	return do_sys_open(dfd, filename, flags, mode);
 }
 
@@ -1099,6 +1137,7 @@ SYSCALL_DEFINE4(openat, int, dfd, const char __user *, filename, int, flags,
  */
 COMPAT_SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, umode_t, mode)
 {
+    printk(KERN_INFO " open \n" );
 	return do_sys_open(AT_FDCWD, filename, flags, mode);
 }
 
@@ -1108,6 +1147,7 @@ COMPAT_SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, umode_t,
  */
 COMPAT_SYSCALL_DEFINE4(openat, int, dfd, const char __user *, filename, int, flags, umode_t, mode)
 {
+    printk(KERN_INFO " openat  \n" );
 	return do_sys_open(dfd, filename, flags, mode);
 }
 #endif
@@ -1120,6 +1160,7 @@ COMPAT_SYSCALL_DEFINE4(openat, int, dfd, const char __user *, filename, int, fla
  */
 SYSCALL_DEFINE2(creat, const char __user *, pathname, umode_t, mode)
 {
+    printk(KERN_INFO " creat \n" );
 	return sys_open(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);
 }
 
@@ -1133,6 +1174,7 @@ int filp_close(struct file *filp, fl_owner_t id)
 {
 	int retval = 0;
 
+    printk(KERN_INFO "flip_close \n" );
 	if (!file_count(filp)) {
 		printk(KERN_ERR "VFS: Close: file count is 0\n");
 		return 0;
@@ -1160,6 +1202,7 @@ SYSCALL_DEFINE1(close, unsigned int, fd)
 {
 	int retval = __close_fd(current->files, fd);
 
+    printk(KERN_INFO " close  \n" );
 	/* can't restart close syscall because file table entry was cleared */
 	if (unlikely(retval == -ERESTARTSYS ||
 		     retval == -ERESTARTNOINTR ||
@@ -1192,6 +1235,7 @@ SYSCALL_DEFINE0(vhangup)
  */
 int generic_file_open(struct inode * inode, struct file * filp)
 {
+    printk(KERN_INFO "generic_file_open \n" );
 	if (!(filp->f_flags & O_LARGEFILE) && i_size_read(inode) > MAX_NON_LFS)
 		return -EOVERFLOW;
 	return 0;
@@ -1207,6 +1251,7 @@ EXPORT_SYMBOL(generic_file_open);
  */
 int nonseekable_open(struct inode *inode, struct file *filp)
 {
+    printk(KERN_INFO "nonseekable_open \n" );
 	filp->f_mode &= ~(FMODE_LSEEK | FMODE_PREAD | FMODE_PWRITE);
 	return 0;
 }
