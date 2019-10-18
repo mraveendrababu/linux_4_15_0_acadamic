@@ -27,7 +27,6 @@ int fs_annon_inode_trace_enable=0;
 int fs_block_dev_trace_enable=0;
 int fs_sync_trace_enable=0;
 int fs_mbcache_trace_enable=0;
-int fs_dcache_trace_enable=0;
 
 EXPORT_SYMBOL(fs_trace_enable);
 EXPORT_SYMBOL(fs_open_trace_enable);
@@ -54,7 +53,6 @@ EXPORT_SYMBOL(fs_block_dev_trace_enable);
 EXPORT_SYMBOL(fs_annon_inode_trace_enable);
 EXPORT_SYMBOL(fs_sync_trace_enable);
 EXPORT_SYMBOL(fs_mbcache_trace_enable);
-EXPORT_SYMBOL(fs_dcache_trace_enable);
 
 
 int fs_trace_dummy(void){
