@@ -32,6 +32,8 @@
 #include <linux/cleancache.h>
 #include "internal.h"
 
+extern int fs_trace_enable;
+extern int fs_mpage_trace_enable;
 /*
  * I/O completion handler for multipage BIOs.
  *
@@ -49,6 +51,9 @@ static void mpage_end_io(struct bio *bio)
 	struct bio_vec *bv;
 	int i;
 
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO " mpage_end_io \n" );
+    }
 	bio_for_each_segment_all(bv, bio, i) {
 		struct page *page = bv->bv_page;
 		page_endio(page, op_is_write(bio_op(bio)),
@@ -60,6 +65,9 @@ static void mpage_end_io(struct bio *bio)
 
 static struct bio *mpage_bio_submit(int op, int op_flags, struct bio *bio)
 {
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO " mpage_bio_submit \n" );
+    }
 	bio->bi_end_io = mpage_end_io;
 	bio_set_op_attrs(bio, op, op_flags);
 	guard_bio_eod(op, bio);
@@ -74,6 +82,9 @@ mpage_alloc(struct block_device *bdev,
 {
 	struct bio *bio;
 
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO " mpage_alloc \n" );
+    }
 	/* Restrict the given (page cache) mask for slab allocations */
 	gfp_flags &= GFP_KERNEL;
 	bio = bio_alloc(gfp_flags, nr_vecs);
@@ -107,6 +118,9 @@ map_buffer_to_page(struct page *page, struct buffer_head *bh, int page_block)
 	struct buffer_head *page_bh, *head;
 	int block = 0;
 
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO " map_buffer_to_page \n" );
+    }
 	if (!page_has_buffers(page)) {
 		/*
 		 * don't make any buffers if there is only one buffer on
@@ -164,6 +178,9 @@ do_mpage_readpage(struct bio *bio, struct page *page, unsigned nr_pages,
 	unsigned nblocks;
 	unsigned relative_block;
 
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO " do_mpage_readpage \n" );
+    }
 	if (page_has_buffers(page))
 		goto confused;
 
@@ -370,6 +387,9 @@ mpage_readpages(struct address_space *mapping, struct list_head *pages,
 	unsigned long first_logical_block = 0;
 	gfp_t gfp = readahead_gfp_mask(mapping);
 
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO " mpage_readpages \n" );
+    }
 	map_bh.b_state = 0;
 	map_bh.b_size = 0;
 	for (page_idx = 0; page_idx < nr_pages; page_idx++) {
@@ -406,6 +426,9 @@ int mpage_readpage(struct page *page, get_block_t get_block)
 	unsigned long first_logical_block = 0;
 	gfp_t gfp = mapping_gfp_constraint(page->mapping, GFP_KERNEL);
 
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO " mpage_readpage \n" );
+    }
 	map_bh.b_state = 0;
 	map_bh.b_size = 0;
 	bio = do_mpage_readpage(bio, page, 1, &last_block_in_bio,
@@ -453,6 +476,9 @@ static void clean_buffers(struct page *page, unsigned first_unmapped)
 	head = page_buffers(page);
 	bh = head;
 
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO " clean_buffers \n" );
+    }
 	do {
 		if (buffer_counter++ == first_unmapped)
 			break;
@@ -476,6 +502,9 @@ static void clean_buffers(struct page *page, unsigned first_unmapped)
  */
 void clean_page_buffers(struct page *page)
 {
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO "clean_page_buffers  \n" );
+    }
 	clean_buffers(page, ~0U);
 }
 
@@ -504,6 +533,9 @@ static int __mpage_writepage(struct page *page, struct writeback_control *wbc,
 	int ret = 0;
 	int op_flags = wbc_to_write_flags(wbc);
 
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO "__mpage_writepage  \n" );
+    }
 	if (page_has_buffers(page)) {
 		struct buffer_head *head = page_buffers(page);
 		struct buffer_head *bh = head;
@@ -701,6 +733,9 @@ mpage_writepages(struct address_space *mapping,
 	struct blk_plug plug;
 	int ret;
 
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO " mpage_writepages \n" );
+    }
 	blk_start_plug(&plug);
 
 	if (!get_block)
@@ -735,6 +770,9 @@ int mpage_writepage(struct page *page, get_block_t get_block,
 		.use_writepage = 0,
 	};
 	int ret = __mpage_writepage(page, wbc, &mpd);
+    if( fs_trace_enable && fs_mpage_trace_enable ){
+        printk(KERN_INFO " mpage_writepage \n" );
+    }
 	if (mpd.bio) {
 		int op_flags = (wbc->sync_mode == WB_SYNC_ALL ?
 			  REQ_SYNC : 0);
