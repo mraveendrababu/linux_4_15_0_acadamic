@@ -2,6 +2,7 @@
 #include <linux/string.h>
 #include <linux/module.h>
 
+int fs_trace_enable=1;
 int fs_open_trace_enable=0;
 int fs_locks_trace_enable=0;
 int fs_readdir_trace_enable=0;
@@ -25,6 +26,7 @@ int fs_annon_inode_trace_enable=0;
 int fs_block_dev_trace_enable=0;
 int fs_sync_trace_enable=0;
 
+EXPORT_SYMBOL(fs_trace_enable);
 EXPORT_SYMBOL(fs_open_trace_enable);
 EXPORT_SYMBOL(fs_locks_trace_enable);
 EXPORT_SYMBOL(fs_readdir_trace_enable);
