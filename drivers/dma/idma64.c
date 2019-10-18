@@ -27,6 +27,10 @@
 /* For now we support only two channels */
 #define IDMA64_NR_CHAN		2
 
+static int irq_counter=0;
+static int irq_chan_counter=0;
+extern int stop_kbd_int_loop;
+
 /* ---------------------------------------------------------------------- */
 
 static struct device *chan2dev(struct dma_chan *chan)
@@ -143,7 +147,8 @@ static void idma64_chan_irq(struct idma64 *idma64, unsigned short c,
 	struct idma64_chan *idma64c = &idma64->chan[c];
 	struct idma64_desc *desc;
 	unsigned long flags;
-
+    ++irq_chan_counter;
+    printk(KERN_INFO "idma64_chan_irq counter : %d \n", irq_chan_counter );
 	spin_lock_irqsave(&idma64c->vchan.lock, flags);
 	desc = idma64c->desc;
 	if (desc) {
@@ -171,12 +176,23 @@ static irqreturn_t idma64_irq(int irq, void *dev)
 	u32 status_xfer;
 	u32 status_err;
 	unsigned short i;
+    ++irq_counter;
+    //printk(KERN_INFO "idma64_irq counter: %d \n", irq_counter);
+    
+    if( irq_counter%100 == 0 ){
+        // enabling to break the keyboard interrupt looping 
+        printk(KERN_INFO "idma64_irq counter: %d  and now breaking the keyboard interrupt handler loop \n", irq_counter);
+        stop_kbd_int_loop = 1;
+    }
+
 
 	dev_vdbg(idma64->dma.dev, "%s: status=%#x\n", __func__, status);
 
 	/* Check if we have any interrupt from the DMA controller */
 	if (!status)
 		return IRQ_NONE;
+
+    printk(KERN_INFO "idma64_irq - The actual interrupt is seen now  : %d \n", irq_counter);
 
 	status_xfer = dma_readl(idma64, RAW(XFER));
 	status_err = dma_readl(idma64, RAW(ERROR));
@@ -193,6 +209,7 @@ static struct idma64_desc *idma64_alloc_desc(unsigned int ndesc)
 {
 	struct idma64_desc *desc;
 
+    printk(KERN_INFO "idma64_alloc_desc \n");
 	desc = kzalloc(sizeof(*desc), GFP_NOWAIT);
 	if (!desc)
 		return NULL;
@@ -211,6 +228,7 @@ static void idma64_desc_free(struct idma64_chan *idma64c,
 {
 	struct idma64_hw_desc *hw;
 
+    printk(KERN_INFO "idma64_alloc_free \n");
 	if (desc->ndesc) {
 		unsigned int i = desc->ndesc;
 

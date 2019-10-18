@@ -64,7 +64,7 @@ static void usb_mouse_irq(struct urb *urb)
 	signed char *data = mouse->data;
 	struct input_dev *dev = mouse->dev;
 	int status;
-
+    printk(KERN_INFO "usb_mouse_irq \n");
 	switch (urb->status) {
 	case 0:			/* success */
 		break;

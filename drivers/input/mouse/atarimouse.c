@@ -69,6 +69,7 @@ static void atamouse_interrupt(char *buf)
 {
 	int buttons, dx, dy;
 
+    printk(KERN_INFO "atamouse_interrupt \n");
 	buttons = (buf[0] & 1) | ((buf[0] & 2) << 1);
 #ifdef FIXED_ATARI_JOYSTICK
 	buttons |= atari_mouse_buttons & 2;
