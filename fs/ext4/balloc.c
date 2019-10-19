@@ -23,6 +23,9 @@
 
 #include <trace/events/ext4.h>
 
+extern int ext4_trace_enable;
+extern int ext4_balloc_trace_enable;
+
 static unsigned ext4_num_base_meta_clusters(struct super_block *sb,
 					    ext4_group_t block_group);
 /*
@@ -37,6 +40,9 @@ ext4_group_t ext4_get_group_number(struct super_block *sb,
 {
 	ext4_group_t group;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_get_group_number \n" );
+    }
 	if (test_opt2(sb, STD_GROUP_SIZE))
 		group = (block -
 			 le32_to_cpu(EXT4_SB(sb)->s_es->s_first_data_block)) >>
@@ -56,6 +62,9 @@ void ext4_get_group_no_and_offset(struct super_block *sb, ext4_fsblk_t blocknr,
 	struct ext4_super_block *es = EXT4_SB(sb)->s_es;
 	ext4_grpblk_t offset;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_get_group_no_and_offset\n" );
+    }
 	blocknr = blocknr - le32_to_cpu(es->s_first_data_block);
 	offset = do_div(blocknr, EXT4_BLOCKS_PER_GROUP(sb)) >>
 		EXT4_SB(sb)->s_cluster_bits;
@@ -76,6 +85,9 @@ static inline int ext4_block_in_group(struct super_block *sb,
 {
 	ext4_group_t actual_group;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_block_in_group\n" );
+    }
 	actual_group = ext4_get_group_number(sb, block);
 	return (actual_group == block_group) ? 1 : 0;
 }
@@ -93,6 +105,9 @@ static unsigned ext4_num_overhead_clusters(struct super_block *sb,
 	ext4_fsblk_t itbl_blk;
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_num_overhead_clusters\n" );
+    }
 	/* This is the number of clusters used by the superblock,
 	 * block group descriptors, and reserved block group
 	 * descriptor blocks */
@@ -161,6 +176,9 @@ static unsigned int num_clusters_in_group(struct super_block *sb,
 {
 	unsigned int blocks;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO "num_clusters_in_group \n" );
+    }
 	if (block_group == ext4_get_groups_count(sb) - 1) {
 		/*
 		 * Even though mke2fs always initializes the first and
@@ -188,6 +206,9 @@ static int ext4_init_block_bitmap(struct super_block *sb,
 
 	J_ASSERT_BH(bh, buffer_locked(bh));
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_init_block_bitmap\n" );
+    }
 	/* If checksum is bad mark all blocks used to prevent allocation
 	 * essentially implementing a per-group read-only flag. */
 	if (!ext4_group_desc_csum_verify(sb, block_group, gdp)) {
@@ -281,6 +302,9 @@ struct ext4_group_desc * ext4_get_group_desc(struct super_block *sb,
 	struct ext4_group_desc *desc;
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_get_group_desc\n" );
+    }
 	if (block_group >= ngroups) {
 		ext4_error(sb, "block_group >= groups_count - block_group = %u,"
 			   " groups_count = %u", block_group, ngroups);
@@ -321,6 +345,9 @@ static ext4_fsblk_t ext4_valid_block_bitmap(struct super_block *sb,
 	ext4_fsblk_t blk;
 	ext4_fsblk_t group_first_block;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_valid_block_bitmap\n" );
+    }
 	if (ext4_has_feature_flex_bg(sb)) {
 		/* with FLEX_BG, the inode/block bitmaps and itable
 		 * blocks may not be in the group at all
@@ -373,6 +400,9 @@ static int ext4_validate_block_bitmap(struct super_block *sb,
 	struct ext4_group_info *grp = ext4_get_group_info(sb, block_group);
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_validate_block_bitmap\n" );
+    }
 	if (buffer_verified(bh))
 		return 0;
 	if (EXT4_MB_GRP_BBITMAP_CORRUPT(grp))
@@ -427,6 +457,9 @@ ext4_read_block_bitmap_nowait(struct super_block *sb, ext4_group_t block_group)
 	ext4_fsblk_t bitmap_blk;
 	int err;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO "ext4_read_block_bitmap_nowait \n" );
+    }
 	desc = ext4_get_group_desc(sb, block_group, NULL);
 	if (!desc)
 		return ERR_PTR(-EFSCORRUPTED);
@@ -512,6 +545,9 @@ int ext4_wait_block_bitmap(struct super_block *sb, ext4_group_t block_group,
 {
 	struct ext4_group_desc *desc;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_wait_block_bitmap\n" );
+    }
 	if (!buffer_new(bh))
 		return 0;
 	desc = ext4_get_group_desc(sb, block_group, NULL);
@@ -535,6 +571,9 @@ ext4_read_block_bitmap(struct super_block *sb, ext4_group_t block_group)
 	struct buffer_head *bh;
 	int err;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_read_block_bitmap\n" );
+    }
 	bh = ext4_read_block_bitmap_nowait(sb, block_group);
 	if (IS_ERR(bh))
 		return bh;
@@ -566,6 +605,9 @@ static int ext4_has_free_clusters(struct ext4_sb_info *sbi,
 	dirty_clusters = percpu_counter_read_positive(dcc);
 	resv_clusters = atomic64_read(&sbi->s_resv_clusters);
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_has_free_clusters\n" );
+    }
 	/*
 	 * r_blocks_count should always be multiple of the cluster ratio so
 	 * we are safe to do a plane bit shift only.
@@ -606,6 +648,9 @@ static int ext4_has_free_clusters(struct ext4_sb_info *sbi,
 int ext4_claim_free_clusters(struct ext4_sb_info *sbi,
 			     s64 nclusters, unsigned int flags)
 {
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_claim_free_clusters\n" );
+    }
 	if (ext4_has_free_clusters(sbi, nclusters, flags)) {
 		percpu_counter_add(&sbi->s_dirtyclusters_counter, nclusters);
 		return 0;
@@ -630,6 +675,9 @@ int ext4_should_retry_alloc(struct super_block *sb, int *retries)
 	    !EXT4_SB(sb)->s_journal)
 		return 0;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_should_retry_alloc\n" );
+    }
 	smp_mb();
 	if (EXT4_SB(sb)->s_mb_free_pending == 0)
 		return 0;
@@ -658,6 +706,9 @@ ext4_fsblk_t ext4_new_meta_blocks(handle_t *handle, struct inode *inode,
 	struct ext4_allocation_request ar;
 	ext4_fsblk_t ret;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_new_meta_blocks\n" );
+    }
 	memset(&ar, 0, sizeof(ar));
 	/* Fill with neighbour allocated blocks */
 	ar.inode = inode;
@@ -698,6 +749,9 @@ ext4_fsblk_t ext4_count_free_clusters(struct super_block *sb)
 	unsigned int x;
 	struct buffer_head *bitmap_bh = NULL;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_count_free_clusters\n" );
+    }
 	es = EXT4_SB(sb)->s_es;
 	desc_count = 0;
 	bitmap_count = 0;
@@ -773,6 +827,9 @@ int ext4_bg_has_super(struct super_block *sb, ext4_group_t group)
 {
 	struct ext4_super_block *es = EXT4_SB(sb)->s_es;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_bg_has_super\n" );
+    }
 	if (group == 0)
 		return 1;
 	if (ext4_has_feature_sparse_super2(sb)) {
@@ -796,6 +853,9 @@ static unsigned long ext4_bg_num_gdb_meta(struct super_block *sb,
 					ext4_group_t group)
 {
 	unsigned long metagroup = group / EXT4_DESC_PER_BLOCK(sb);
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_bg_num_gdb_meta\n" );
+    }
 	ext4_group_t first = metagroup * EXT4_DESC_PER_BLOCK(sb);
 	ext4_group_t last = first + EXT4_DESC_PER_BLOCK(sb) - 1;
 
@@ -807,6 +867,9 @@ static unsigned long ext4_bg_num_gdb_meta(struct super_block *sb,
 static unsigned long ext4_bg_num_gdb_nometa(struct super_block *sb,
 					ext4_group_t group)
 {
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO "ext4_bg_num_gdb_nometa \n" );
+    }
 	if (!ext4_bg_has_super(sb, group))
 		return 0;
 
@@ -831,6 +894,9 @@ unsigned long ext4_bg_num_gdb(struct super_block *sb, ext4_group_t group)
 			le32_to_cpu(EXT4_SB(sb)->s_es->s_first_meta_bg);
 	unsigned long metagroup = group / EXT4_DESC_PER_BLOCK(sb);
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO "ext4_bg_num_gdb \n" );
+    }
 	if (!ext4_has_feature_meta_bg(sb) || metagroup < first_meta_bg)
 		return ext4_bg_num_gdb_nometa(sb, group);
 
@@ -848,6 +914,9 @@ static unsigned ext4_num_base_meta_clusters(struct super_block *sb,
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	unsigned num;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO " ext4_num_base_meta_clusters\n" );
+    }
 	/* Check for superblock and gdt backups in this group */
 	num = ext4_bg_has_super(sb, block_group);
 
@@ -879,6 +948,9 @@ ext4_fsblk_t ext4_inode_to_goal_block(struct inode *inode)
 	ext4_fsblk_t bg_start;
 	ext4_fsblk_t last_block;
 
+    if( ext4_trace_enable && ext4_balloc_trace_enable ){
+        printk(KERN_INFO "ext4_inode_to_goal_block \n" );
+    }
 	block_group = ei->i_block_group;
 	if (flex_size >= EXT4_FLEX_SIZE_DIR_ALLOC_SCHEME) {
 		/*
