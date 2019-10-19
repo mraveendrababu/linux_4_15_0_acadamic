@@ -7,6 +7,9 @@
 
 #include "ext4.h"
 
+extern int ext4_trace_enable;
+extern int ext4_mmp_trace_enable;
+
 /* Checksumming functions */
 static __le32 ext4_mmp_csum(struct super_block *sb, struct mmp_struct *mmp)
 {
@@ -14,6 +17,9 @@ static __le32 ext4_mmp_csum(struct super_block *sb, struct mmp_struct *mmp)
 	int offset = offsetof(struct mmp_struct, mmp_checksum);
 	__u32 csum;
 
+    if( ext4_trace_enable && ext4_mmp_trace_enable ){
+        printk( KERN_INFO " ext4_mmp_csum\n" );
+    }
 	csum = ext4_chksum(sbi, sbi->s_csum_seed, (char *)mmp, offset);
 
 	return cpu_to_le32(csum);
@@ -24,6 +30,9 @@ static int ext4_mmp_csum_verify(struct super_block *sb, struct mmp_struct *mmp)
 	if (!ext4_has_metadata_csum(sb))
 		return 1;
 
+    if( ext4_trace_enable && ext4_mmp_trace_enable ){
+        printk( KERN_INFO " ext4_mmp_csum_verify\n" );
+    }
 	return mmp->mmp_checksum == ext4_mmp_csum(sb, mmp);
 }
 
@@ -32,6 +41,9 @@ static void ext4_mmp_csum_set(struct super_block *sb, struct mmp_struct *mmp)
 	if (!ext4_has_metadata_csum(sb))
 		return;
 
+    if( ext4_trace_enable && ext4_mmp_trace_enable ){
+        printk( KERN_INFO "ext4_mmp_csum_set \n" );
+    }
 	mmp->mmp_checksum = ext4_mmp_csum(sb, mmp);
 }
 
@@ -43,6 +55,9 @@ static int write_mmp_block(struct super_block *sb, struct buffer_head *bh)
 {
 	struct mmp_struct *mmp = (struct mmp_struct *)(bh->b_data);
 
+    if( ext4_trace_enable && ext4_mmp_trace_enable ){
+        printk( KERN_INFO " write_mmp_block\n" );
+    }
 	/*
 	 * We protect against freezing so that we don't create dirty buffers
 	 * on frozen filesystem.
@@ -71,6 +86,9 @@ static int read_mmp_block(struct super_block *sb, struct buffer_head **bh,
 	struct mmp_struct *mmp;
 	int ret;
 
+    if( ext4_trace_enable && ext4_mmp_trace_enable ){
+        printk( KERN_INFO "read_mmp_block \n" );
+    }
 	if (*bh)
 		clear_buffer_uptodate(*bh);
 
@@ -144,6 +162,9 @@ static int kmmpd(void *data)
 	unsigned long diff;
 	int retval;
 
+    if( ext4_trace_enable && ext4_mmp_trace_enable ){
+        printk( KERN_INFO " kmmpd\n" );
+    }
 	mmp_block = le64_to_cpu(es->s_mmp_block);
 	mmp = (struct mmp_struct *)(bh->b_data);
 	mmp->mmp_time = cpu_to_le64(get_seconds());
@@ -259,6 +280,9 @@ static unsigned int mmp_new_seq(void)
 {
 	u32 new_seq;
 
+    if( ext4_trace_enable && ext4_mmp_trace_enable ){
+        printk( KERN_INFO " mmp_new_seq\n" );
+    }
 	do {
 		new_seq = prandom_u32();
 	} while (new_seq > EXT4_MMP_SEQ_MAX);
@@ -281,6 +305,9 @@ int ext4_multi_mount_protect(struct super_block *sb,
 	unsigned int wait_time = 0;
 	int retval;
 
+    if( ext4_trace_enable && ext4_mmp_trace_enable ){
+        printk( KERN_INFO " ext4_multi_mount_protect\n" );
+    }
 	if (mmp_block < le32_to_cpu(es->s_first_data_block) ||
 	    mmp_block >= ext4_blocks_count(es)) {
 		ext4_warning(sb, "Invalid MMP block in superblock");
