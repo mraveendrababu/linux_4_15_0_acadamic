@@ -25,6 +25,9 @@ struct migrate_struct {
 	ext4_fsblk_t first_pblock, last_pblock;
 };
 
+extern int ext4_trace_enable;
+extern int ext4_migrate_trace_enable;
+
 static int finish_range(handle_t *handle, struct inode *inode,
 				struct migrate_struct *lb)
 
@@ -32,6 +35,10 @@ static int finish_range(handle_t *handle, struct inode *inode,
 	int retval = 0, needed;
 	struct ext4_extent newext;
 	struct ext4_ext_path *path;
+
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO " finish_range\n" );
+    }
 	if (lb->first_pblock == 0)
 		return 0;
 
@@ -93,6 +100,9 @@ static int update_extent_range(handle_t *handle, struct inode *inode,
 			       ext4_fsblk_t pblock, struct migrate_struct *lb)
 {
 	int retval;
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO " update_extent_range\n" );
+    }
 	/*
 	 * See if we can add on to the existing range (if it exists)
 	 */
@@ -123,6 +133,9 @@ static int update_ind_extent_range(handle_t *handle, struct inode *inode,
 	int i, retval = 0;
 	unsigned long max_entries = inode->i_sb->s_blocksize >> 2;
 
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO " update_ind_extent_range\n" );
+    }
 	bh = sb_bread(inode->i_sb, pblock);
 	if (!bh)
 		return -EIO;
@@ -152,6 +165,9 @@ static int update_dind_extent_range(handle_t *handle, struct inode *inode,
 	int i, retval = 0;
 	unsigned long max_entries = inode->i_sb->s_blocksize >> 2;
 
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO "update_dind_extent_range \n" );
+    }
 	bh = sb_bread(inode->i_sb, pblock);
 	if (!bh)
 		return -EIO;
@@ -182,6 +198,9 @@ static int update_tind_extent_range(handle_t *handle, struct inode *inode,
 	int i, retval = 0;
 	unsigned long max_entries = inode->i_sb->s_blocksize >> 2;
 
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO "update_tind_extent_range \n" );
+    }
 	bh = sb_bread(inode->i_sb, pblock);
 	if (!bh)
 		return -EIO;
@@ -207,6 +226,9 @@ static int extend_credit_for_blkdel(handle_t *handle, struct inode *inode)
 {
 	int retval = 0, needed;
 
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO " extend_credit_for_blkdel\n" );
+    }
 	if (ext4_handle_has_enough_credits(handle, EXT4_RESERVE_TRANS_BLOCKS+1))
 		return 0;
 	/*
@@ -231,6 +253,9 @@ static int free_dind_blocks(handle_t *handle,
 	struct buffer_head *bh;
 	unsigned long max_entries = inode->i_sb->s_blocksize >> 2;
 
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO " free_dind_blocks\n" );
+    }
 	bh = sb_bread(inode->i_sb, le32_to_cpu(i_data));
 	if (!bh)
 		return -EIO;
@@ -261,6 +286,9 @@ static int free_tind_blocks(handle_t *handle,
 	struct buffer_head *bh;
 	unsigned long max_entries = inode->i_sb->s_blocksize >> 2;
 
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO "free_tind_blocks \n" );
+    }
 	bh = sb_bread(inode->i_sb, le32_to_cpu(i_data));
 	if (!bh)
 		return -EIO;
@@ -288,6 +316,9 @@ static int free_ind_block(handle_t *handle, struct inode *inode, __le32 *i_data)
 {
 	int retval;
 
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO " free_ind_block\n" );
+    }
 	/* ei->i_data[EXT4_IND_BLOCK] */
 	if (i_data[0]) {
 		extend_credit_for_blkdel(handle, inode);
@@ -321,6 +352,9 @@ static int ext4_ext_swap_inode_data(handle_t *handle, struct inode *inode,
 	struct ext4_inode_info *ei = EXT4_I(inode);
 	struct ext4_inode_info *tmp_ei = EXT4_I(tmp_inode);
 
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO " ext4_ext_swap_inode_data\n" );
+    }
 	/*
 	 * One credit accounted for writing the
 	 * i_data field of the original inode
@@ -388,6 +422,9 @@ static int free_ext_idx(handle_t *handle, struct inode *inode,
 	struct buffer_head *bh;
 	struct ext4_extent_header *eh;
 
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO "free_ext_idx \n" );
+    }
 	block = ext4_idx_pblock(ix);
 	bh = sb_bread(inode->i_sb, block);
 	if (!bh)
@@ -418,6 +455,9 @@ static int free_ext_block(handle_t *handle, struct inode *inode)
 	struct ext4_inode_info *ei = EXT4_I(inode);
 	struct ext4_extent_header *eh = (struct ext4_extent_header *)ei->i_data;
 	struct ext4_extent_idx *ix;
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO " free_ext_block\n" );
+    }
 	if (eh->eh_depth == 0)
 		/*
 		 * No extra blocks allocated for extent meta data
@@ -444,6 +484,9 @@ int ext4_ext_migrate(struct inode *inode)
 	__u32 goal;
 	uid_t owner[2];
 
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO " ext4_ext_migrate\n" );
+    }
 	/*
 	 * If the filesystem does not support extents, or the inode
 	 * already is extent-based, error out.
@@ -624,6 +667,9 @@ int ext4_ind_migrate(struct inode *inode)
 	handle_t			*handle;
 	int				ret;
 
+    if(ext4_trace_enable && ext4_migrate_trace_enable ){
+        printk(KERN_INFO " ext4_ind_migrate\n" );
+    }
 	if (!ext4_has_feature_extents(inode->i_sb) ||
 	    (!ext4_test_inode_flag(inode, EXT4_INODE_EXTENTS)))
 		return -EINVAL;
