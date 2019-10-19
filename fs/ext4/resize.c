@@ -17,11 +17,16 @@
 
 #include "ext4_jbd2.h"
 
+extern int ext4_trace_enable;
+extern int ext4_resize_trace_enable;
+
 int ext4_resize_begin(struct super_block *sb)
 {
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	int ret = 0;
-
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO "ext4_resize_begin \n" );
+    }
 	if (!ns_capable(sb->s_user_ns, CAP_SYS_RESOURCE))
 		return -EPERM;
 
@@ -56,6 +61,9 @@ int ext4_resize_begin(struct super_block *sb)
 
 void ext4_resize_end(struct super_block *sb)
 {
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " ext4_resize_end\n" );
+    }
 	clear_bit_unlock(EXT4_FLAGS_RESIZING, &EXT4_SB(sb)->s_ext4_flags);
 	smp_mb__after_atomic();
 }
@@ -100,6 +108,9 @@ static int verify_group_input(struct super_block *sb,
 	ext4_grpblk_t free_blocks_count, offset;
 	int err = -EINVAL;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO "verify_group_input \n" );
+    }
 	if (group != sbi->s_groups_count) {
 		ext4_warning(sb, "Cannot add at group %u (only %u groups)",
 			     input->group, sbi->s_groups_count);
@@ -197,6 +208,9 @@ static struct ext4_new_flex_group_data *alloc_flex_gd(unsigned long flexbg_size)
 {
 	struct ext4_new_flex_group_data *flex_gd;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO "alloc_flex_gd \n" );
+    }
 	flex_gd = kmalloc(sizeof(*flex_gd), GFP_NOFS);
 	if (flex_gd == NULL)
 		goto out3;
@@ -261,6 +275,9 @@ static int ext4_alloc_group_tables(struct super_block *sb,
 	__u16 uninit_mask = (flexbg_size > 1) ? ~EXT4_BG_BLOCK_UNINIT : ~0;
 	int i;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO "ext4_alloc_group_tables \n" );
+    }
 	BUG_ON(flex_gd->count == 0 || group_data == NULL);
 
 	src_group = group_data[0].group;
@@ -369,6 +386,9 @@ static struct buffer_head *bclean(handle_t *handle, struct super_block *sb,
 	struct buffer_head *bh;
 	int err;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " bclean\n" );
+    }
 	bh = sb_getblk(sb, blk);
 	if (unlikely(!bh))
 		return ERR_PTR(-ENOMEM);
@@ -393,6 +413,9 @@ static int extend_or_restart_transaction(handle_t *handle, int thresh)
 {
 	int err;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " extend_or_restart_transaction\n" );
+    }
 	if (ext4_handle_has_enough_credits(handle, thresh))
 		return 0;
 
@@ -425,6 +448,9 @@ static int set_flexbg_block_bitmap(struct super_block *sb, handle_t *handle,
 	ext4_group_t count = last_cluster - first_cluster + 1;
 	ext4_group_t count2;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO "set_flexbg_block_bitmap \n" );
+    }
 	ext4_debug("mark clusters [%llu-%llu] used\n", first_cluster,
 		   last_cluster);
 	for (count2 = count; count > 0;
@@ -504,6 +530,9 @@ static int setup_new_flex_group_blocks(struct super_block *sb,
 	int reserved_gdb, i, j, err = 0, err2;
 	int meta_bg;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " setup_new_flex_group_blocks\n" );
+    }
 	BUG_ON(!flex_gd->count || !group_data ||
 	       group_data[0].group != sbi->s_groups_count);
 
@@ -703,6 +732,9 @@ static unsigned ext4_list_backups(struct super_block *sb, unsigned *three,
 	int mult = 3;
 	unsigned ret;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " ext4_list_backups\n" );
+    }
 	if (!ext4_has_feature_sparse_super(sb)) {
 		ret = *min;
 		*min += 1;
@@ -741,6 +773,9 @@ static int verify_reserved_gdb(struct super_block *sb,
 	__le32 *p = (__le32 *)primary->b_data;
 	int gdbackups = 0;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " verify_reserved_gdb\n" );
+    }
 	while ((grp = ext4_list_backups(sb, &three, &five, &seven)) < end) {
 		if (le32_to_cpu(*p++) !=
 		    grp * EXT4_BLOCKS_PER_GROUP(sb) + blk){
@@ -787,6 +822,9 @@ static int add_new_gdb(handle_t *handle, struct inode *inode,
 	__le32 *data;
 	int err;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " add_new_gdb\n" );
+    }
 	if (test_opt(sb, DEBUG))
 		printk(KERN_DEBUG
 		       "EXT4-fs: ext4_add_new_gdb: adding group block %lu\n",
@@ -912,6 +950,9 @@ static int add_new_gdb_meta_bg(struct super_block *sb,
 	unsigned long gdb_num = group / EXT4_DESC_PER_BLOCK(sb);
 	int err;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " add_new_gdb_meta_bg\n" );
+    }
 	gdblock = ext4_meta_bg_first_block_no(sb, group) +
 		   ext4_bg_has_super(sb, group);
 	gdb_bh = sb_bread(sb, gdblock);
@@ -968,6 +1009,9 @@ static int reserve_backup_gdb(handle_t *handle, struct inode *inode,
 	int res, i;
 	int err;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " reserve_backup_gdb\n" );
+    }
 	primary = kmalloc(reserved_gdb * sizeof(*primary), GFP_NOFS);
 	if (!primary)
 		return -ENOMEM;
@@ -1079,6 +1123,9 @@ static void update_backups(struct super_block *sb, sector_t blk_off, char *data,
 	handle_t *handle;
 	int err = 0, err2;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO "update_backups \n" );
+    }
 	handle = ext4_journal_start_sb(sb, EXT4_HT_RESIZE, EXT4_MAX_TRANS_DATA);
 	if (IS_ERR(handle)) {
 		group = 1;
@@ -1185,6 +1232,9 @@ static int ext4_add_new_descs(handle_t *handle, struct super_block *sb,
 	int i, gdb_off, gdb_num, err = 0;
 	int meta_bg;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " ext4_add_new_descs\n" );
+    }
 	meta_bg = ext4_has_feature_meta_bg(sb);
 	for (i = 0; i < count; i++, group++) {
 		int reserved_gdb = ext4_bg_has_super(sb, group) ?
@@ -1220,6 +1270,9 @@ static int ext4_add_new_descs(handle_t *handle, struct super_block *sb,
 static struct buffer_head *ext4_get_bitmap(struct super_block *sb, __u64 block)
 {
 	struct buffer_head *bh = sb_getblk(sb, block);
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " ext4_get_bitmap\n" );
+    }
 	if (unlikely(!bh))
 		return NULL;
 	if (!bh_uptodate_or_lock(bh)) {
@@ -1239,6 +1292,9 @@ static int ext4_set_bitmap_checksums(struct super_block *sb,
 {
 	struct buffer_head *bh;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " ext4_set_bitmap_checksums\n" );
+    }
 	if (!ext4_has_metadata_csum(sb))
 		return 0;
 
@@ -1272,6 +1328,9 @@ static int ext4_setup_new_descs(handle_t *handle, struct super_block *sb,
 	__u16				*bg_flags = flex_gd->bg_flags;
 	int				i, gdb_off, gdb_num, err = 0;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " ext4_setup_new_descs\n" );
+    }
 
 	for (i = 0; i < flex_gd->count; i++, group_data++, bg_flags++) {
 		group = group_data->group;
@@ -1341,6 +1400,9 @@ static void ext4_update_super(struct super_block *sb,
 	struct ext4_super_block *es = sbi->s_es;
 	int i;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO "ext4_update_super \n" );
+    }
 	BUG_ON(flex_gd->count == 0 || group_data == NULL);
 	/*
 	 * Make the new blocks and inodes valid next.  We do this before
@@ -1445,6 +1507,9 @@ static int ext4_flex_group_add(struct super_block *sb,
 	unsigned reserved_gdb;
 	int err = 0, err2 = 0, credit;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO "ext4_flex_group_add \n" );
+    }
 	BUG_ON(!flex_gd->count || !flex_gd->groups || !flex_gd->bg_flags);
 
 	reserved_gdb = le16_to_cpu(es->s_reserved_gdt_blocks);
@@ -1537,6 +1602,9 @@ static int ext4_setup_next_flex_gd(struct super_block *sb,
 	ext4_grpblk_t clusters_per_group;
 	unsigned long i;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " ext4_setup_next_flex_gd\n" );
+    }
 	clusters_per_group = EXT4_CLUSTERS_PER_GROUP(sb);
 
 	o_blocks_count = ext4_blocks_count(es);
@@ -1609,6 +1677,9 @@ int ext4_group_add(struct super_block *sb, struct ext4_new_group_data *input)
 	int err;
 	__u16 bg_flags = 0;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " ext4_group_add\n" );
+    }
 	gdb_off = input->group % EXT4_DESC_PER_BLOCK(sb);
 
 	if (gdb_off == 0 && !ext4_has_feature_sparse_super(sb)) {
@@ -1674,6 +1745,9 @@ static int ext4_group_extend_no_check(struct super_block *sb,
 	handle_t *handle;
 	int err = 0, err2;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " ext4_group_extend_no_check\n" );
+    }
 	/* We will update the superblock, one block bitmap, and
 	 * one group descriptor via ext4_group_add_blocks().
 	 */
@@ -1737,6 +1811,9 @@ int ext4_group_extend(struct super_block *sb, struct ext4_super_block *es,
 	int err;
 	ext4_group_t group;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " ext4_group_extend\n" );
+    }
 	o_blocks_count = ext4_blocks_count(es);
 
 	if (test_opt(sb, DEBUG))
@@ -1816,6 +1893,9 @@ static int ext4_convert_meta_bg(struct super_block *sb, struct inode *inode)
 	int i, ret, err = 0;
 	int credits = 1;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO "ext4_convert_meta_bg \n" );
+    }
 	ext4_msg(sb, KERN_INFO, "Converting file system to meta_bg");
 	if (inode) {
 		if (es->s_reserved_gdt_blocks) {
@@ -1909,6 +1989,9 @@ int ext4_resize_fs(struct super_block *sb, ext4_fsblk_t n_blocks_count)
 	int err = 0, flexbg_size = 1 << sbi->s_log_groups_per_flex;
 	int meta_bg;
 
+    if (ext4_trace_enable && ext4_resize_trace_enable ){
+        printk( KERN_INFO " ext4_resize_fs\n" );
+    }
 	/* See if the device is actually as big as what was requested */
 	bh = sb_bread(sb, n_blocks_count - 1);
 	if (!bh) {
