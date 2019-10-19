@@ -66,6 +66,8 @@ int ext4_xattr_trusted_trace_enable=0;
 EXPORT_SYMBOL(ext4_xattr_trusted_trace_enable);
 int ext4_xattr_user_trace_enable=0;
 EXPORT_SYMBOL(ext4_xattr_user_trace_enable);
+int ext4_sysfs_trace_enable=0;
+EXPORT_SYMBOL(ext4_sysfs_trace_enable);
 
 
 int ext4_trace_dummy(void){
