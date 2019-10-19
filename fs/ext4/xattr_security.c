@@ -12,11 +12,17 @@
 #include "ext4.h"
 #include "xattr.h"
 
+extern int ext4_trace_enable;
+extern int ext4_xattr_security_trace_enable;
+
 static int
 ext4_xattr_security_get(const struct xattr_handler *handler,
 			struct dentry *unused, struct inode *inode,
 			const char *name, void *buffer, size_t size)
 {
+    if(ext4_trace_enable && ext4_xattr_security_trace_enable ){
+        printk(KERN_INFO "ext4_xattr_security_get \n" );
+    }
 	return ext4_xattr_get(inode, EXT4_XATTR_INDEX_SECURITY,
 			      name, buffer, size);
 }
@@ -27,6 +33,9 @@ ext4_xattr_security_set(const struct xattr_handler *handler,
 			const char *name, const void *value,
 			size_t size, int flags)
 {
+    if(ext4_trace_enable && ext4_xattr_security_trace_enable ){
+        printk(KERN_INFO "ext4_xattr_security_set \n" );
+    }
 	return ext4_xattr_set(inode, EXT4_XATTR_INDEX_SECURITY,
 			      name, value, size, flags);
 }
@@ -39,6 +48,9 @@ ext4_initxattrs(struct inode *inode, const struct xattr *xattr_array,
 	handle_t *handle = fs_info;
 	int err = 0;
 
+    if(ext4_trace_enable && ext4_xattr_security_trace_enable ){
+        printk(KERN_INFO " ext4_initxattrs\n" );
+    }
 	for (xattr = xattr_array; xattr->name != NULL; xattr++) {
 		err = ext4_xattr_set_handle(handle, inode,
 					    EXT4_XATTR_INDEX_SECURITY,
@@ -54,6 +66,9 @@ int
 ext4_init_security(handle_t *handle, struct inode *inode, struct inode *dir,
 		   const struct qstr *qstr)
 {
+    if(ext4_trace_enable && ext4_xattr_security_trace_enable ){
+        printk(KERN_INFO "ext4_init_security \n" );
+    }
 	return security_inode_init_security(inode, dir, qstr,
 					    &ext4_initxattrs, handle);
 }
