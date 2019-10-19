@@ -22,6 +22,9 @@
 
 #include <asm/ioctls.h>
 
+extern int fs_trace_enable;
+extern int fs_ioctl_trace_enable;
+
 /* So that the fiemap access checks can't overflow on 32 bit machines. */
 #define FIEMAP_MAX_EXTENTS	(UINT_MAX / sizeof(struct fiemap_extent))
 
@@ -39,7 +42,9 @@
 long vfs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	int error = -ENOTTY;
-
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "vfs_ioctl \n" );
+    }
 	if (!filp->f_op->unlocked_ioctl)
 		goto out;
 
@@ -55,6 +60,9 @@ static int ioctl_fibmap(struct file *filp, int __user *p)
 	struct address_space *mapping = filp->f_mapping;
 	int res, block;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "ioctl_fibmap \n" );
+    }
 	/* do we support this mess? */
 	if (!mapping->a_ops->bmap)
 		return -EINVAL;
@@ -91,6 +99,9 @@ int fiemap_fill_next_extent(struct fiemap_extent_info *fieinfo, u64 logical,
 	struct fiemap_extent extent;
 	struct fiemap_extent __user *dest = fieinfo->fi_extents_start;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO " fiemap_fill_next_extent\n" );
+    }
 	/* only count the extents */
 	if (fieinfo->fi_extents_max == 0) {
 		fieinfo->fi_extents_mapped++;
@@ -142,6 +153,9 @@ int fiemap_check_flags(struct fiemap_extent_info *fieinfo, u32 fs_flags)
 {
 	u32 incompat_flags;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "fiemap_check_flags \n" );
+    }
 	incompat_flags = fieinfo->fi_flags & ~(FIEMAP_FLAGS_COMPAT & fs_flags);
 	if (incompat_flags) {
 		fieinfo->fi_flags = incompat_flags;
@@ -156,6 +170,9 @@ static int fiemap_check_ranges(struct super_block *sb,
 {
 	u64 maxbytes = (u64) sb->s_maxbytes;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "fiemap_check_ranges \n" );
+    }
 	*new_len = len;
 
 	if (len == 0)
@@ -183,6 +200,9 @@ static int ioctl_fiemap(struct file *filp, unsigned long arg)
 	u64 len;
 	int error;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "ioctl_fiemap \n" );
+    }
 	if (!inode->i_op->fiemap)
 		return -EOPNOTSUPP;
 
@@ -224,6 +244,9 @@ static long ioctl_file_clone(struct file *dst_file, unsigned long srcfd,
 	struct fd src_file = fdget(srcfd);
 	int ret;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "ioctl_file_clone \n" );
+    }
 	if (!src_file.file)
 		return -EBADF;
 	ret = -EXDEV;
@@ -239,6 +262,9 @@ static long ioctl_file_clone_range(struct file *file, void __user *argp)
 {
 	struct file_clone_range args;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO " ioctl_file_clone_range\n" );
+    }
 	if (copy_from_user(&args, argp, sizeof(args)))
 		return -EFAULT;
 	return ioctl_file_clone(file, args.src_fd, args.src_offset,
@@ -249,11 +275,17 @@ static long ioctl_file_clone_range(struct file *file, void __user *argp)
 
 static inline sector_t logical_to_blk(struct inode *inode, loff_t offset)
 {
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO " logical_to_blk\n" );
+    }
 	return (offset >> inode->i_blkbits);
 }
 
 static inline loff_t blk_to_logical(struct inode *inode, sector_t blk)
 {
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "blk_to_logical \n" );
+    }
 	return (blk << inode->i_blkbits);
 }
 
@@ -289,6 +321,9 @@ int __generic_block_fiemap(struct inode *inode,
 	bool past_eof = false, whole_file = false;
 	int ret = 0;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO " __generic_block_fiemap\n" );
+    }
 	ret = fiemap_check_flags(fieinfo, FIEMAP_FLAG_SYNC);
 	if (ret)
 		return ret;
@@ -441,6 +476,9 @@ int generic_block_fiemap(struct inode *inode,
 			 u64 len, get_block_t *get_block)
 {
 	int ret;
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO " generic_block_fiemap\n" );
+    }
 	inode_lock(inode);
 	ret = __generic_block_fiemap(inode, fieinfo, start, len, get_block);
 	inode_unlock(inode);
@@ -462,6 +500,9 @@ int ioctl_preallocate(struct file *filp, void __user *argp)
 	struct inode *inode = file_inode(filp);
 	struct space_resv sr;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO " ioctl_preallocate\n" );
+    }
 	if (copy_from_user(&sr, argp, sizeof(sr)))
 		return -EFAULT;
 
@@ -487,6 +528,9 @@ static int file_ioctl(struct file *filp, unsigned int cmd,
 	struct inode *inode = file_inode(filp);
 	int __user *p = (int __user *)arg;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO " file_ioctl\n" );
+    }
 	switch (cmd) {
 	case FIBMAP:
 		return ioctl_fibmap(filp, p);
@@ -505,6 +549,9 @@ static int ioctl_fionbio(struct file *filp, int __user *argp)
 	unsigned int flag;
 	int on, error;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "ioctl_fionbio \n" );
+    }
 	error = get_user(on, argp);
 	if (error)
 		return error;
@@ -529,6 +576,9 @@ static int ioctl_fioasync(unsigned int fd, struct file *filp,
 	unsigned int flag;
 	int on, error;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "ioctl_fioasync \n" );
+    }
 	error = get_user(on, argp);
 	if (error)
 		return error;
@@ -549,6 +599,9 @@ static int ioctl_fsfreeze(struct file *filp)
 {
 	struct super_block *sb = file_inode(filp)->i_sb;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "ioctl_fsfreeze \n" );
+    }
 	if (!ns_capable(sb->s_user_ns, CAP_SYS_ADMIN))
 		return -EPERM;
 
@@ -566,6 +619,9 @@ static int ioctl_fsthaw(struct file *filp)
 {
 	struct super_block *sb = file_inode(filp)->i_sb;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "ioctl_fsthaw \n" );
+    }
 	if (!ns_capable(sb->s_user_ns, CAP_SYS_ADMIN))
 		return -EPERM;
 
@@ -583,6 +639,9 @@ static int ioctl_file_dedupe_range(struct file *file, void __user *arg)
 	unsigned long size;
 	u16 count;
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO "ioctl_file_dedupe_range \n" );
+    }
 	if (get_user(count, &argp->dest_count)) {
 		ret = -EFAULT;
 		goto out;
@@ -629,6 +688,9 @@ int do_vfs_ioctl(struct file *filp, unsigned int fd, unsigned int cmd,
 	int __user *argp = (int __user *)arg;
 	struct inode *inode = file_inode(filp);
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO " do_vfs_ioctl\n" );
+    }
 	switch (cmd) {
 	case FIOCLEX:
 		set_close_on_exec(fd, 1);
@@ -694,6 +756,9 @@ SYSCALL_DEFINE3(ioctl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
 	int error;
 	struct fd f = fdget(fd);
 
+    if(fs_trace_enable && fs_ioctl_trace_enable ){
+        printk(KERN_INFO " ioctl\n" );
+    }
 	if (!f.file)
 		return -EBADF;
 	error = security_file_ioctl(f.file, cmd, arg);

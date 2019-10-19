@@ -39,6 +39,7 @@ int fs_exec_trace_enable=0;
 int fs_fhandle_trace_enable=0;
 int fs_filesystems_trace_enable=0;
 int fs_fs_struct_trace_enable=0;
+int fs_ioctl_trace_enable=0;
 
 EXPORT_SYMBOL(fs_trace_enable);
 EXPORT_SYMBOL(fs_open_trace_enable);
@@ -78,6 +79,8 @@ EXPORT_SYMBOL(fs_fhandle_trace_enable);
 EXPORT_SYMBOL(fs_filesystems_trace_enable);
 EXPORT_SYMBOL(fs_fs_struct_trace_enable);
 EXPORT_SYMBOL(fs_fs_writeback_trace_enable);
+EXPORT_SYMBOL(fs_ioctl_trace_enable);
+
 
 int fs_trace_dummy(void){
 
