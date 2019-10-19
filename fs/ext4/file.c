@@ -35,7 +35,7 @@
 #include "acl.h"
 
 extern int ext4_trace_enable;
-exnter int ext4_file_trace_enable;
+extern int ext4_file_trace_enable;
 
 #ifdef CONFIG_FS_DAX
 static ssize_t ext4_dax_read_iter(struct kiocb *iocb, struct iov_iter *to)
