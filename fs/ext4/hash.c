@@ -16,6 +16,9 @@
 
 #define DELTA 0x9E3779B9
 
+extern int ext4_trace_enable;
+extern int ext4_hash_trace_enable;
+
 static void TEA_transform(__u32 buf[4], __u32 const in[])
 {
 	__u32	sum = 0;
@@ -210,6 +213,9 @@ int ext4fs_dirhash(const char *name, int len, struct dx_hash_info *hinfo)
 	void		(*str2hashbuf)(const char *, int, __u32 *, int) =
 				str2hashbuf_signed;
 
+    if( ext4_trace_enable && ext4_hash_trace_enable ){
+        printk( KERN_INFO " ext4fs_dirhash  \n");
+    }
 	/* Initialize the default seed for the hash checksum functions */
 	buf[0] = 0x67452301;
 	buf[1] = 0xefcdab89;
