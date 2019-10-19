@@ -44,6 +44,8 @@ int ext4_migrate_trace_enable=0;
 EXPORT_SYMBOL(ext4_migrate_trace_enable);
 int ext4_mmp_trace_enable=0;
 EXPORT_SYMBOL(ext4_mmp_trace_enable);
+int ext4_move_extent_trace_enable=0;
+EXPORT_SYMBOL(ext4_move_extent_trace_enable);
 int ext4_namei_trace_enable=0;
 EXPORT_SYMBOL(ext4_namei_trace_enable);
 int ext4_pageio_trace_enable=0;
