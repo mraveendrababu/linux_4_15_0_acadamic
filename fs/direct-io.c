@@ -38,6 +38,9 @@
 #include <linux/atomic.h>
 #include <linux/prefetch.h>
 
+extern int fs_trace_enable;
+extern int fs_directio_trace_enable;
+
 /*
  * How many user pages to map in one call to get_user_pages().  This determines
  * the size of a structure in the slab cache
@@ -160,6 +163,7 @@ static inline unsigned dio_pages_present(struct dio_submit *sdio)
 	return sdio->tail - sdio->head;
 }
 
+
 /*
  * Go grab and pin some userspace pages.   Typically we'll get 64 at a time.
  */
@@ -167,6 +171,9 @@ static inline int dio_refill_pages(struct dio *dio, struct dio_submit *sdio)
 {
 	ssize_t ret;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO " dio_refill_pages\n" );
+    }
 	ret = iov_iter_get_pages(sdio->iter, dio->pages, LONG_MAX, DIO_PAGES,
 				&sdio->from);
 
@@ -208,6 +215,9 @@ static inline int dio_refill_pages(struct dio *dio, struct dio_submit *sdio)
 static inline struct page *dio_get_page(struct dio *dio,
 					struct dio_submit *sdio)
 {
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_get_page \n" );
+    }
 	if (dio_pages_present(sdio) == 0) {
 		int ret;
 
@@ -237,6 +247,9 @@ static ssize_t dio_complete(struct dio *dio, ssize_t ret, unsigned int flags)
 	ssize_t transferred = 0;
 	int err;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO " dio_complete\n" );
+    }
 	/*
 	 * AIO submission can race with bio completion to get here while
 	 * expecting to have the last io completed by bio completion.
@@ -317,6 +330,9 @@ static void dio_aio_complete_work(struct work_struct *work)
 {
 	struct dio *dio = container_of(work, struct dio, complete_work);
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_aio_complete_work \n" );
+    }
 	dio_complete(dio, 0, DIO_COMPLETE_ASYNC | DIO_COMPLETE_INVALIDATE);
 }
 
@@ -332,6 +348,9 @@ static void dio_bio_end_aio(struct bio *bio)
 	unsigned long flags;
 	bool defer_completion = false;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_bio_end_aio \n" );
+    }
 	/* cleanup the bio */
 	dio_bio_complete(dio, bio);
 
@@ -376,6 +395,9 @@ static void dio_bio_end_io(struct bio *bio)
 	struct dio *dio = bio->bi_private;
 	unsigned long flags;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_bio_end_io \n" );
+    }
 	spin_lock_irqsave(&dio->bio_lock, flags);
 	bio->bi_private = dio->bio_list;
 	dio->bio_list = bio;
@@ -396,6 +418,9 @@ void dio_end_io(struct bio *bio)
 {
 	struct dio *dio = bio->bi_private;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_end_io \n" );
+    }
 	if (dio->is_async)
 		dio_bio_end_aio(bio);
 	else
@@ -410,6 +435,9 @@ dio_bio_alloc(struct dio *dio, struct dio_submit *sdio,
 {
 	struct bio *bio;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_bio_alloc \n" );
+    }
 	/*
 	 * bio_alloc() is guaranteed to return a bio when called with
 	 * __GFP_RECLAIM and we request a valid number of vectors.
@@ -442,6 +470,9 @@ static inline void dio_bio_submit(struct dio *dio, struct dio_submit *sdio)
 	struct bio *bio = sdio->bio;
 	unsigned long flags;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO " dio_bio_submit\n" );
+    }
 	bio->bi_private = dio;
 
 	spin_lock_irqsave(&dio->bio_lock, flags);
@@ -469,6 +500,9 @@ static inline void dio_bio_submit(struct dio *dio, struct dio_submit *sdio)
  */
 static inline void dio_cleanup(struct dio *dio, struct dio_submit *sdio)
 {
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO " dio_cleanup\n" );
+    }
 	while (sdio->head < sdio->tail)
 		put_page(dio->pages[sdio->head++]);
 }
@@ -484,6 +518,9 @@ static struct bio *dio_await_one(struct dio *dio)
 	unsigned long flags;
 	struct bio *bio = NULL;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_await_one \n" );
+    }
 	spin_lock_irqsave(&dio->bio_lock, flags);
 
 	/*
@@ -520,6 +557,9 @@ static blk_status_t dio_bio_complete(struct dio *dio, struct bio *bio)
 	unsigned i;
 	blk_status_t err = bio->bi_status;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_bio_complete \n" );
+    }
 	if (err) {
 		if (err == BLK_STS_AGAIN && (bio->bi_opf & REQ_NOWAIT))
 			dio->io_error = -EAGAIN;
@@ -553,6 +593,9 @@ static blk_status_t dio_bio_complete(struct dio *dio, struct bio *bio)
 static void dio_await_completion(struct dio *dio)
 {
 	struct bio *bio;
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_await_completion \n" );
+    }
 	do {
 		bio = dio_await_one(dio);
 		if (bio)
@@ -571,6 +614,9 @@ static inline int dio_bio_reap(struct dio *dio, struct dio_submit *sdio)
 {
 	int ret = 0;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_bio_reap \n" );
+    }
 	if (sdio->reap_counter++ >= 64) {
 		while (dio->bio_list) {
 			unsigned long flags;
@@ -602,6 +648,9 @@ int sb_init_dio_done_wq(struct super_block *sb)
 	struct workqueue_struct *wq = alloc_workqueue("dio/%s",
 						      WQ_MEM_RECLAIM, 0,
 						      sb->s_id);
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "sb_init_dio_done_wq \n" );
+    }
 	if (!wq)
 		return -ENOMEM;
 	/*
@@ -618,6 +667,9 @@ static int dio_set_defer_completion(struct dio *dio)
 {
 	struct super_block *sb = dio->inode->i_sb;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO " dio_set_defer_completion\n" );
+    }
 	if (dio->defer_completion)
 		return 0;
 	dio->defer_completion = true;
@@ -659,6 +711,9 @@ static int get_more_blocks(struct dio *dio, struct dio_submit *sdio,
 	int create;
 	unsigned int i_blkbits = sdio->blkbits + sdio->blkfactor;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO " get_more_blocks\n" );
+    }
 	/*
 	 * If there was a memory error and we've overwritten all the
 	 * mapped blocks then we can now return that memory error
@@ -713,6 +768,9 @@ static inline int dio_new_bio(struct dio *dio, struct dio_submit *sdio,
 	sector_t sector;
 	int ret, nr_pages;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_new_bio \n" );
+    }
 	ret = dio_bio_reap(dio, sdio);
 	if (ret)
 		goto out;
@@ -736,6 +794,9 @@ static inline int dio_bio_add_page(struct dio_submit *sdio)
 {
 	int ret;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO " dio_bio_add_page\n" );
+    }
 	ret = bio_add_page(sdio->bio, sdio->cur_page,
 			sdio->cur_page_len, sdio->cur_page_offset);
 	if (ret == sdio->cur_page_len) {
@@ -769,6 +830,9 @@ static inline int dio_send_cur_page(struct dio *dio, struct dio_submit *sdio,
 {
 	int ret = 0;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_send_cur_page \n" );
+    }
 	if (sdio->bio) {
 		loff_t cur_offset = sdio->cur_page_fs_offset;
 		loff_t bio_next_offset = sdio->logical_offset_in_bio +
@@ -835,6 +899,9 @@ submit_page_section(struct dio *dio, struct dio_submit *sdio, struct page *page,
 {
 	int ret = 0;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "submit_page_section \n" );
+    }
 	if (dio->op == REQ_OP_WRITE) {
 		/*
 		 * Read accounting is performed in submit_bio()
@@ -902,6 +969,9 @@ static inline void dio_zero_block(struct dio *dio, struct dio_submit *sdio,
 	unsigned this_chunk_bytes;
 	struct page *page;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "dio_zero_block \n" );
+    }
 	sdio->start_zero_done = 1;
 	if (!sdio->blkfactor || !buffer_new(map_bh))
 		return;
@@ -952,6 +1022,9 @@ static int do_direct_IO(struct dio *dio, struct dio_submit *sdio,
 	const unsigned i_blkbits = blkbits + sdio->blkfactor;
 	int ret = 0;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO "do_direct_IO \n" );
+    }
 	while (sdio->block_in_file < sdio->final_block_in_request) {
 		struct page *page;
 		size_t from, to;
@@ -1104,6 +1177,9 @@ static inline int drop_refcount(struct dio *dio)
 	int ret2;
 	unsigned long flags;
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO " drop_refcount\n" );
+    }
 	/*
 	 * Sync will always be dropping the final ref and completing the
 	 * operation.  AIO can if it was a broken operation described above or
@@ -1165,6 +1241,9 @@ do_blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
 	struct blk_plug plug;
 	unsigned long align = offset | iov_iter_alignment(iter);
 
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO " do_blockdev_direct_IO\n" );
+    }
 	/*
 	 * Avoid references to bdev if not absolutely needed to give
 	 * the early prefetch in the caller enough time.
@@ -1384,6 +1463,9 @@ ssize_t __blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
 			     dio_iodone_t end_io, dio_submit_t submit_io,
 			     int flags)
 {
+    if(fs_trace_enable && fs_directio_trace_enable ){
+        printk(KERN_INFO " __blockdev_direct_IO\n" );
+    }
 	/*
 	 * The block device state is needed in the end to finally
 	 * submit everything.  Since it's likely to be cache cold
