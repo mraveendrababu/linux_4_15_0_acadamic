@@ -30,6 +30,9 @@
 #include "xattr.h"
 #include "acl.h"
 
+extern int ext4_trace_enable;
+extern int ext4_pageio_trace_enable;
+
 static struct kmem_cache *io_end_cachep;
 
 int __init ext4_init_pageio(void)
@@ -64,6 +67,9 @@ static void ext4_finish_bio(struct bio *bio)
 	int i;
 	struct bio_vec *bvec;
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO "ext4_finish_bio \n"  );
+    }
 	bio_for_each_segment_all(bvec, bio, i) {
 		struct page *page = bvec->bv_page;
 #ifdef CONFIG_EXT4_FS_ENCRYPTION
@@ -124,6 +130,9 @@ static void ext4_release_io_end(ext4_io_end_t *io_end)
 {
 	struct bio *bio, *next_bio;
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO "ext4_release_io_end \n"  );
+    }
 	BUG_ON(!list_empty(&io_end->list));
 	BUG_ON(io_end->flag & EXT4_IO_END_UNWRITTEN);
 	WARN_ON(io_end->handle);
@@ -152,6 +161,9 @@ static int ext4_end_io(ext4_io_end_t *io)
 	handle_t *handle = io->handle;
 	int ret = 0;
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO " ext4_end_io\n"  );
+    }
 	ext4_debug("ext4_end_io_nolock: io 0x%p from inode %lu,list->next 0x%p,"
 		   "list->prev 0x%p\n",
 		   io, inode->i_ino, io->list.next, io->list.prev);
@@ -176,6 +188,9 @@ static void dump_completed_IO(struct inode *inode, struct list_head *head)
 	struct list_head *cur, *before, *after;
 	ext4_io_end_t *io, *io0, *io1;
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO "dump_completed_IO \n"  );
+    }
 	if (list_empty(head))
 		return;
 
@@ -201,6 +216,9 @@ static void ext4_add_complete_io(ext4_io_end_t *io_end)
 	struct workqueue_struct *wq;
 	unsigned long flags;
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO " ext4_add_complete_io\n"  );
+    }
 	/* Only reserved conversions from writeback should enter here */
 	WARN_ON(!(io_end->flag & EXT4_IO_END_UNWRITTEN));
 	WARN_ON(!io_end->handle && sbi->s_journal);
@@ -221,6 +239,9 @@ static int ext4_do_flush_completed_IO(struct inode *inode,
 	struct ext4_inode_info *ei = EXT4_I(inode);
 	int err, ret = 0;
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO "ext4_do_flush_completed_IO \n"  );
+    }
 	spin_lock_irqsave(&ei->i_completed_io_lock, flags);
 	dump_completed_IO(inode, head);
 	list_replace_init(head, &unwritten);
@@ -245,12 +266,18 @@ void ext4_end_io_rsv_work(struct work_struct *work)
 {
 	struct ext4_inode_info *ei = container_of(work, struct ext4_inode_info,
 						  i_rsv_conversion_work);
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO "ext4_end_io_rsv_work \n"  );
+    }
 	ext4_do_flush_completed_IO(&ei->vfs_inode, &ei->i_rsv_conversion_list);
 }
 
 ext4_io_end_t *ext4_init_io_end(struct inode *inode, gfp_t flags)
 {
 	ext4_io_end_t *io = kmem_cache_zalloc(io_end_cachep, flags);
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO "ext4_init_io_end \n"  );
+    }
 	if (io) {
 		io->inode = inode;
 		INIT_LIST_HEAD(&io->list);
@@ -261,6 +288,9 @@ ext4_io_end_t *ext4_init_io_end(struct inode *inode, gfp_t flags)
 
 void ext4_put_io_end_defer(ext4_io_end_t *io_end)
 {
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO "ext4_put_io_end_defer \n"  );
+    }
 	if (atomic_dec_and_test(&io_end->count)) {
 		if (!(io_end->flag & EXT4_IO_END_UNWRITTEN) || !io_end->size) {
 			ext4_release_io_end(io_end);
@@ -274,6 +304,9 @@ int ext4_put_io_end(ext4_io_end_t *io_end)
 {
 	int err = 0;
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO "ext4_put_io_end \n"  );
+    }
 	if (atomic_dec_and_test(&io_end->count)) {
 		if (io_end->flag & EXT4_IO_END_UNWRITTEN) {
 			err = ext4_convert_unwritten_extents(io_end->handle,
@@ -300,6 +333,9 @@ static void ext4_end_bio(struct bio *bio)
 	sector_t bi_sector = bio->bi_iter.bi_sector;
 	char b[BDEVNAME_SIZE];
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO " ext4_end_bio\n"  );
+    }
 	if (WARN_ONCE(!io_end, "io_end is NULL: %s: sector %Lu len %u err %d\n",
 		      bio_devname(bio, b),
 		      (long long) bio->bi_iter.bi_sector,
@@ -348,6 +384,9 @@ void ext4_io_submit(struct ext4_io_submit *io)
 {
 	struct bio *bio = io->io_bio;
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO " ext4_io_submit\n"  );
+    }
 	if (bio) {
 		int io_op_flags = io->io_wbc->sync_mode == WB_SYNC_ALL ?
 				  REQ_SYNC : 0;
@@ -361,6 +400,9 @@ void ext4_io_submit(struct ext4_io_submit *io)
 void ext4_io_submit_init(struct ext4_io_submit *io,
 			 struct writeback_control *wbc)
 {
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO "ext4_io_submit_init \n"  );
+    }
 	io->io_wbc = wbc;
 	io->io_bio = NULL;
 	io->io_end = NULL;
@@ -371,6 +413,9 @@ static int io_submit_init_bio(struct ext4_io_submit *io,
 {
 	struct bio *bio;
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO " io_submit_init_bio\n"  );
+    }
 	bio = bio_alloc(GFP_NOIO, BIO_MAX_PAGES);
 	if (!bio)
 		return -ENOMEM;
@@ -391,6 +436,9 @@ static int io_submit_add_bh(struct ext4_io_submit *io,
 {
 	int ret;
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO "io_submit_add_bh \n"  );
+    }
 	if (io->io_bio && bh->b_blocknr != io->io_next_block) {
 submit_and_retry:
 		ext4_io_submit(io);
@@ -423,6 +471,9 @@ int ext4_bio_write_page(struct ext4_io_submit *io,
 	int nr_submitted = 0;
 	int nr_to_submit = 0;
 
+    if( ext4_trace_enable && ext4_pageio_trace_enable  ){
+        printk( KERN_INFO " ext4_bio_write_page\n"  );
+    }
 	BUG_ON(!PageLocked(page));
 	BUG_ON(PageWriteback(page));
 
