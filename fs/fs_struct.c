@@ -7,6 +7,9 @@
 #include <linux/fs_struct.h>
 #include "internal.h"
 
+extern int fs_trace_enable;
+extern int fs_fs_struct_trace_enable;
+
 /*
  * Replace the fs->{rootmnt,root} with {mnt,dentry}. Put the old values.
  * It can block.
@@ -14,7 +17,9 @@
 void set_fs_root(struct fs_struct *fs, const struct path *path)
 {
 	struct path old_root;
-
+    if( fs_trace_enable && fs_fs_struct_trace_enable ){
+        printk(KERN_INFO "set_fs_root \n" );
+    }
 	path_get(path);
 	spin_lock(&fs->lock);
 	write_seqcount_begin(&fs->seq);
@@ -34,6 +39,9 @@ void set_fs_pwd(struct fs_struct *fs, const struct path *path)
 {
 	struct path old_pwd;
 
+    if( fs_trace_enable && fs_fs_struct_trace_enable ){
+        printk(KERN_INFO "set_fs_pwd \n" );
+    }
 	path_get(path);
 	spin_lock(&fs->lock);
 	write_seqcount_begin(&fs->seq);
@@ -48,6 +56,9 @@ void set_fs_pwd(struct fs_struct *fs, const struct path *path)
 
 static inline int replace_path(struct path *p, const struct path *old, const struct path *new)
 {
+    if( fs_trace_enable && fs_fs_struct_trace_enable ){
+        printk(KERN_INFO " replace_path\n" );
+    }
 	if (likely(p->dentry != old->dentry || p->mnt != old->mnt))
 		return 0;
 	*p = *new;
@@ -60,6 +71,9 @@ void chroot_fs_refs(const struct path *old_root, const struct path *new_root)
 	struct fs_struct *fs;
 	int count = 0;
 
+    if( fs_trace_enable && fs_fs_struct_trace_enable ){
+        printk(KERN_INFO " chroot_fs_refs\n" );
+    }
 	read_lock(&tasklist_lock);
 	do_each_thread(g, p) {
 		task_lock(p);
@@ -86,6 +100,9 @@ void chroot_fs_refs(const struct path *old_root, const struct path *new_root)
 
 void free_fs_struct(struct fs_struct *fs)
 {
+    if( fs_trace_enable && fs_fs_struct_trace_enable ){
+        printk(KERN_INFO "free_fs_struct \n" );
+    }
 	path_put(&fs->root);
 	path_put(&fs->pwd);
 	kmem_cache_free(fs_cachep, fs);
@@ -95,6 +112,9 @@ void exit_fs(struct task_struct *tsk)
 {
 	struct fs_struct *fs = tsk->fs;
 
+    if( fs_trace_enable && fs_fs_struct_trace_enable ){
+        printk(KERN_INFO " exit_fs\n" );
+    }
 	if (fs) {
 		int kill;
 		task_lock(tsk);
@@ -111,6 +131,9 @@ void exit_fs(struct task_struct *tsk)
 struct fs_struct *copy_fs_struct(struct fs_struct *old)
 {
 	struct fs_struct *fs = kmem_cache_alloc(fs_cachep, GFP_KERNEL);
+    if( fs_trace_enable && fs_fs_struct_trace_enable ){
+        printk(KERN_INFO "copy_fs_struct \n" );
+    }
 	/* We don't need to lock fs - think why ;-) */
 	if (fs) {
 		fs->users = 1;
@@ -135,6 +158,9 @@ int unshare_fs_struct(void)
 	struct fs_struct *new_fs = copy_fs_struct(fs);
 	int kill;
 
+    if( fs_trace_enable && fs_fs_struct_trace_enable ){
+        printk(KERN_INFO " unshare_fs_struct\n" );
+    }
 	if (!new_fs)
 		return -ENOMEM;
 
