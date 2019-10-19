@@ -43,6 +43,9 @@ static struct kmem_cache *dcookie_cache __read_mostly;
 static struct list_head *dcookie_hashtable __read_mostly;
 static size_t hash_size __read_mostly;
 
+extern int fs_trace_enable;
+extern int fs_dcookies_trace_enable;
+
 static inline int is_live(void)
 {
 	return !(list_empty(&dcookie_users));
@@ -68,6 +71,10 @@ static struct dcookie_struct * find_dcookie(unsigned long dcookie)
 	struct dcookie_struct * dcs;
 	struct list_head * pos;
 	struct list_head * list;
+
+    if(fs_trace_enable && fs_dcookies_trace_enable ){
+        printk(KERN_INFO "find_dcookie \n" );
+    }
 
 	list = dcookie_hashtable + dcookie_hash(dcookie);
 
@@ -98,6 +105,9 @@ static struct dcookie_struct *alloc_dcookie(const struct path *path)
 	if (!dcs)
 		return NULL;
 
+    if(fs_trace_enable && fs_dcookies_trace_enable ){
+        printk(KERN_INFO " alloc_dcookie\n" );
+    }
 	d = path->dentry;
 	spin_lock(&d->d_lock);
 	d->d_flags |= DCACHE_COOKIE;
@@ -118,6 +128,9 @@ int get_dcookie(const struct path *path, unsigned long *cookie)
 	int err = 0;
 	struct dcookie_struct * dcs;
 
+    if(fs_trace_enable && fs_dcookies_trace_enable ){
+        printk(KERN_INFO "get_dcookie \n" );
+    }
 	mutex_lock(&dcookie_mutex);
 
 	if (!is_live()) {
@@ -155,6 +168,9 @@ SYSCALL_DEFINE3(lookup_dcookie, u64, cookie64, char __user *, buf, size_t, len)
 	size_t pathlen;
 	struct dcookie_struct * dcs;
 
+    if(fs_trace_enable && fs_dcookies_trace_enable ){
+        printk(KERN_INFO "lookup_dcookie \n" );
+    }
 	/* we could leak path information to users
 	 * without dir read permission without this
 	 */
@@ -220,6 +236,9 @@ static int dcookie_init(void)
 	unsigned int i, hash_bits;
 	int err = -ENOMEM;
 
+    if(fs_trace_enable && fs_dcookies_trace_enable ){
+        printk(KERN_INFO " dcookie_init\n" );
+    }
 	dcookie_cache = kmem_cache_create("dcookie_cache",
 		sizeof(struct dcookie_struct),
 		0, 0, NULL);
@@ -272,6 +291,9 @@ static void free_dcookie(struct dcookie_struct * dcs)
 {
 	struct dentry *d = dcs->path.dentry;
 
+    if(fs_trace_enable && fs_dcookies_trace_enable ){
+        printk(KERN_INFO " free_dcookie\n" );
+    }
 	spin_lock(&d->d_lock);
 	d->d_flags &= ~DCACHE_COOKIE;
 	spin_unlock(&d->d_lock);
@@ -311,6 +333,9 @@ struct dcookie_user * dcookie_register(void)
 {
 	struct dcookie_user * user;
 
+    if(fs_trace_enable && fs_dcookies_trace_enable ){
+        printk(KERN_INFO "dcookie_register \n" );
+    }
 	mutex_lock(&dcookie_mutex);
 
 	user = kmalloc(sizeof(struct dcookie_user), GFP_KERNEL);
@@ -334,6 +359,9 @@ out_free:
 
 void dcookie_unregister(struct dcookie_user * user)
 {
+    if(fs_trace_enable && fs_dcookies_trace_enable ){
+        printk(KERN_INFO " dcookie_unregister\n" );
+    }
 	mutex_lock(&dcookie_mutex);
 
 	list_del(&user->next);
