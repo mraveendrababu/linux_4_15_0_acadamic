@@ -25,6 +25,8 @@
 #include "fsmap.h"
 #include <trace/events/ext4.h>
 
+extern int ext4_trace_enable;
+extern int ext4_ioctl_trace_enable;
 /**
  * Swap memory between @a and @b for @len bytes.
  *
@@ -63,6 +65,9 @@ static void swap_inode_data(struct inode *inode1, struct inode *inode2)
 	struct ext4_inode_info *ei1;
 	struct ext4_inode_info *ei2;
 
+    if( ext4_trace_enable && ext4_ioctl_trace_enable ){
+        printk(KERN_INFO "swap_inode_data \n" );
+    }
 	ei1 = EXT4_I(inode1);
 	ei2 = EXT4_I(inode2);
 
@@ -91,6 +96,9 @@ static void reset_inode_seed(struct inode *inode)
 	__le32 gen = cpu_to_le32(inode->i_generation);
 	__u32 csum;
 
+    if( ext4_trace_enable && ext4_ioctl_trace_enable ){
+        printk(KERN_INFO " reset_inode_seed\n" );
+    }
 	if (!ext4_has_metadata_csum(inode->i_sb))
 		return;
 
@@ -115,6 +123,9 @@ static long swap_inode_boot_loader(struct super_block *sb,
 	struct inode *inode_bl;
 	struct ext4_inode_info *ei_bl;
 
+    if( ext4_trace_enable && ext4_ioctl_trace_enable ){
+        printk(KERN_INFO " swap_inode_boot_loader\n" );
+    }
 	if (inode->i_nlink != 1 || !S_ISREG(inode->i_mode) ||
 	    IS_SWAPFILE(inode) || IS_ENCRYPTED(inode) ||
 	    ext4_has_inline_data(inode))
@@ -235,6 +246,9 @@ static int ext4_ioctl_setflags(struct inode *inode,
 	unsigned int oldflags, mask, i;
 	unsigned int jflag;
 
+    if( ext4_trace_enable && ext4_ioctl_trace_enable ){
+        printk(KERN_INFO " ext4_ioctl_setflags\n" );
+    }
 	/* Is it quota file? Do not allow user to mess with it */
 	if (ext4_is_quota_file(inode))
 		goto flags_out;
@@ -348,6 +362,9 @@ static int ext4_ioctl_setproject(struct file *filp, __u32 projid)
 	struct ext4_inode *raw_inode;
 	struct dquot *transfer_to[MAXQUOTAS] = { };
 
+    if( ext4_trace_enable && ext4_ioctl_trace_enable ){
+        printk(KERN_INFO " ext4_ioctl_setproject\n" );
+    }
 	if (!ext4_has_feature_project(sb)) {
 		if (projid != EXT4_DEF_PROJID)
 			return -EOPNOTSUPP;
@@ -482,6 +499,9 @@ static int ext4_shutdown(struct super_block *sb, unsigned long arg)
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	__u32 flags;
 
+    if( ext4_trace_enable && ext4_ioctl_trace_enable ){
+        printk(KERN_INFO " ext4_shutdown\n" );
+    }
 	if (!capable(CAP_SYS_ADMIN))
 		return -EPERM;
 
@@ -533,6 +553,9 @@ static int ext4_getfsmap_format(struct ext4_fsmap *xfm, void *priv)
 	struct getfsmap_info *info = priv;
 	struct fsmap fm;
 
+    if( ext4_trace_enable && ext4_ioctl_trace_enable ){
+        printk(KERN_INFO "ext4_getfsmap_format \n" );
+    }
 	trace_ext4_getfsmap_mapping(info->gi_sb, xfm);
 
 	info->gi_last_flags = xfm->fmr_flags;
@@ -553,6 +576,9 @@ static int ext4_ioc_getfsmap(struct super_block *sb,
 	bool aborted = false;
 	int error;
 
+    if( ext4_trace_enable && ext4_ioctl_trace_enable ){
+        printk(KERN_INFO " ext4_ioc_getfsmap\n" );
+    }
 	if (copy_from_user(&head, arg, sizeof(struct fsmap_head)))
 		return -EFAULT;
 	if (memchr_inv(head.fmh_reserved, 0, sizeof(head.fmh_reserved)) ||
@@ -611,6 +637,9 @@ static long ext4_ioctl_group_add(struct file *file,
 	struct super_block *sb = file_inode(file)->i_sb;
 	int err, err2=0;
 
+    if( ext4_trace_enable && ext4_ioctl_trace_enable ){
+        printk(KERN_INFO " ext4_ioctl_group_add\n" );
+    }
 	err = ext4_resize_begin(sb);
 	if (err)
 		return err;
@@ -674,6 +703,9 @@ long ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	struct ext4_inode_info *ei = EXT4_I(inode);
 	unsigned int flags;
 
+    if( ext4_trace_enable && ext4_ioctl_trace_enable ){
+        printk(KERN_INFO " ext4_ioctl\n" );
+    }
 	ext4_debug("cmd = %u, arg = %lu\n", cmd, arg);
 
 	switch (cmd) {
@@ -1090,6 +1122,9 @@ out:
 #ifdef CONFIG_COMPAT
 long ext4_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
+    if( ext4_trace_enable && ext4_ioctl_trace_enable ){
+        printk(KERN_INFO "ext4_compat_ioctl \n" );
+    }
 	/* These are just misnamed, they actually get/put from/to user an int */
 	switch (cmd) {
 	case EXT4_IOC32_GETFLAGS:
