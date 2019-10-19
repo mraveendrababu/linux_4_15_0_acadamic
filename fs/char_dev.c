@@ -28,6 +28,8 @@
 static struct kobj_map *cdev_map;
 
 static DEFINE_MUTEX(chrdevs_lock);
+extern int fs_trace_enable;
+extern int fs_chardev_trace_enable;
 
 #define CHRDEV_MAJOR_HASH_SIZE 255
 
@@ -51,7 +53,9 @@ static inline int major_to_index(unsigned major)
 void chrdev_show(struct seq_file *f, off_t offset)
 {
 	struct char_device_struct *cd;
-
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO "chrdev_show \n" );
+    }
 	mutex_lock(&chrdevs_lock);
 	for (cd = chrdevs[major_to_index(offset)]; cd; cd = cd->next) {
 		if (cd->major == offset)
@@ -67,6 +71,9 @@ static int find_dynamic_major(void)
 	int i;
 	struct char_device_struct *cd;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO " find_dynamic_major\n" );
+    }
 	for (i = ARRAY_SIZE(chrdevs)-1; i > CHRDEV_MAJOR_DYN_END; i--) {
 		if (chrdevs[i] == NULL)
 			return i;
@@ -104,6 +111,9 @@ __register_chrdev_region(unsigned int major, unsigned int baseminor,
 	int ret = 0;
 	int i;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO " __register_chrdev_region\n" );
+    }
 	cd = kzalloc(sizeof(struct char_device_struct), GFP_KERNEL);
 	if (cd == NULL)
 		return ERR_PTR(-ENOMEM);
@@ -177,6 +187,9 @@ __unregister_chrdev_region(unsigned major, unsigned baseminor, int minorct)
 	struct char_device_struct *cd = NULL, **cp;
 	int i = major_to_index(major);
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO " __unregister_chrdev_region\n" );
+    }
 	mutex_lock(&chrdevs_lock);
 	for (cp = &chrdevs[i]; *cp; cp = &(*cp)->next)
 		if ((*cp)->major == major &&
@@ -206,6 +219,9 @@ int register_chrdev_region(dev_t from, unsigned count, const char *name)
 	dev_t to = from + count;
 	dev_t n, next;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO "register_chrdev_region \n" );
+    }
 	for (n = from; n < to; n = next) {
 		next = MKDEV(MAJOR(n)+1, 0);
 		if (next > to)
@@ -241,6 +257,9 @@ int alloc_chrdev_region(dev_t *dev, unsigned baseminor, unsigned count,
 {
 	struct char_device_struct *cd;
 	cd = __register_chrdev_region(0, baseminor, count, name);
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO " alloc_chrdev_region\n" );
+    }
 	if (IS_ERR(cd))
 		return PTR_ERR(cd);
 	*dev = MKDEV(cd->major, cd->baseminor);
@@ -276,6 +295,9 @@ int __register_chrdev(unsigned int major, unsigned int baseminor,
 	struct cdev *cdev;
 	int err = -ENOMEM;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO "__register_chrdev \n" );
+    }
 	cd = __register_chrdev_region(major, baseminor, count, name);
 	if (IS_ERR(cd))
 		return PTR_ERR(cd);
@@ -316,6 +338,9 @@ void unregister_chrdev_region(dev_t from, unsigned count)
 	dev_t to = from + count;
 	dev_t n, next;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO "unregister_chrdev_region \n" );
+    }
 	for (n = from; n < to; n = next) {
 		next = MKDEV(MAJOR(n)+1, 0);
 		if (next > to)
@@ -340,6 +365,9 @@ void __unregister_chrdev(unsigned int major, unsigned int baseminor,
 {
 	struct char_device_struct *cd;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO " __unregister_chrdev\n" );
+    }
 	cd = __unregister_chrdev_region(major, baseminor, count);
 	if (cd && cd->cdev)
 		cdev_del(cd->cdev);
@@ -353,6 +381,9 @@ static struct kobject *cdev_get(struct cdev *p)
 	struct module *owner = p->owner;
 	struct kobject *kobj;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO "cdev_get \n" );
+    }
 	if (owner && !try_module_get(owner))
 		return NULL;
 	kobj = kobject_get(&p->kobj);
@@ -363,6 +394,9 @@ static struct kobject *cdev_get(struct cdev *p)
 
 void cdev_put(struct cdev *p)
 {
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO " cdev_put\n" );
+    }
 	if (p) {
 		struct module *owner = p->owner;
 		kobject_put(&p->kobj);
@@ -380,6 +414,9 @@ static int chrdev_open(struct inode *inode, struct file *filp)
 	struct cdev *new = NULL;
 	int ret = 0;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO " chrdev_open\n" );
+    }
 	spin_lock(&cdev_lock);
 	p = inode->i_cdev;
 	if (!p) {
@@ -428,6 +465,9 @@ static int chrdev_open(struct inode *inode, struct file *filp)
 
 void cd_forget(struct inode *inode)
 {
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO "cd_forget \n" );
+    }
 	spin_lock(&cdev_lock);
 	list_del_init(&inode->i_devices);
 	inode->i_cdev = NULL;
@@ -437,6 +477,9 @@ void cd_forget(struct inode *inode)
 
 static void cdev_purge(struct cdev *cdev)
 {
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO " cdev_purge\n" );
+    }
 	spin_lock(&cdev_lock);
 	while (!list_empty(&cdev->list)) {
 		struct inode *inode;
@@ -483,6 +526,9 @@ int cdev_add(struct cdev *p, dev_t dev, unsigned count)
 {
 	int error;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO "cdev_add \n" );
+    }
 	p->dev = dev;
 	p->count = count;
 
@@ -538,6 +584,9 @@ int cdev_device_add(struct cdev *cdev, struct device *dev)
 {
 	int rc = 0;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO "cdev_device_add \n" );
+    }
 	if (dev->devt) {
 		cdev_set_parent(cdev, &dev->kobj);
 
@@ -577,6 +626,9 @@ void cdev_device_del(struct cdev *cdev, struct device *dev)
 
 static void cdev_unmap(dev_t dev, unsigned count)
 {
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO " cdev_unmap\n" );
+    }
 	kobj_unmap(cdev_map, dev, count);
 }
 
@@ -593,6 +645,9 @@ static void cdev_unmap(dev_t dev, unsigned count)
  */
 void cdev_del(struct cdev *p)
 {
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO "cdev_del \n" );
+    }
 	cdev_unmap(p->dev, p->count);
 	kobject_put(&p->kobj);
 }
@@ -603,6 +658,9 @@ static void cdev_default_release(struct kobject *kobj)
 	struct cdev *p = container_of(kobj, struct cdev, kobj);
 	struct kobject *parent = kobj->parent;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO " cdev_default_release\n" );
+    }
 	cdev_purge(p);
 	kobject_put(parent);
 }
@@ -612,6 +670,9 @@ static void cdev_dynamic_release(struct kobject *kobj)
 	struct cdev *p = container_of(kobj, struct cdev, kobj);
 	struct kobject *parent = kobj->parent;
 
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO "cdev_dynamic_release \n" );
+    }
 	cdev_purge(p);
 	kfree(p);
 	kobject_put(parent);
@@ -633,6 +694,9 @@ static struct kobj_type ktype_cdev_dynamic = {
 struct cdev *cdev_alloc(void)
 {
 	struct cdev *p = kzalloc(sizeof(struct cdev), GFP_KERNEL);
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO " cdev_alloc\n" );
+    }
 	if (p) {
 		INIT_LIST_HEAD(&p->list);
 		kobject_init(&p->kobj, &ktype_cdev_dynamic);
@@ -650,6 +714,9 @@ struct cdev *cdev_alloc(void)
  */
 void cdev_init(struct cdev *cdev, const struct file_operations *fops)
 {
+    if( fs_trace_enable && fs_chardev_trace_enable ){
+        printk(KERN_INFO "cdev_init \n" );
+    }
 	memset(cdev, 0, sizeof *cdev);
 	INIT_LIST_HEAD(&cdev->list);
 	kobject_init(&cdev->kobj, &ktype_cdev_default);

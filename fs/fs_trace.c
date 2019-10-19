@@ -30,6 +30,7 @@ int fs_mbcache_trace_enable=0;
 int fs_aio_trace_enable=0;
 int fs_annon_trace_enable=0;
 int fs_blockdev_trace_enable=0;
+int fs_chardev_trace_enable=0;
 
 EXPORT_SYMBOL(fs_trace_enable);
 EXPORT_SYMBOL(fs_open_trace_enable);
@@ -59,6 +60,7 @@ EXPORT_SYMBOL(fs_mbcache_trace_enable);
 EXPORT_SYMBOL(fs_aio_trace_enable);
 EXPORT_SYMBOL(fs_annon_trace_enable);
 EXPORT_SYMBOL(fs_blockdev_trace_enable);
+EXPORT_SYMBOL(fs_chardev_trace_enable);
 
 int fs_trace_dummy(void){
 
