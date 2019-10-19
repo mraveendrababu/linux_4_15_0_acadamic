@@ -36,6 +36,7 @@ int fs_dcookies_trace_enable=0;
 int fs_directio_trace_enable=0;
 int fs_dropcaches_trace_enable=0;
 int fs_exec_trace_enable=0;
+int fs_fhandle_trace_enable=0;
 
 EXPORT_SYMBOL(fs_trace_enable);
 EXPORT_SYMBOL(fs_open_trace_enable);
@@ -71,6 +72,7 @@ EXPORT_SYMBOL(fs_dcookies_trace_enable);
 EXPORT_SYMBOL(fs_directio_trace_enable);
 EXPORT_SYMBOL(fs_dropcaches_trace_enable);
 EXPORT_SYMBOL(fs_exec_trace_enable);
+EXPORT_SYMBOL(fs_fhandle_trace_enable);
 
 int fs_trace_dummy(void){
 
