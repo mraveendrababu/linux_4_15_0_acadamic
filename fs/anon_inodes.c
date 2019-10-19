@@ -22,6 +22,9 @@
 
 #include <linux/uaccess.h>
 
+extern int fs_trace_enable;
+extern int fs_annon_trace_enable;
+
 static struct vfsmount *anon_inode_mnt __read_mostly;
 static struct inode *anon_inode_inode;
 
@@ -30,6 +33,9 @@ static struct inode *anon_inode_inode;
  */
 static char *anon_inodefs_dname(struct dentry *dentry, char *buffer, int buflen)
 {
+    if(fs_trace_enable && fs_annon_trace_enable ){
+        printk(KERN_INFO "anon_inodefs_dname \n" );
+    }
 	return dynamic_dname(dentry, buffer, buflen, "anon_inode:%s",
 				dentry->d_name.name);
 }
@@ -41,6 +47,9 @@ static const struct dentry_operations anon_inodefs_dentry_operations = {
 static struct dentry *anon_inodefs_mount(struct file_system_type *fs_type,
 				int flags, const char *dev_name, void *data)
 {
+    if(fs_trace_enable && fs_annon_trace_enable ){
+        printk(KERN_INFO " anon_inodefs_mount\n" );
+    }
 	return mount_pseudo(fs_type, "anon_inode:", NULL,
 			&anon_inodefs_dentry_operations, ANON_INODE_FS_MAGIC);
 }
@@ -75,6 +84,9 @@ struct file *anon_inode_getfile(const char *name,
 	struct path path;
 	struct file *file;
 
+    if(fs_trace_enable && fs_annon_trace_enable ){
+        printk(KERN_INFO "anon_inode_getfile \n" );
+    }
 	if (IS_ERR(anon_inode_inode))
 		return ERR_PTR(-ENODEV);
 
@@ -142,6 +154,9 @@ int anon_inode_getfd(const char *name, const struct file_operations *fops,
 	int error, fd;
 	struct file *file;
 
+    if(fs_trace_enable && fs_annon_trace_enable ){
+        printk(KERN_INFO "anon_inode_getfd \n" );
+    }
 	error = get_unused_fd_flags(flags);
 	if (error < 0)
 		return error;
@@ -165,6 +180,9 @@ EXPORT_SYMBOL_GPL(anon_inode_getfd);
 static int __init anon_inode_init(void)
 {
 	anon_inode_mnt = kern_mount(&anon_inode_fs_type);
+    if(fs_trace_enable && fs_annon_trace_enable ){
+        printk(KERN_INFO " anon_inode_init\n" );
+    }
 	if (IS_ERR(anon_inode_mnt))
 		panic("anon_inode_init() kernel mount failed (%ld)\n", PTR_ERR(anon_inode_mnt));
 
