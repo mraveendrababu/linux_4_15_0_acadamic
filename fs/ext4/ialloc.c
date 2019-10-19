@@ -33,6 +33,8 @@
 
 #include <trace/events/ext4.h>
 
+extern int ext4_trace_enable;
+extern int ext4_ialloc_trace_enable;
 /*
  * ialloc.c contains the inodes allocation and deallocation routines
  */
@@ -76,6 +78,7 @@ void ext4_end_bitmap_read(struct buffer_head *bh, int uptodate)
 	put_bh(bh);
 }
 
+
 static int ext4_validate_inode_bitmap(struct super_block *sb,
 				      struct ext4_group_desc *desc,
 				      ext4_group_t block_group,
@@ -85,6 +88,9 @@ static int ext4_validate_inode_bitmap(struct super_block *sb,
 	struct ext4_group_info *grp = ext4_get_group_info(sb, block_group);
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO "ext4_validate_inode_bitmap \n" );
+    }
 	if (buffer_verified(bh))
 		return 0;
 	if (EXT4_MB_GRP_IBITMAP_CORRUPT(grp))
@@ -130,6 +136,9 @@ ext4_read_inode_bitmap(struct super_block *sb, ext4_group_t block_group)
 	ext4_fsblk_t bitmap_blk;
 	int err;
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO "ext4_read_inode_bitmap \n" );
+    }
 	desc = ext4_get_group_desc(sb, block_group, NULL);
 	if (!desc)
 		return ERR_PTR(-EFSCORRUPTED);
@@ -246,6 +255,9 @@ void ext4_free_inode(handle_t *handle, struct inode *inode)
 	int fatal = 0, err, count, cleared;
 	struct ext4_group_info *grp;
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO " ext4_free_inode\n" );
+    }
 	if (!sb) {
 		printk(KERN_ERR "EXT4-fs: %s:%d: inode on "
 		       "nonexistent device\n", __func__, __LINE__);
@@ -380,6 +392,9 @@ static void get_orlov_stats(struct super_block *sb, ext4_group_t g,
 	struct ext4_group_desc *desc;
 	struct flex_groups *flex_group = EXT4_SB(sb)->s_flex_groups;
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO "get_orlov_stats \n" );
+    }
 	if (flex_size > 1) {
 		stats->free_inodes = atomic_read(&flex_group[g].free_inodes);
 		stats->free_clusters = atomic64_read(&flex_group[g].free_clusters);
@@ -439,6 +454,9 @@ static int find_group_orlov(struct super_block *sb, struct inode *parent,
 	int flex_size = ext4_flex_bg_size(sbi);
 	struct dx_hash_info hinfo;
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO " find_group_orlov\n" );
+    }
 	ngroups = real_ngroups;
 	if (flex_size > 1) {
 		ngroups = (real_ngroups + flex_size - 1) >>
@@ -576,6 +594,9 @@ static int find_group_other(struct super_block *sb, struct inode *parent,
 	struct ext4_group_desc *desc;
 	int flex_size = ext4_flex_bg_size(EXT4_SB(sb));
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO " find_group_other\n" );
+    }
 	/*
 	 * Try to place the inode is the same flex group as its
 	 * parent.  If we can't find space, use the Orlov algorithm to
@@ -683,6 +704,9 @@ static int recently_deleted(struct super_block *sb, ext4_group_t group, int ino)
 	int recentcy = RECENTCY_MIN;
 	u32 dtime, now;
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO " recently_deleted\n" );
+    }
 	gdp = ext4_get_group_desc(sb, group, NULL);
 	if (unlikely(!gdp))
 		return 0;
@@ -719,6 +743,9 @@ out:
 static int find_inode_bit(struct super_block *sb, ext4_group_t group,
 			  struct buffer_head *bitmap, unsigned long *ino)
 {
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO " \n" );
+    }
 next:
 	*ino = ext4_find_next_zero_bit((unsigned long *)
 				       bitmap->b_data,
@@ -769,6 +796,9 @@ struct inode *__ext4_new_inode(handle_t *handle, struct inode *dir,
 	struct ext4_group_info *grp;
 	int encrypt = 0;
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO "__ext4_new_inode \n" );
+    }
 	/* Cannot create files in a deleted directory */
 	if (!dir || !dir->i_nlink)
 		return ERR_PTR(-EPERM);
@@ -1217,6 +1247,9 @@ struct inode *ext4_orphan_get(struct super_block *sb, unsigned long ino)
 	struct inode *inode = NULL;
 	int err = -EFSCORRUPTED;
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO " ext4_orphan_get\n" );
+    }
 	if (ino < EXT4_FIRST_INO(sb) || ino > max_ino)
 		goto bad_orphan;
 
@@ -1291,6 +1324,9 @@ unsigned long ext4_count_free_inodes(struct super_block *sb)
 	unsigned long bitmap_count, x;
 	struct buffer_head *bitmap_bh = NULL;
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO "ext4_count_free_inodes \n" );
+    }
 	es = EXT4_SB(sb)->s_es;
 	desc_count = 0;
 	bitmap_count = 0;
@@ -1337,6 +1373,9 @@ unsigned long ext4_count_dirs(struct super_block * sb)
 	unsigned long count = 0;
 	ext4_group_t i, ngroups = ext4_get_groups_count(sb);
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO "ext4_count_dirs \n" );
+    }
 	for (i = 0; i < ngroups; i++) {
 		struct ext4_group_desc *gdp = ext4_get_group_desc(sb, i, NULL);
 		if (!gdp)
@@ -1365,6 +1404,9 @@ int ext4_init_inode_table(struct super_block *sb, ext4_group_t group,
 	ext4_fsblk_t blk;
 	int num, ret = 0, used_blks = 0;
 
+    if( ext4_trace_enable && ext4_ialloc_trace_enable ){
+        printk(KERN_INFO "ext4_init_inode_table \n" );
+    }
 	/* This should not happen, but just to be sure check this */
 	if (sb_rdonly(sb)) {
 		ret = 1;
