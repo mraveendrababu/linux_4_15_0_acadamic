@@ -13,9 +13,15 @@
 #include "ext4.h"
 #include "xattr.h"
 
+extern int ext4_trace_enable;
+extern int ext4_xattr_trusted_trace_enable;
+
 static bool
 ext4_xattr_trusted_list(struct dentry *dentry)
 {
+    if(ext4_trace_enable && ext4_xattr_trusted_trace_enable ){
+        printk( KERN_INFO " ext4_xattr_trusted_list\n");
+    }
 	return capable(CAP_SYS_ADMIN);
 }
 
@@ -24,6 +30,9 @@ ext4_xattr_trusted_get(const struct xattr_handler *handler,
 		       struct dentry *unused, struct inode *inode,
 		       const char *name, void *buffer, size_t size)
 {
+    if(ext4_trace_enable && ext4_xattr_trusted_trace_enable ){
+        printk( KERN_INFO " ext4_xattr_trusted_get\n");
+    }
 	return ext4_xattr_get(inode, EXT4_XATTR_INDEX_TRUSTED,
 			      name, buffer, size);
 }
@@ -34,6 +43,9 @@ ext4_xattr_trusted_set(const struct xattr_handler *handler,
 		       const char *name, const void *value,
 		       size_t size, int flags)
 {
+    if(ext4_trace_enable && ext4_xattr_trusted_trace_enable ){
+        printk( KERN_INFO "ext4_xattr_trusted_set \n");
+    }
 	return ext4_xattr_set(inode, EXT4_XATTR_INDEX_TRUSTED,
 			      name, value, size, flags);
 }
