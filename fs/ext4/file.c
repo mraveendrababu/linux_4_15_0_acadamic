@@ -34,12 +34,18 @@
 #include "xattr.h"
 #include "acl.h"
 
+extern int ext4_trace_enable;
+exnter int ext4_file_trace_enable;
+
 #ifdef CONFIG_FS_DAX
 static ssize_t ext4_dax_read_iter(struct kiocb *iocb, struct iov_iter *to)
 {
 	struct inode *inode = file_inode(iocb->ki_filp);
 	ssize_t ret;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_dax_read_iter \n"  );
+    }
 	if (!inode_trylock_shared(inode)) {
 		if (iocb->ki_flags & IOCB_NOWAIT)
 			return -EAGAIN;
@@ -67,6 +73,9 @@ static ssize_t ext4_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(file_inode(iocb->ki_filp)->i_sb))))
 		return -EIO;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_file_read_iter \n"  );
+    }
 	if (!iov_iter_count(to))
 		return 0; /* skip atime */
 
@@ -84,6 +93,9 @@ static ssize_t ext4_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
  */
 static int ext4_release_file(struct inode *inode, struct file *filp)
 {
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_release_file\n"  );
+    }
 	if (ext4_test_inode_state(inode, EXT4_STATE_DA_ALLOC_CLOSE)) {
 		ext4_alloc_da_blocks(inode);
 		ext4_clear_inode_state(inode, EXT4_STATE_DA_ALLOC_CLOSE);
@@ -125,6 +137,9 @@ ext4_unaligned_aio(struct inode *inode, struct iov_iter *from, loff_t pos)
 	struct super_block *sb = inode->i_sb;
 	int blockmask = sb->s_blocksize - 1;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_unaligned_aio \n"  );
+    }
 	if (pos >= i_size_read(inode))
 		return 0;
 
@@ -141,6 +156,9 @@ static bool ext4_overwrite_io(struct inode *inode, loff_t pos, loff_t len)
 	unsigned int blkbits = inode->i_blkbits;
 	int err, blklen;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_overwrite_io \n"  );
+    }
 	if (pos + len > i_size_read(inode))
 		return false;
 
@@ -162,6 +180,9 @@ static ssize_t ext4_write_checks(struct kiocb *iocb, struct iov_iter *from)
 	struct inode *inode = file_inode(iocb->ki_filp);
 	ssize_t ret;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_write_checks \n"  );
+    }
 	ret = generic_write_checks(iocb, from);
 	if (ret <= 0)
 		return ret;
@@ -186,6 +207,9 @@ ext4_dax_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	struct inode *inode = file_inode(iocb->ki_filp);
 	ssize_t ret;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_dax_write_iter\n"  );
+    }
 	if (!inode_trylock(inode)) {
 		if (iocb->ki_flags & IOCB_NOWAIT)
 			return -EAGAIN;
@@ -219,6 +243,9 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	int overwrite = 0;
 	ssize_t ret;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_file_write_iter\n"  );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
 		return -EIO;
 
@@ -285,6 +312,9 @@ static int ext4_dax_huge_fault(struct vm_fault *vmf,
 	struct inode *inode = file_inode(vmf->vma->vm_file);
 	struct super_block *sb = inode->i_sb;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_dax_huge_fault\n"  );
+    }
 	/*
 	 * We have to distinguish real writes from writes which will result in a
 	 * COW page; COW writes should *not* poke the journal (the file will not
@@ -331,6 +361,9 @@ static int ext4_dax_huge_fault(struct vm_fault *vmf,
 
 static int ext4_dax_fault(struct vm_fault *vmf)
 {
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_dax_fault\n"  );
+    }
 	return ext4_dax_huge_fault(vmf, PE_SIZE_PTE);
 }
 
@@ -354,6 +387,9 @@ static int ext4_file_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	struct inode *inode = file->f_mapping->host;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_file_mmap \n"  );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
 		return -EIO;
 
@@ -383,6 +419,9 @@ static int ext4_file_open(struct inode * inode, struct file * filp)
 	char buf[64], *cp;
 	int ret;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_file_open\n"  );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
 		return -EIO;
 
@@ -447,6 +486,9 @@ loff_t ext4_llseek(struct file *file, loff_t offset, int whence)
 	struct inode *inode = file->f_mapping->host;
 	loff_t maxbytes;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_llseek \n"  );
+    }
 	if (!(ext4_test_inode_flag(inode, EXT4_INODE_EXTENTS)))
 		maxbytes = EXT4_SB(inode->i_sb)->s_bitmap_maxbytes;
 	else
