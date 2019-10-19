@@ -18,6 +18,8 @@ int ext4_ext4_jbd2_trace_enable=0;
 EXPORT_SYMBOL(ext4_ext4_jbd2_trace_enable);
 int ext4_extents_trace_enable=0;
 EXPORT_SYMBOL(ext4_extents_trace_enable);
+int ext4_extents_status_trace_enable=0;
+EXPORT_SYMBOL(ext4_extents_status_trace_enable);
 int ext4_file_trace_enable=0;
 EXPORT_SYMBOL(ext4_file_trace_enable);
 int ext4_fsmap_trace_enable=0;
