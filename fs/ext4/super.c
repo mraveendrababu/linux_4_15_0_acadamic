@@ -133,6 +133,8 @@ MODULE_ALIAS("ext2");
 #define IS_EXT2_SB(sb) (0)
 #endif
 
+extern int ext4_trace_enable;
+extern int ext4_super_trace_enable;
 
 static struct file_system_type ext3_fs_type = {
 	.owner		= THIS_MODULE,
@@ -205,9 +207,13 @@ void *ext4_kvzalloc(size_t size, gfp_t flags)
 	return ret;
 }
 
+
 ext4_fsblk_t ext4_block_bitmap(struct super_block *sb,
 			       struct ext4_group_desc *bg)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_block_bitmap\n" );
+    }
 	return le32_to_cpu(bg->bg_block_bitmap_lo) |
 		(EXT4_DESC_SIZE(sb) >= EXT4_MIN_DESC_SIZE_64BIT ?
 		 (ext4_fsblk_t)le32_to_cpu(bg->bg_block_bitmap_hi) << 32 : 0);
@@ -216,6 +222,9 @@ ext4_fsblk_t ext4_block_bitmap(struct super_block *sb,
 ext4_fsblk_t ext4_inode_bitmap(struct super_block *sb,
 			       struct ext4_group_desc *bg)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_inode_bitmap\n" );
+    }
 	return le32_to_cpu(bg->bg_inode_bitmap_lo) |
 		(EXT4_DESC_SIZE(sb) >= EXT4_MIN_DESC_SIZE_64BIT ?
 		 (ext4_fsblk_t)le32_to_cpu(bg->bg_inode_bitmap_hi) << 32 : 0);
@@ -224,6 +233,9 @@ ext4_fsblk_t ext4_inode_bitmap(struct super_block *sb,
 ext4_fsblk_t ext4_inode_table(struct super_block *sb,
 			      struct ext4_group_desc *bg)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_inode_table \n" );
+    }
 	return le32_to_cpu(bg->bg_inode_table_lo) |
 		(EXT4_DESC_SIZE(sb) >= EXT4_MIN_DESC_SIZE_64BIT ?
 		 (ext4_fsblk_t)le32_to_cpu(bg->bg_inode_table_hi) << 32 : 0);
@@ -324,6 +336,9 @@ static void __save_error_info(struct super_block *sb, const char *func,
 	struct ext4_super_block *es = EXT4_SB(sb)->s_es;
 
 	EXT4_SB(sb)->s_mount_state |= EXT4_ERROR_FS;
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "__save_error_info \n" );
+    }
 	if (bdev_read_only(sb->s_bdev))
 		return;
 	es->s_state |= cpu_to_le16(EXT4_ERROR_FS);
@@ -377,6 +392,9 @@ static void ext4_journal_commit_callback(journal_t *journal, transaction_t *txn)
 	int				error = is_journal_aborted(journal);
 	struct ext4_journal_cb_entry	*jce;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_journal_commit_callback \n" );
+    }
 	BUG_ON(txn->t_state == T_FINISHED);
 
 	ext4_process_freed_data(sb, txn->t_tid);
@@ -413,6 +431,9 @@ static void ext4_handle_error(struct super_block *sb)
 	if (sb_rdonly(sb))
 		return;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_handle_error\n" );
+    }
 	if (!test_opt(sb, ERRORS_CONT)) {
 		journal_t *journal = EXT4_SB(sb)->s_journal;
 
@@ -448,6 +469,9 @@ void __ext4_error(struct super_block *sb, const char *function,
 	struct va_format vaf;
 	va_list args;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "__ext4_error \n" );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(sb))))
 		return;
 
@@ -472,6 +496,9 @@ void __ext4_error_inode(struct inode *inode, const char *function,
 	struct va_format vaf;
 	struct ext4_super_block *es = EXT4_SB(inode->i_sb)->s_es;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "__ext4_error_inode \n" );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
 		return;
 
@@ -507,6 +534,9 @@ void __ext4_error_file(struct file *file, const char *function,
 	struct inode *inode = file_inode(file);
 	char pathname[80], *path;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " __ext4_error_file\n" );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
 		return;
 
@@ -542,6 +572,9 @@ const char *ext4_decode_error(struct super_block *sb, int errno,
 {
 	char *errstr = NULL;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_decode_error\n" );
+    }
 	switch (errno) {
 	case -EFSCORRUPTED:
 		errstr = "Corrupt filesystem";
@@ -586,6 +619,9 @@ void __ext4_std_error(struct super_block *sb, const char *function,
 	char nbuf[16];
 	const char *errstr;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "__ext4_std_error \n" );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(sb))))
 		return;
 
@@ -621,6 +657,9 @@ void __ext4_abort(struct super_block *sb, const char *function,
 	struct va_format vaf;
 	va_list args;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "__ext4_abort \n" );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(sb))))
 		return;
 
@@ -659,6 +698,9 @@ void __ext4_msg(struct super_block *sb,
 	struct va_format vaf;
 	va_list args;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " __ext4_msg\n" );
+    }
 	if (!___ratelimit(&(EXT4_SB(sb)->s_msg_ratelimit_state), "EXT4-fs"))
 		return;
 
@@ -679,6 +721,9 @@ void __ext4_warning(struct super_block *sb, const char *function,
 	struct va_format vaf;
 	va_list args;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " __ext4_warning\n" );
+    }
 	if (!ext4_warning_ratelimit(sb))
 		return;
 
@@ -696,6 +741,9 @@ void __ext4_warning_inode(const struct inode *inode, const char *function,
 	struct va_format vaf;
 	va_list args;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " __ext4_warning_inode\n" );
+    }
 	if (!ext4_warning_ratelimit(inode->i_sb))
 		return;
 
@@ -719,6 +767,9 @@ __acquires(bitlock)
 	va_list args;
 	struct ext4_super_block *es = EXT4_SB(sb)->s_es;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " __ext4_grp_locked_error\n" );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(sb))))
 		return;
 
@@ -768,6 +819,9 @@ void ext4_update_dynamic_rev(struct super_block *sb)
 {
 	struct ext4_super_block *es = EXT4_SB(sb)->s_es;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_update_dynamic_rev\n" );
+    }
 	if (le32_to_cpu(es->s_rev_level) > EXT4_GOOD_OLD_REV)
 		return;
 
@@ -797,6 +851,9 @@ static struct block_device *ext4_blkdev_get(dev_t dev, struct super_block *sb)
 	struct block_device *bdev;
 	char b[BDEVNAME_SIZE];
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_blkdev_get\n" );
+    }
 	bdev = blkdev_get_by_dev(dev, FMODE_READ|FMODE_WRITE|FMODE_EXCL, sb);
 	if (IS_ERR(bdev))
 		goto fail;
@@ -813,12 +870,18 @@ fail:
  */
 static void ext4_blkdev_put(struct block_device *bdev)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_blkdev_put \n" );
+    }
 	blkdev_put(bdev, FMODE_READ|FMODE_WRITE|FMODE_EXCL);
 }
 
 static void ext4_blkdev_remove(struct ext4_sb_info *sbi)
 {
 	struct block_device *bdev;
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_blkdev_remove\n" );
+    }
 	bdev = sbi->journal_bdev;
 	if (bdev) {
 		ext4_blkdev_put(bdev);
@@ -828,6 +891,9 @@ static void ext4_blkdev_remove(struct ext4_sb_info *sbi)
 
 static inline struct inode *orphan_list_entry(struct list_head *l)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " orphan_list_entry\n" );
+    }
 	return &list_entry(l, struct ext4_inode_info, i_orphan)->vfs_inode;
 }
 
@@ -835,6 +901,9 @@ static void dump_orphan_list(struct super_block *sb, struct ext4_sb_info *sbi)
 {
 	struct list_head *l;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " dump_orphan_list\n" );
+    }
 	ext4_msg(sb, KERN_ERR, "sb orphan head is %d",
 		 le32_to_cpu(sbi->s_es->s_last_orphan));
 
@@ -856,6 +925,9 @@ static inline void ext4_quota_off_umount(struct super_block *sb)
 {
 	int type;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_quota_off_umount\n" );
+    }
 	/* Use our quota_off function to clear inode flags etc. */
 	for (type = 0; type < EXT4_MAXQUOTAS; type++)
 		ext4_quota_off(sb, type);
@@ -869,6 +941,9 @@ static inline char *get_qf_name(struct super_block *sb,
 				struct ext4_sb_info *sbi,
 				int type)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " get_qf_name\n" );
+    }
 	return rcu_dereference_protected(sbi->s_qf_names[type],
 					 lockdep_is_held(&sb->s_umount));
 }
@@ -885,6 +960,9 @@ static void ext4_put_super(struct super_block *sb)
 	int aborted = 0;
 	int i, err;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_put_super \n" );
+    }
 	ext4_unregister_li_request(sb);
 	ext4_quota_off_umount(sb);
 
@@ -981,6 +1059,9 @@ static struct inode *ext4_alloc_inode(struct super_block *sb)
 {
 	struct ext4_inode_info *ei;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_alloc_inode\n" );
+    }
 	ei = kmem_cache_alloc(ext4_inode_cachep, GFP_NOFS);
 	if (!ei)
 		return NULL;
@@ -1017,6 +1098,9 @@ static int ext4_drop_inode(struct inode *inode)
 {
 	int drop = generic_drop_inode(inode);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_drop_inode\n" );
+    }
 	trace_ext4_drop_inode(inode, drop);
 	return drop;
 }
@@ -1029,6 +1113,9 @@ static void ext4_i_callback(struct rcu_head *head)
 
 static void ext4_destroy_inode(struct inode *inode)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_destroy_inode\n" );
+    }
 	if (!list_empty(&(EXT4_I(inode)->i_orphan))) {
 		ext4_msg(inode->i_sb, KERN_ERR,
 			 "Inode %lu (%p): orphan list check failed!",
@@ -1045,6 +1132,9 @@ static void init_once(void *foo)
 {
 	struct ext4_inode_info *ei = (struct ext4_inode_info *) foo;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "init_once \n" );
+    }
 	INIT_LIST_HEAD(&ei->i_orphan);
 	init_rwsem(&ei->xattr_sem);
 	init_rwsem(&ei->i_data_sem);
@@ -1059,6 +1149,9 @@ static int __init init_inodecache(void)
 					     0, (SLAB_RECLAIM_ACCOUNT|
 						SLAB_MEM_SPREAD|SLAB_ACCOUNT),
 					     init_once);
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " init_inodecache\n" );
+    }
 	if (ext4_inode_cachep == NULL)
 		return -ENOMEM;
 	return 0;
@@ -1076,6 +1169,9 @@ static void destroy_inodecache(void)
 
 void ext4_clear_inode(struct inode *inode)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_clear_inode\n" );
+    }
 	invalidate_inode_buffers(inode);
 	clear_inode(inode);
 	dquot_drop(inode);
@@ -1097,6 +1193,9 @@ static struct inode *ext4_nfs_get_inode(struct super_block *sb,
 {
 	struct inode *inode;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_nfs_get_inode\n" );
+    }
 	if (ino < EXT4_FIRST_INO(sb) && ino != EXT4_ROOT_INO)
 		return ERR_PTR(-ESTALE);
 	if (ino > le32_to_cpu(EXT4_SB(sb)->s_es->s_inodes_count))
@@ -1124,6 +1223,9 @@ static struct inode *ext4_nfs_get_inode(struct super_block *sb,
 static struct dentry *ext4_fh_to_dentry(struct super_block *sb, struct fid *fid,
 					int fh_len, int fh_type)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_fh_to_dentry\n" );
+    }
 	return generic_fh_to_dentry(sb, fid, fh_len, fh_type,
 				    ext4_nfs_get_inode);
 }
@@ -1146,6 +1248,9 @@ static int bdev_try_to_free_page(struct super_block *sb, struct page *page,
 {
 	journal_t *journal = EXT4_SB(sb)->s_journal;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " bdev_try_to_free_page\n" );
+    }
 	WARN_ON(PageChecked(page));
 	if (!page_has_buffers(page))
 		return 0;
@@ -1168,6 +1273,9 @@ static int ext4_set_context(struct inode *inode, const void *ctx, size_t len,
 	handle_t *handle = fs_data;
 	int res, res2, credits, retries = 0;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_set_context \n" );
+    }
 	/*
 	 * Encrypting the root directory is not allowed because e2fsck expects
 	 * lost+found to exist and be unencrypted, and encrypting the root
@@ -1465,6 +1573,9 @@ static ext4_fsblk_t get_sb_block(void **data)
 	ext4_fsblk_t	sb_block;
 	char		*options = (char *) *data;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " get_sb_block\n" );
+    }
 	if (!options || strncmp(options, "sb=", 3) != 0)
 		return 1;	/* Default location */
 
@@ -1495,6 +1606,9 @@ static int set_qf_name(struct super_block *sb, int qtype, substring_t *args)
 	char *qname, *old_qname = get_qf_name(sb, sbi, qtype);
 	int ret = -1;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "set_qf_name \n" );
+    }
 	if (sb_any_quota_loaded(sb) && !old_qname) {
 		ext4_msg(sb, KERN_ERR,
 			"Cannot change journaled "
@@ -1540,6 +1654,9 @@ static int clear_qf_name(struct super_block *sb, int qtype)
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	char *old_qname = get_qf_name(sb, sbi, qtype);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " clear_qf_name\n" );
+    }
 	if (sb_any_quota_loaded(sb) && old_qname) {
 		ext4_msg(sb, KERN_ERR, "Cannot change journaled quota options"
 			" when quota turned on");
@@ -1683,6 +1800,9 @@ static int handle_mount_opt(struct super_block *sb, char *opt, int token,
 	else if (token == Opt_offgrpjquota)
 		return clear_qf_name(sb, GRPQUOTA);
 #endif
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " handle_mount_opt\n" );
+    }
 	switch (token) {
 	case Opt_noacl:
 	case Opt_nouser_xattr:
@@ -1944,6 +2064,9 @@ static int parse_options(char *options, struct super_block *sb,
 	substring_t args[MAX_OPT_ARGS];
 	int token;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "parse_options \n" );
+    }
 	if (!options)
 		return 1;
 
@@ -2009,6 +2132,9 @@ static int parse_options(char *options, struct super_block *sb,
 static inline void ext4_show_quota_options(struct seq_file *seq,
 					   struct super_block *sb)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_show_quota_options\n" );
+    }
 #if defined(CONFIG_QUOTA)
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	char *usr_qf_name, *grp_qf_name;
@@ -2065,6 +2191,9 @@ static int _ext4_show_options(struct seq_file *seq, struct super_block *sb,
 	const struct mount_opts *m;
 	char sep = nodefs ? '\n' : ',';
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "_ext4_show_options \n" );
+    }
 #define SEQ_OPTS_PUTS(str) seq_printf(seq, "%c" str, sep)
 #define SEQ_OPTS_PRINT(str, arg) seq_printf(seq, "%c" str, sep, arg)
 
@@ -2159,6 +2288,9 @@ static int ext4_setup_super(struct super_block *sb, struct ext4_super_block *es,
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	int res = 0;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_setup_super \n" );
+    }
 	if (le32_to_cpu(es->s_rev_level) > EXT4_MAX_SUPP_REV) {
 		ext4_msg(sb, KERN_ERR, "revision level too high, "
 			 "forcing read-only mode");
@@ -2216,6 +2348,9 @@ int ext4_alloc_flex_bg_array(struct super_block *sb, ext4_group_t ngroup)
 	struct flex_groups *new_groups;
 	int size;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_alloc_flex_bg_array\n" );
+    }
 	if (!sbi->s_log_groups_per_flex)
 		return 0;
 
@@ -2249,6 +2384,9 @@ static int ext4_fill_flex_info(struct super_block *sb)
 	ext4_group_t flex_group;
 	int i, err;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_fill_flex_info \n" );
+    }
 	sbi->s_log_groups_per_flex = sbi->s_es->s_log_groups_per_flex;
 	if (sbi->s_log_groups_per_flex < 1 || sbi->s_log_groups_per_flex > 31) {
 		sbi->s_log_groups_per_flex = 0;
@@ -2284,6 +2422,9 @@ static __le16 ext4_group_desc_csum(struct super_block *sb, __u32 block_group,
 	__le32 le_group = cpu_to_le32(block_group);
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_group_desc_csum\n" );
+    }
 	if (ext4_has_metadata_csum(sbi->s_sb)) {
 		/* Use new metadata_csum algorithm */
 		__u32 csum32;
@@ -2355,6 +2496,9 @@ static int ext4_check_descriptors(struct super_block *sb,
 	int flexbg_flag = 0;
 	ext4_group_t i, grp = sbi->s_groups_count;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_check_descriptors\n" );
+    }
 	if (ext4_has_feature_flex_bg(sb))
 		flexbg_flag = 1;
 
@@ -2486,6 +2630,9 @@ static void ext4_orphan_cleanup(struct super_block *sb,
 	int quota_update = 0;
 	int i;
 #endif
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_orphan_cleanup \n" );
+    }
 	if (!es->s_last_orphan) {
 		jbd_debug(4, "no orphan inodes to clean up\n");
 		return;
@@ -2639,6 +2786,9 @@ static loff_t ext4_max_size(int blkbits, int has_huge_files)
 	loff_t res;
 	loff_t upper_limit = MAX_LFS_FILESIZE;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_max_size\n" );
+    }
 	/* small i_blocks in vfs inode? */
 	if (!has_huge_files || sizeof(blkcnt_t) < sizeof(u64)) {
 		/*
@@ -2678,6 +2828,9 @@ static loff_t ext4_max_bitmap_size(int bits, int has_huge_files)
 	loff_t res = EXT4_NDIR_BLOCKS;
 	int meta_blocks;
 	loff_t upper_limit;
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_max_bitmap_size\n" );
+    }
 	/* This is calculated to be the largest file size for a dense, block
 	 * mapped file such that the file's total number of 512-byte sectors,
 	 * including data and all indirect blocks, does not exceed (2^48 - 1).
@@ -2738,6 +2891,9 @@ static ext4_fsblk_t descriptor_loc(struct super_block *sb,
 	ext4_group_t bg, first_meta_bg;
 	int has_super = 0;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "descriptor_loc \n" );
+    }
 	first_meta_bg = le32_to_cpu(sbi->s_es->s_first_meta_bg);
 
 	if (!ext4_has_feature_meta_bg(sb) || nr < first_meta_bg)
@@ -2777,6 +2933,9 @@ static unsigned long ext4_get_stripe_size(struct ext4_sb_info *sbi)
 			le32_to_cpu(sbi->s_es->s_raid_stripe_width);
 	int ret;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_get_stripe_size\n" );
+    }
 	if (sbi->s_stripe && sbi->s_stripe <= sbi->s_blocks_per_group)
 		ret = sbi->s_stripe;
 	else if (stripe_width && stripe_width <= sbi->s_blocks_per_group)
@@ -2804,6 +2963,9 @@ static unsigned long ext4_get_stripe_size(struct ext4_sb_info *sbi)
  */
 static int ext4_feature_set_ok(struct super_block *sb, int readonly)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_feature_set_ok\n" );
+    }
 	if (ext4_has_unknown_ext4_incompat_features(sb)) {
 		ext4_msg(sb, KERN_ERR,
 			"Couldn't mount because of "
@@ -2876,6 +3038,9 @@ static void print_daily_error_info(struct timer_list *t)
 	struct super_block *sb = sbi->s_sb;
 	struct ext4_super_block *es = sbi->s_es;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " print_daily_error_info\n" );
+    }
 	if (es->s_error_count)
 		/* fsck newer than v1.41.13 is needed to clean this condition. */
 		ext4_msg(sb, KERN_NOTICE, "error count since last fsck: %u",
@@ -2920,6 +3085,9 @@ static int ext4_run_li_request(struct ext4_li_request *elr)
 	unsigned long timeout = 0;
 	int ret = 0;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_run_li_request\n" );
+    }
 	sb = elr->lr_super;
 	ngroups = EXT4_SB(sb)->s_groups_count;
 
@@ -2960,6 +3128,9 @@ static void ext4_remove_li_request(struct ext4_li_request *elr)
 {
 	struct ext4_sb_info *sbi;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_remove_li_request \n" );
+    }
 	if (!elr)
 		return;
 
@@ -3002,6 +3173,9 @@ static int ext4_lazyinit_thread(void *arg)
 	struct ext4_li_request *elr;
 	unsigned long next_wakeup, cur;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_lazyinit_thread \n" );
+    }
 	BUG_ON(NULL == eli);
 
 cont_thread:
@@ -3101,6 +3275,9 @@ static void ext4_clear_request_list(void)
 	struct list_head *pos, *n;
 	struct ext4_li_request *elr;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_clear_request_list\n" );
+    }
 	mutex_lock(&ext4_li_info->li_list_mtx);
 	list_for_each_safe(pos, n, &ext4_li_info->li_request_list) {
 		elr = list_entry(pos, struct ext4_li_request,
@@ -3114,6 +3291,9 @@ static int ext4_run_lazyinit_thread(void)
 {
 	ext4_lazyinit_task = kthread_run(ext4_lazyinit_thread,
 					 ext4_li_info, "ext4lazyinit");
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_run_lazyinit_thread\n" );
+    }
 	if (IS_ERR(ext4_lazyinit_task)) {
 		int err = PTR_ERR(ext4_lazyinit_task);
 		ext4_clear_request_list();
@@ -3139,6 +3319,9 @@ static ext4_group_t ext4_has_uninit_itable(struct super_block *sb)
 	ext4_group_t group, ngroups = EXT4_SB(sb)->s_groups_count;
 	struct ext4_group_desc *gdp = NULL;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_has_uninit_itable\n" );
+    }
 	if (!ext4_has_group_desc_csum(sb))
 		return ngroups;
 
@@ -3158,6 +3341,9 @@ static int ext4_li_info_new(void)
 {
 	struct ext4_lazy_init *eli = NULL;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_li_info_new\n" );
+    }
 	eli = kzalloc(sizeof(*eli), GFP_KERNEL);
 	if (!eli)
 		return -ENOMEM;
@@ -3178,6 +3364,9 @@ static struct ext4_li_request *ext4_li_request_new(struct super_block *sb,
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	struct ext4_li_request *elr;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_li_request_new\n" );
+    }
 	elr = kzalloc(sizeof(*elr), GFP_KERNEL);
 	if (!elr)
 		return NULL;
@@ -3204,6 +3393,9 @@ int ext4_register_li_request(struct super_block *sb,
 	ext4_group_t ngroups = EXT4_SB(sb)->s_groups_count;
 	int ret = 0;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_register_li_request\n" );
+    }
 	mutex_lock(&ext4_li_mtx);
 	if (sbi->s_li_request != NULL) {
 		/*
@@ -3276,6 +3468,9 @@ static int set_journal_csum_feature_set(struct super_block *sb)
 	int compat, incompat;
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " set_journal_csum_feature_set\n" );
+    }
 	if (ext4_has_metadata_csum(sb)) {
 		/* journal checksum v3 */
 		compat = 0;
@@ -3333,6 +3528,9 @@ static int count_overhead(struct super_block *sb, ext4_group_t grp,
 	ext4_group_t		i, ngroups = ext4_get_groups_count(sb);
 	int			s, j, count = 0;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " count_overhead\n" );
+    }
 	if (!ext4_has_feature_bigalloc(sb))
 		return (ext4_bg_has_super(sb, grp) + ext4_bg_num_gdb(sb, grp) +
 			sbi->s_itb_per_group + 2);
@@ -3395,6 +3593,9 @@ int ext4_calculate_overhead(struct super_block *sb)
 	ext4_fsblk_t overhead = 0;
 	char *buf = (char *) get_zeroed_page(GFP_NOFS);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_calculate_overhead \n" );
+    }
 	if (!buf)
 		return -ENOMEM;
 
@@ -3449,6 +3650,9 @@ static void ext4_set_resv_clusters(struct super_block *sb)
 	ext4_fsblk_t resv_clusters;
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_set_resv_clusters\n" );
+    }
 	/*
 	 * There's no need to reserve anything when we aren't using extents.
 	 * The space estimates are exact, there are no unwritten extents,
@@ -3499,6 +3703,9 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 	unsigned int journal_ioprio = DEFAULT_JOURNAL_IOPRIO;
 	ext4_group_t first_not_zeroed;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_fill_super \n" );
+    }
 	if ((data && !orig_data) || !sbi)
 		goto out_free_base;
 
@@ -4542,6 +4749,9 @@ static void ext4_init_journal_params(struct super_block *sb, journal_t *journal)
 {
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_init_journal_params \n" );
+    }
 	journal->j_commit_interval = sbi->s_commit_interval;
 	journal->j_min_batch_time = sbi->s_min_batch_time;
 	journal->j_max_batch_time = sbi->s_max_batch_time;
@@ -4563,6 +4773,9 @@ static struct inode *ext4_get_journal_inode(struct super_block *sb,
 {
 	struct inode *journal_inode;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_get_journal_inode\n" );
+    }
 	/*
 	 * Test for the existence of a valid inode on disk.  Bad things
 	 * happen if we iget() an unused inode, as the subsequent iput()
@@ -4596,6 +4809,9 @@ static journal_t *ext4_get_journal(struct super_block *sb,
 	struct inode *journal_inode;
 	journal_t *journal;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_get_journal\n" );
+    }
 	BUG_ON(!ext4_has_feature_journal(sb));
 
 	journal_inode = ext4_get_journal_inode(sb, journal_inum);
@@ -4626,6 +4842,9 @@ static journal_t *ext4_get_dev_journal(struct super_block *sb,
 	struct ext4_super_block *es;
 	struct block_device *bdev;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_get_dev_journal \n" );
+    }
 	BUG_ON(!ext4_has_feature_journal(sb));
 
 	bdev = ext4_blkdev_get(j_dev, sb);
@@ -4718,6 +4937,9 @@ static int ext4_load_journal(struct super_block *sb,
 	int err = 0;
 	int really_read_only;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_load_journal \n" );
+    }
 	BUG_ON(!ext4_has_feature_journal(sb));
 
 	if (journal_devnum &&
@@ -4807,6 +5029,9 @@ static int ext4_commit_super(struct super_block *sb, int sync)
 	struct buffer_head *sbh = EXT4_SB(sb)->s_sbh;
 	int error = 0;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_commit_super \n" );
+    }
 	if (!sbh || block_device_ejected(sb))
 		return error;
 
@@ -4892,6 +5117,9 @@ static void ext4_mark_recovery_complete(struct super_block *sb,
 {
 	journal_t *journal = EXT4_SB(sb)->s_journal;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_mark_recovery_complete \n" );
+    }
 	if (!ext4_has_feature_journal(sb)) {
 		BUG_ON(journal != NULL);
 		return;
@@ -4921,6 +5149,9 @@ static void ext4_clear_journal_err(struct super_block *sb,
 	int j_errno;
 	const char *errstr;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_clear_journal_err \n" );
+    }
 	BUG_ON(!ext4_has_feature_journal(sb));
 
 	journal = EXT4_SB(sb)->s_journal;
@@ -4956,6 +5187,9 @@ int ext4_force_commit(struct super_block *sb)
 {
 	journal_t *journal;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_force_commit \n" );
+    }
 	if (sb_rdonly(sb))
 		return 0;
 
@@ -4970,6 +5204,9 @@ static int ext4_sync_fs(struct super_block *sb, int wait)
 	bool needs_barrier = false;
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_sync_fs\n" );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(sb))))
 		return 0;
 
@@ -5021,6 +5258,9 @@ static int ext4_freeze(struct super_block *sb)
 	int error = 0;
 	journal_t *journal;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_freeze\n" );
+    }
 	if (sb_rdonly(sb))
 		return 0;
 
@@ -5056,6 +5296,9 @@ out:
  */
 static int ext4_unfreeze(struct super_block *sb)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_unfreeze\n" );
+    }
 	if (sb_rdonly(sb) || ext4_forced_shutdown(EXT4_SB(sb)))
 		return 0;
 
@@ -5100,6 +5343,9 @@ static int ext4_remount(struct super_block *sb, int *flags, char *data)
 #endif
 	char *orig_data = kstrdup(data, GFP_KERNEL);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_remount\n" );
+    }
 	/* Store the original options */
 	old_sb_flags = sb->s_flags;
 	old_opts.s_mount_opt = sbi->s_mount_opt;
@@ -5357,6 +5603,9 @@ static int ext4_statfs_project(struct super_block *sb,
 	u64 limit;
 	u64 curblock;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_statfs_project \n" );
+    }
 	qid = make_kqid_projid(projid);
 	dquot = dqget(sb, qid);
 	if (IS_ERR(dquot))
@@ -5400,6 +5649,9 @@ static int ext4_statfs(struct dentry *dentry, struct kstatfs *buf)
 	s64 bfree;
 	resv_blocks = EXT4_C2B(sbi, atomic64_read(&sbi->s_resv_clusters));
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_statfs\n" );
+    }
 	if (!test_opt(sb, MINIX_DF))
 		overhead = sbi->s_overhead;
 
@@ -5439,6 +5691,9 @@ static int ext4_statfs(struct dentry *dentry, struct kstatfs *buf)
  */
 static inline struct inode *dquot_to_inode(struct dquot *dquot)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " dquot_to_inode\n" );
+    }
 	return sb_dqopt(dquot->dq_sb)->files[dquot->dq_id.type];
 }
 
@@ -5448,6 +5703,9 @@ static int ext4_write_dquot(struct dquot *dquot)
 	handle_t *handle;
 	struct inode *inode;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_write_dquot\n" );
+    }
 	inode = dquot_to_inode(dquot);
 	handle = ext4_journal_start(inode, EXT4_HT_QUOTA,
 				    EXT4_QUOTA_TRANS_BLOCKS(dquot->dq_sb));
@@ -5465,6 +5723,9 @@ static int ext4_acquire_dquot(struct dquot *dquot)
 	int ret, err;
 	handle_t *handle;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_acquire_dquot \n" );
+    }
 	handle = ext4_journal_start(dquot_to_inode(dquot), EXT4_HT_QUOTA,
 				    EXT4_QUOTA_INIT_BLOCKS(dquot->dq_sb));
 	if (IS_ERR(handle))
@@ -5481,6 +5742,9 @@ static int ext4_release_dquot(struct dquot *dquot)
 	int ret, err;
 	handle_t *handle;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_release_dquot \n" );
+    }
 	handle = ext4_journal_start(dquot_to_inode(dquot), EXT4_HT_QUOTA,
 				    EXT4_QUOTA_DEL_BLOCKS(dquot->dq_sb));
 	if (IS_ERR(handle)) {
@@ -5500,6 +5764,9 @@ static int ext4_mark_dquot_dirty(struct dquot *dquot)
 	struct super_block *sb = dquot->dq_sb;
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_mark_dquot_dirty\n" );
+    }
 	/* Are we journaling quotas? */
 	if (ext4_has_feature_quota(sb) ||
 	    sbi->s_qf_names[USRQUOTA] || sbi->s_qf_names[GRPQUOTA]) {
@@ -5515,6 +5782,9 @@ static int ext4_write_info(struct super_block *sb, int type)
 	int ret, err;
 	handle_t *handle;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_write_info \n" );
+    }
 	/* Data block + inode block */
 	handle = ext4_journal_start(d_inode(sb->s_root), EXT4_HT_QUOTA, 2);
 	if (IS_ERR(handle))
@@ -5532,6 +5802,9 @@ static int ext4_write_info(struct super_block *sb, int type)
  */
 static int ext4_quota_on_mount(struct super_block *sb, int type)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_quota_on_mount \n" );
+    }
 	return dquot_quota_on_mount(sb, get_qf_name(sb, EXT4_SB(sb), type),
 					EXT4_SB(sb)->s_jquota_fmt, type);
 }
@@ -5540,6 +5813,9 @@ static void lockdep_set_quota_inode(struct inode *inode, int subclass)
 {
 	struct ext4_inode_info *ei = EXT4_I(inode);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " lockdep_set_quota_inode\n" );
+    }
 	/* The first argument of lockdep_set_subclass has to be
 	 * *exactly* the same as the argument to init_rwsem() --- in
 	 * this case, in init_once() --- or lockdep gets unhappy
@@ -5558,6 +5834,9 @@ static int ext4_quota_on(struct super_block *sb, int type, int format_id,
 {
 	int err;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_quota_on \n" );
+    }
 	if (!test_opt(sb, QUOTA))
 		return -EINVAL;
 
@@ -5637,6 +5916,9 @@ static int ext4_quota_enable(struct super_block *sb, int type, int format_id,
 		le32_to_cpu(EXT4_SB(sb)->s_es->s_prj_quota_inum)
 	};
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_quota_enable\n" );
+    }
 	BUG_ON(!ext4_has_feature_quota(sb));
 
 	if (!qf_inums[type])
@@ -5674,6 +5956,9 @@ static int ext4_enable_quotas(struct super_block *sb)
 		test_opt(sb, PRJQUOTA),
 	};
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_enable_quotas \n" );
+    }
 	sb_dqopt(sb)->flags |= DQUOT_QUOTA_SYS_FILE | DQUOT_NOLIST_DIRTY;
 	for (type = 0; type < EXT4_MAXQUOTAS; type++) {
 		if (qf_inums[type]) {
@@ -5701,6 +5986,9 @@ static int ext4_quota_off(struct super_block *sb, int type)
 	handle_t *handle;
 	int err;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_quota_off \n" );
+    }
 	/* Force all delayed allocation blocks to be allocated.
 	 * Caller already holds s_umount sem */
 	if (test_opt(sb, DELALLOC))
@@ -5752,6 +6040,9 @@ static ssize_t ext4_quota_read(struct super_block *sb, int type, char *data,
 	struct buffer_head *bh;
 	loff_t i_size = i_size_read(inode);
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_quota_read\n" );
+    }
 	if (off > i_size)
 		return 0;
 	if (off+len > i_size)
@@ -5788,6 +6079,9 @@ static ssize_t ext4_quota_write(struct super_block *sb, int type,
 	struct buffer_head *bh;
 	handle_t *handle = journal_current_handle();
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_quota_write\n" );
+    }
 	if (EXT4_SB(sb)->s_journal && !handle) {
 		ext4_msg(sb, KERN_WARNING, "Quota write (off=%llu, len=%llu)"
 			" cancelled because transaction is not started",
@@ -5840,6 +6134,9 @@ static int ext4_get_next_id(struct super_block *sb, struct kqid *qid)
 {
 	const struct quota_format_ops	*ops;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_get_next_id\n" );
+    }
 	if (!sb_has_quota_loaded(sb, qid->type))
 		return -ESRCH;
 	ops = sb_dqopt(sb)->ops[qid->type];
@@ -5852,6 +6149,9 @@ static int ext4_get_next_id(struct super_block *sb, struct kqid *qid)
 static struct dentry *ext4_mount(struct file_system_type *fs_type, int flags,
 		       const char *dev_name, void *data)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "ext4_mount \n" );
+    }
 	return mount_bdev(fs_type, flags, dev_name, data, ext4_fill_super);
 }
 
@@ -5859,6 +6159,9 @@ static struct dentry *ext4_mount(struct file_system_type *fs_type, int flags,
 static inline void register_as_ext2(void)
 {
 	int err = register_filesystem(&ext2_fs_type);
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "register_as_ext2 \n" );
+    }
 	if (err)
 		printk(KERN_WARNING
 		       "EXT4-fs: Unable to register as ext2 (%d)\n", err);
@@ -5866,11 +6169,17 @@ static inline void register_as_ext2(void)
 
 static inline void unregister_as_ext2(void)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " unregister_as_ext2\n" );
+    }
 	unregister_filesystem(&ext2_fs_type);
 }
 
 static inline int ext2_feature_set_ok(struct super_block *sb)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext2_feature_set_ok\n" );
+    }
 	if (ext4_has_unknown_ext2_incompat_features(sb))
 		return 0;
 	if (sb_rdonly(sb))
@@ -5888,6 +6197,9 @@ static inline int ext2_feature_set_ok(struct super_block *sb) { return 0; }
 static inline void register_as_ext3(void)
 {
 	int err = register_filesystem(&ext3_fs_type);
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO "register_as_ext3 \n" );
+    }
 	if (err)
 		printk(KERN_WARNING
 		       "EXT4-fs: Unable to register as ext3 (%d)\n", err);
@@ -5895,11 +6207,17 @@ static inline void register_as_ext3(void)
 
 static inline void unregister_as_ext3(void)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " unregister_as_ext3\n" );
+    }
 	unregister_filesystem(&ext3_fs_type);
 }
 
 static inline int ext3_feature_set_ok(struct super_block *sb)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext3_feature_set_ok\n" );
+    }
 	if (ext4_has_unknown_ext3_incompat_features(sb))
 		return 0;
 	if (!ext4_has_feature_journal(sb))
@@ -5927,6 +6245,9 @@ static int __init ext4_init_fs(void)
 {
 	int i, err;
 
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_init_fs\n" );
+    }
 	ratelimit_state_init(&ext4_mount_msg_ratelimit, 30 * HZ, 64);
 	ext4_li_info = NULL;
 	mutex_init(&ext4_li_mtx);
@@ -5986,6 +6307,9 @@ out5:
 
 static void __exit ext4_exit_fs(void)
 {
+    if( ext4_trace_enable && ext4_super_trace_enable){
+        printk(KERN_INFO " ext4_exit_fs\n" );
+    }
 	ext4_destroy_lazyinit_thread();
 	unregister_as_ext2();
 	unregister_as_ext3();
