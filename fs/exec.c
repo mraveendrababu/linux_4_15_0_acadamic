@@ -76,11 +76,17 @@
 
 int suid_dumpable = 0;
 
+extern int fs_trace_enable;
+extern int fs_exec_trace_enable;
+
 static LIST_HEAD(formats);
 static DEFINE_RWLOCK(binfmt_lock);
 
 void __register_binfmt(struct linux_binfmt * fmt, int insert)
 {
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "__register_binfmt \n" );
+    }
 	BUG_ON(!fmt);
 	if (WARN_ON(!fmt->load_binary))
 		return;
@@ -94,6 +100,9 @@ EXPORT_SYMBOL(__register_binfmt);
 
 void unregister_binfmt(struct linux_binfmt * fmt)
 {
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "unregister_binfmt \n" );
+    }
 	write_lock(&binfmt_lock);
 	list_del(&fmt->lh);
 	write_unlock(&binfmt_lock);
@@ -140,6 +149,9 @@ SYSCALL_DEFINE1(uselib, const char __user *, library)
 		.lookup_flags = LOOKUP_FOLLOW,
 	};
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "uselib \n" );
+    }
 	if (IS_ERR(tmp))
 		goto out;
 
@@ -194,6 +206,9 @@ static void acct_arg_size(struct linux_binprm *bprm, unsigned long pages)
 	struct mm_struct *mm = current->mm;
 	long diff = (long)(pages - bprm->vma_pages);
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "acct_arg_size \n" );
+    }
 	if (!mm || !diff)
 		return;
 
@@ -208,6 +223,9 @@ static struct page *get_arg_page(struct linux_binprm *bprm, unsigned long pos,
 	int ret;
 	unsigned int gup_flags = FOLL_FORCE;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " get_arg_page\n" );
+    }
 #ifdef CONFIG_STACK_GROWSUP
 	if (write) {
 		ret = expand_downwards(bprm->vma, pos);
@@ -291,6 +309,9 @@ static void free_arg_pages(struct linux_binprm *bprm)
 static void flush_arg_page(struct linux_binprm *bprm, unsigned long pos,
 		struct page *page)
 {
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "flush_arg_page \n" );
+    }
 	flush_cache_page(bprm->vma, pos, page_to_pfn(page));
 }
 
@@ -300,6 +321,9 @@ static int __bprm_mm_init(struct linux_binprm *bprm)
 	struct vm_area_struct *vma = NULL;
 	struct mm_struct *mm = bprm->mm;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "__bprm_mm_init \n" );
+    }
 	bprm->vma = vma = vm_area_alloc(mm);
 	if (!vma)
 		return -ENOMEM;
@@ -354,6 +378,9 @@ static struct page *get_arg_page(struct linux_binprm *bprm, unsigned long pos,
 {
 	struct page *page;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " get_arg_page\n" );
+    }
 	page = bprm->page[pos / PAGE_SIZE];
 	if (!page && write) {
 		page = alloc_page(GFP_HIGHUSER|__GFP_ZERO);
@@ -371,6 +398,9 @@ static void put_arg_page(struct page *page)
 
 static void free_arg_page(struct linux_binprm *bprm, int i)
 {
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " free_arg_page\n" );
+    }
 	if (bprm->page[i]) {
 		__free_page(bprm->page[i]);
 		bprm->page[i] = NULL;
@@ -414,6 +444,9 @@ static int bprm_mm_init(struct linux_binprm *bprm)
 	int err;
 	struct mm_struct *mm = NULL;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "bprm_mm_init \n" );
+    }
 	bprm->mm = mm = mm_alloc();
 	err = -ENOMEM;
 	if (!mm)
@@ -450,6 +483,9 @@ static const char __user *get_user_arg_ptr(struct user_arg_ptr argv, int nr)
 {
 	const char __user *native;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " get_user_arg_ptr\n" );
+    }
 #ifdef CONFIG_COMPAT
 	if (unlikely(argv.is_compat)) {
 		compat_uptr_t compat;
@@ -474,6 +510,9 @@ static int count(struct user_arg_ptr argv, int max)
 {
 	int i = 0;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " count\n" );
+    }
 	if (argv.ptr.native != NULL) {
 		for (;;) {
 			const char __user *p = get_user_arg_ptr(argv, i);
@@ -509,6 +548,9 @@ static int copy_strings(int argc, struct user_arg_ptr argv,
 	unsigned long kpos = 0;
 	int ret;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "copy_strings \n" );
+    }
 	while (argc-- > 0) {
 		const char __user *str;
 		int len;
@@ -596,6 +638,9 @@ int copy_strings_kernel(int argc, const char *const *__argv,
 			struct linux_binprm *bprm)
 {
 	int r;
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " copy_strings_kernel\n" );
+    }
 	mm_segment_t oldfs = get_fs();
 	struct user_arg_ptr argv = {
 		.ptr.native = (const char __user *const  __user *)__argv,
@@ -633,6 +678,9 @@ static int shift_arg_pages(struct vm_area_struct *vma, unsigned long shift)
 	unsigned long new_end = old_end - shift;
 	struct mmu_gather tlb;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " shift_arg_pages\n" );
+    }
 	BUG_ON(new_start > new_end);
 
 	/*
@@ -703,6 +751,9 @@ int setup_arg_pages(struct linux_binprm *bprm,
 	unsigned long stack_expand;
 	unsigned long rlim_stack;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " setup_arg_pages\n" );
+    }
 #ifdef CONFIG_STACK_GROWSUP
 	/* Limit stack size */
 	stack_base = rlimit_max(RLIMIT_STACK);
@@ -813,6 +864,9 @@ int transfer_args_to_stack(struct linux_binprm *bprm,
 	unsigned long index, stop, sp;
 	int ret = 0;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "transfer_args_to_stack \n" );
+    }
 	stop = bprm->p >> PAGE_SHIFT;
 	sp = *sp_location;
 
@@ -847,6 +901,9 @@ static struct file *do_open_execat(int fd, struct filename *name, int flags)
 		.lookup_flags = LOOKUP_FOLLOW,
 	};
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " do_open_execat\n" );
+    }
 	if ((flags & ~(AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH)) != 0)
 		return ERR_PTR(-EINVAL);
 	if (flags & AT_SYMLINK_NOFOLLOW)
@@ -887,6 +944,9 @@ struct file *open_exec(const char *name)
 	struct filename *filename = getname_kernel(name);
 	struct file *f = ERR_CAST(filename);
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " open_exec\n" );
+    }
 	if (!IS_ERR(filename)) {
 		f = do_open_execat(AT_FDCWD, filename, 0);
 		putname(filename);
@@ -902,6 +962,9 @@ int kernel_read_file(struct file *file, void **buf, loff_t *size,
 	ssize_t bytes = 0;
 	int ret;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " kernel_read_file\n" );
+    }
 	if (!S_ISREG(file_inode(file)->i_mode) || max_size < 0)
 		return -EINVAL;
 
@@ -971,6 +1034,9 @@ int kernel_read_file_from_path(const char *path, void **buf, loff_t *size,
 	struct file *file;
 	int ret;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "kernel_read_file_from_path \n" );
+    }
 	if (!path || !*path)
 		return -EINVAL;
 
@@ -990,6 +1056,9 @@ int kernel_read_file_from_fd(int fd, void **buf, loff_t *size, loff_t max_size,
 	struct fd f = fdget(fd);
 	int ret = -EBADF;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " kernel_read_file_from_fd\n" );
+    }
 	if (!f.file)
 		goto out;
 
@@ -1003,6 +1072,9 @@ EXPORT_SYMBOL_GPL(kernel_read_file_from_fd);
 ssize_t read_code(struct file *file, unsigned long addr, loff_t pos, size_t len)
 {
 	ssize_t res = vfs_read(file, (void __user *)addr, len, &pos);
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "read_code \n" );
+    }
 	if (res > 0)
 		flush_icache_range(addr, addr + len);
 	return res;
@@ -1014,6 +1086,9 @@ static int exec_mmap(struct mm_struct *mm)
 	struct task_struct *tsk;
 	struct mm_struct *old_mm, *active_mm;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "exec_mmap \n" );
+    }
 	/* Notify parent that we're no longer interested in the old VM */
 	tsk = current;
 	old_mm = current->mm;
@@ -1065,6 +1140,9 @@ static int de_thread(struct task_struct *tsk)
 	struct sighand_struct *oldsighand = tsk->sighand;
 	spinlock_t *lock = &oldsighand->siglock;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "de_thread \n" );
+    }
 	if (thread_group_empty(tsk))
 		goto no_thread_group;
 
@@ -1228,6 +1306,9 @@ killed:
 
 char *__get_task_comm(char *buf, size_t buf_size, struct task_struct *tsk)
 {
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " __get_task_comm\n" );
+    }
 	task_lock(tsk);
 	strncpy(buf, tsk->comm, buf_size);
 	task_unlock(tsk);
@@ -1259,6 +1340,9 @@ int flush_old_exec(struct linux_binprm * bprm)
 {
 	int retval;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "flush_old_exec \n" );
+    }
 	/*
 	 * Make sure we have a private signal table and that
 	 * we are unassociated from the previous thread group.
@@ -1313,6 +1397,9 @@ EXPORT_SYMBOL(flush_old_exec);
 void would_dump(struct linux_binprm *bprm, struct file *file)
 {
 	struct inode *inode = file_inode(file);
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "would_dump \n" );
+    }
 	if (inode_permission(inode, MAY_READ) < 0) {
 		struct user_namespace *old, *user_ns;
 		bprm->interp_flags |= BINPRM_FLAGS_ENFORCE_NONDUMP;
@@ -1333,6 +1420,9 @@ EXPORT_SYMBOL(would_dump);
 
 void setup_new_exec(struct linux_binprm * bprm)
 {
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "setup_new_exec \n" );
+    }
 	/*
 	 * Once here, prepare_binrpm() will not be called any more, so
 	 * the final state of setuid/setgid/fscaps can be merged into the
@@ -1396,6 +1486,9 @@ EXPORT_SYMBOL(setup_new_exec);
  */
 int prepare_bprm_creds(struct linux_binprm *bprm)
 {
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " prepare_bprm_creds\n" );
+    }
 	if (mutex_lock_interruptible(&current->signal->cred_guard_mutex))
 		return -ERESTARTNOINTR;
 
@@ -1409,6 +1502,9 @@ int prepare_bprm_creds(struct linux_binprm *bprm)
 
 static void free_bprm(struct linux_binprm *bprm)
 {
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " free_bprm\n" );
+    }
 	free_arg_pages(bprm);
 	if (bprm->cred) {
 		mutex_unlock(&current->signal->cred_guard_mutex);
@@ -1426,6 +1522,9 @@ static void free_bprm(struct linux_binprm *bprm)
 
 int bprm_change_interp(const char *interp, struct linux_binprm *bprm)
 {
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "bprm_change_interp \n" );
+    }
 	/* If a binfmt changed the interp, free it first. */
 	if (bprm->interp != bprm->filename)
 		kfree(bprm->interp);
@@ -1443,6 +1542,9 @@ void install_exec_creds(struct linux_binprm *bprm)
 {
 	security_bprm_committing_creds(bprm);
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " install_exec_creds\n" );
+    }
 	commit_creds(bprm->cred);
 	bprm->cred = NULL;
 
@@ -1474,6 +1576,9 @@ static void check_unsafe_exec(struct linux_binprm *bprm)
 	struct task_struct *p = current, *t;
 	unsigned n_fs;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "check_unsafe_exec \n" );
+    }
 	if (p->ptrace)
 		bprm->unsafe |= LSM_UNSAFE_PTRACE;
 
@@ -1508,6 +1613,9 @@ static void bprm_fill_uid(struct linux_binprm *bprm)
 	kuid_t uid;
 	kgid_t gid;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "bprm_fill_uid \n" );
+    }
 	/*
 	 * Since this can be called multiple times (via prepare_binprm),
 	 * we must clear any previous work done when setting set[ug]id
@@ -1564,6 +1672,9 @@ int prepare_binprm(struct linux_binprm *bprm)
 	int retval;
 	loff_t pos = 0;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "prepare_binprm \n" );
+    }
 	bprm_fill_uid(bprm);
 
 	/* fill in binprm security blob */
@@ -1590,6 +1701,9 @@ int remove_arg_zero(struct linux_binprm *bprm)
 	char *kaddr;
 	struct page *page;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " remove_arg_zero\n" );
+    }
 	if (!bprm->argc)
 		return 0;
 
@@ -1629,6 +1743,9 @@ int search_binary_handler(struct linux_binprm *bprm)
 	struct linux_binfmt *fmt;
 	int retval;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " search_binary_handler\n" );
+    }
 	/* This allows 4 levels of binfmt rewrites before failing hard. */
 	if (bprm->recursion_depth > 5)
 		return -ELOOP;
@@ -1681,6 +1798,9 @@ static int exec_binprm(struct linux_binprm *bprm)
 	pid_t old_pid, old_vpid;
 	int ret;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " exec_binprm\n" );
+    }
 	/* Need to fetch pid before load_binary changes it */
 	old_pid = current->pid;
 	rcu_read_lock();
@@ -1712,6 +1832,9 @@ static int do_execveat_common(int fd, struct filename *filename,
 	struct files_struct *displaced;
 	int retval;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " do_execveat_common\n" );
+    }
 	if (IS_ERR(filename))
 		return PTR_ERR(filename);
 
@@ -1854,6 +1977,9 @@ int do_execve(struct filename *filename,
 {
 	struct user_arg_ptr argv = { .ptr.native = __argv };
 	struct user_arg_ptr envp = { .ptr.native = __envp };
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " do_execve\n" );
+    }
 	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
 }
 
@@ -1865,6 +1991,9 @@ int do_execveat(int fd, struct filename *filename,
 	struct user_arg_ptr argv = { .ptr.native = __argv };
 	struct user_arg_ptr envp = { .ptr.native = __envp };
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " do_execveat\n" );
+    }
 	return do_execveat_common(fd, filename, argv, envp, flags);
 }
 
@@ -1881,6 +2010,9 @@ static int compat_do_execve(struct filename *filename,
 		.is_compat = true,
 		.ptr.compat = __envp,
 	};
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " compat_do_execve\n" );
+    }
 	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
 }
 
@@ -1897,6 +2029,9 @@ static int compat_do_execveat(int fd, struct filename *filename,
 		.is_compat = true,
 		.ptr.compat = __envp,
 	};
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " compat_do_execveat\n" );
+    }
 	return do_execveat_common(fd, filename, argv, envp, flags);
 }
 #endif
@@ -1905,6 +2040,9 @@ void set_binfmt(struct linux_binfmt *new)
 {
 	struct mm_struct *mm = current->mm;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " set_binfmt\n" );
+    }
 	if (mm->binfmt)
 		module_put(mm->binfmt->module);
 
@@ -1921,6 +2059,9 @@ void set_dumpable(struct mm_struct *mm, int value)
 {
 	unsigned long old, new;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO "set_dumpable \n" );
+    }
 	if (WARN_ON((unsigned)value > SUID_DUMP_ROOT))
 		return;
 
@@ -1935,6 +2076,9 @@ SYSCALL_DEFINE3(execve,
 		const char __user *const __user *, argv,
 		const char __user *const __user *, envp)
 {
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " execve\n" );
+    }
 	return do_execve(getname(filename), argv, envp);
 }
 
@@ -1946,6 +2090,9 @@ SYSCALL_DEFINE5(execveat,
 {
 	int lookup_flags = (flags & AT_EMPTY_PATH) ? LOOKUP_EMPTY : 0;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " execveat\n" );
+    }
 	return do_execveat(fd,
 			   getname_flags(filename, lookup_flags, NULL),
 			   argv, envp, flags);
@@ -1956,6 +2103,9 @@ COMPAT_SYSCALL_DEFINE3(execve, const char __user *, filename,
 	const compat_uptr_t __user *, argv,
 	const compat_uptr_t __user *, envp)
 {
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " execve\n" );
+    }
 	return compat_do_execve(getname(filename), argv, envp);
 }
 
@@ -1967,6 +2117,9 @@ COMPAT_SYSCALL_DEFINE5(execveat, int, fd,
 {
 	int lookup_flags = (flags & AT_EMPTY_PATH) ? LOOKUP_EMPTY : 0;
 
+    if (fs_trace_enable && fs_exec_trace_enable ){
+        printk(KERN_INFO " execveat\n" );
+    }
 	return compat_do_execveat(fd,
 				  getname_flags(filename, lookup_flags, NULL),
 				  argv, envp, flags);
