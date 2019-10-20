@@ -34,6 +34,8 @@
 
 #include <linux/uaccess.h>
 
+extern int fs_trace_enable;
+extern int fs_select_trace_enable;
 
 /*
  * Estimate expected accuracy in ns from a timeval.
@@ -54,6 +56,9 @@ static long __estimate_accuracy(struct timespec64 *tv)
 	long slack;
 	int divfactor = 1000;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " __estimate_accuracy\n" );
+    }
 	if (tv->tv_sec < 0)
 		return 0;
 
@@ -77,6 +82,9 @@ u64 select_estimate_accuracy(struct timespec64 *tv)
 	u64 ret;
 	struct timespec64 now;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "select_estimate_accuracy \n" );
+    }
 	/*
 	 * Realtime tasks get a slack of 0 for obvious reasons.
 	 */
@@ -131,6 +139,9 @@ EXPORT_SYMBOL(poll_initwait);
 
 static void free_poll_entry(struct poll_table_entry *entry)
 {
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " free_poll_entry\n" );
+    }
 	remove_wait_queue(entry->wait_address, &entry->wait);
 	fput(entry->filp);
 }
@@ -139,6 +150,9 @@ void poll_freewait(struct poll_wqueues *pwq)
 {
 	struct poll_table_page * p = pwq->table;
 	int i;
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "poll_freewait \n" );
+    }
 	for (i = 0; i < pwq->inline_index; i++)
 		free_poll_entry(pwq->inline_entries + i);
 	while (p) {
@@ -161,6 +175,9 @@ static struct poll_table_entry *poll_get_entry(struct poll_wqueues *p)
 {
 	struct poll_table_page *table = p->table;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " poll_get_entry\n" );
+    }
 	if (p->inline_index < N_INLINE_POLL_ENTRIES)
 		return p->inline_entries + p->inline_index++;
 
@@ -186,6 +203,9 @@ static int __pollwake(wait_queue_entry_t *wait, unsigned mode, int sync, void *k
 	struct poll_wqueues *pwq = wait->private;
 	DECLARE_WAITQUEUE(dummy_wait, pwq->polling_task);
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "__pollwake \n" );
+    }
 	/*
 	 * Although this function is called under waitqueue lock, LOCK
 	 * doesn't imply write barrier and the users expect write
@@ -211,6 +231,9 @@ static int pollwake(wait_queue_entry_t *wait, unsigned mode, int sync, void *key
 {
 	struct poll_table_entry *entry;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "pollwake \n" );
+    }
 	entry = container_of(wait, struct poll_table_entry, wait);
 	if (key && !((unsigned long)key & entry->key))
 		return 0;
@@ -223,6 +246,9 @@ static void __pollwait(struct file *filp, wait_queue_head_t *wait_address,
 {
 	struct poll_wqueues *pwq = container_of(p, struct poll_wqueues, pt);
 	struct poll_table_entry *entry = poll_get_entry(pwq);
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "__pollwait \n" );
+    }
 	if (!entry)
 		return;
 	entry->filp = get_file(filp);
@@ -238,6 +264,9 @@ int poll_schedule_timeout(struct poll_wqueues *pwq, int state,
 {
 	int rc = -EINTR;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "poll_schedule_timeout \n" );
+    }
 	set_current_state(state);
 	if (!pwq->triggered)
 		rc = schedule_hrtimeout_range(expires, slack, HRTIMER_MODE_ABS);
@@ -275,6 +304,9 @@ int poll_select_set_timeout(struct timespec64 *to, time64_t sec, long nsec)
 {
 	struct timespec64 ts = {.tv_sec = sec, .tv_nsec = nsec};
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "poll_select_set_timeout \n" );
+    }
 	if (!timespec64_valid(&ts))
 		return -EINVAL;
 
@@ -295,6 +327,9 @@ static int poll_select_copy_remaining(struct timespec64 *end_time,
 	struct timespec64 rts;
 	struct timeval rtv;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " poll_select_copy_remaining\n" );
+    }
 	if (!p)
 		return ret;
 
@@ -363,6 +398,9 @@ static inline
 int get_fd_set(unsigned long nr, void __user *ufdset, unsigned long *fdset)
 {
 	nr = FDS_BYTES(nr);
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "get_fd_set \n" );
+    }
 	if (ufdset)
 		return copy_from_user(fdset, ufdset, nr) ? -EFAULT : 0;
 
@@ -373,6 +411,9 @@ int get_fd_set(unsigned long nr, void __user *ufdset, unsigned long *fdset)
 static inline unsigned long __must_check
 set_fd_set(unsigned long nr, void __user *ufdset, unsigned long *fdset)
 {
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "set_fd_set \n" );
+    }
 	if (ufdset)
 		return __copy_to_user(ufdset, fdset, FDS_BYTES(nr));
 	return 0;
@@ -381,6 +422,9 @@ set_fd_set(unsigned long nr, void __user *ufdset, unsigned long *fdset)
 static inline
 void zero_fd_set(unsigned long nr, unsigned long *fdset)
 {
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "zero_fd_set \n" );
+    }
 	memset(fdset, 0, FDS_BYTES(nr));
 }
 
@@ -397,6 +441,9 @@ static int max_select_fd(unsigned long n, fd_set_bits *fds)
 	int max;
 	struct fdtable *fdt;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "max_select_fd \n" );
+    }
 	/* handle last in-complete long-word first */
 	set = ~(~0UL << (n & (BITS_PER_LONG-1)));
 	n /= BITS_PER_LONG;
@@ -440,6 +487,9 @@ static inline void wait_key_set(poll_table *wait, unsigned long in,
 				unsigned long out, unsigned long bit,
 				unsigned int ll_flag)
 {
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " wait_key_set\n" );
+    }
 	wait->_key = POLLEX_SET | ll_flag;
 	if (in & bit)
 		wait->_key |= POLLIN_SET;
@@ -457,6 +507,9 @@ static int do_select(int n, fd_set_bits *fds, struct timespec64 *end_time)
 	unsigned int busy_flag = net_busy_loop_on() ? POLL_BUSY_LOOP : 0;
 	unsigned long busy_start = 0;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " do_select\n" );
+    }
 	rcu_read_lock();
 	retval = max_select_fd(n, fds);
 	rcu_read_unlock();
@@ -606,6 +659,9 @@ int core_sys_select(int n, fd_set __user *inp, fd_set __user *outp,
 	/* Allocate small arguments on the stack to save memory and be faster */
 	long stack_fds[SELECT_STACK_ALLOC/sizeof(long)];
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " core_sys_select\n" );
+    }
 	ret = -EINVAL;
 	if (n < 0)
 		goto out_nofds;
@@ -681,6 +737,9 @@ SYSCALL_DEFINE5(select, int, n, fd_set __user *, inp, fd_set __user *, outp,
 	struct timeval tv;
 	int ret;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "select \n" );
+    }
 	if (tvp) {
 		if (copy_from_user(&tv, tvp, sizeof(tv)))
 			return -EFAULT;
@@ -706,6 +765,9 @@ static long do_pselect(int n, fd_set __user *inp, fd_set __user *outp,
 	struct timespec64 ts, end_time, *to = NULL;
 	int ret;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "do_pselect \n" );
+    }
 	if (tsp) {
 		if (get_timespec64(&ts, tsp))
 			return -EFAULT;
@@ -759,6 +821,9 @@ SYSCALL_DEFINE6(pselect6, int, n, fd_set __user *, inp, fd_set __user *, outp,
 	size_t sigsetsize = 0;
 	sigset_t __user *up = NULL;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " pselect6\n" );
+    }
 	if (sig) {
 		if (!access_ok(VERIFY_READ, sig, sizeof(void *)+sizeof(size_t))
 		    || __get_user(up, (sigset_t __user * __user *)sig)
@@ -781,6 +846,9 @@ SYSCALL_DEFINE1(old_select, struct sel_arg_struct __user *, arg)
 {
 	struct sel_arg_struct a;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " old_select\n" );
+    }
 	if (copy_from_user(&a, arg, sizeof(a)))
 		return -EFAULT;
 	return sys_select(a.n, a.inp, a.outp, a.exp, a.tvp);
@@ -809,6 +877,9 @@ static inline unsigned int do_pollfd(struct pollfd *pollfd, poll_table *pwait,
 	unsigned int mask;
 	int fd;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " do_pollfd\n" );
+    }
 	mask = 0;
 	fd = pollfd->fd;
 	if (fd >= 0) {
@@ -843,6 +914,9 @@ static int do_poll(struct poll_list *list, struct poll_wqueues *wait,
 	unsigned int busy_flag = net_busy_loop_on() ? POLL_BUSY_LOOP : 0;
 	unsigned long busy_start = 0;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "do_poll \n" );
+    }
 	/* Optimise the no-wait case */
 	if (end_time && !end_time->tv_sec && !end_time->tv_nsec) {
 		pt->_qproc = NULL;
@@ -935,6 +1009,9 @@ static int do_sys_poll(struct pollfd __user *ufds, unsigned int nfds,
  	struct poll_list *walk = head;
  	unsigned long todo = nfds;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " do_sys_poll\n" );
+    }
 	if (nfds > rlimit(RLIMIT_NOFILE))
 		return -EINVAL;
 
@@ -994,6 +1071,9 @@ static long do_restart_poll(struct restart_block *restart_block)
 	struct timespec64 *to = NULL, end_time;
 	int ret;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " do_restart_poll\n" );
+    }
 	if (restart_block->poll.has_timeout) {
 		end_time.tv_sec = restart_block->poll.tv_sec;
 		end_time.tv_nsec = restart_block->poll.tv_nsec;
@@ -1015,6 +1095,9 @@ SYSCALL_DEFINE3(poll, struct pollfd __user *, ufds, unsigned int, nfds,
 	struct timespec64 end_time, *to = NULL;
 	int ret;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " poll\n" );
+    }
 	if (timeout_msecs >= 0) {
 		to = &end_time;
 		poll_select_set_timeout(to, timeout_msecs / MSEC_PER_SEC,
@@ -1051,6 +1134,9 @@ SYSCALL_DEFINE5(ppoll, struct pollfd __user *, ufds, unsigned int, nfds,
 	struct timespec64 ts, end_time, *to = NULL;
 	int ret;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " ppoll\n" );
+    }
 	if (tsp) {
 		if (get_timespec64(&ts, tsp))
 			return -EFAULT;
@@ -1103,6 +1189,9 @@ int compat_poll_select_copy_remaining(struct timespec64 *end_time, void __user *
 {
 	struct timespec64 ts;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "compat_poll_select_copy_remaining \n" );
+    }
 	if (!p)
 		return ret;
 
@@ -1152,6 +1241,9 @@ static
 int compat_get_fd_set(unsigned long nr, compat_ulong_t __user *ufdset,
 			unsigned long *fdset)
 {
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " compat_get_fd_set\n" );
+    }
 	if (ufdset) {
 		return compat_get_bitmap(fdset, ufdset, nr);
 	} else {
@@ -1164,6 +1256,9 @@ static
 int compat_set_fd_set(unsigned long nr, compat_ulong_t __user *ufdset,
 		      unsigned long *fdset)
 {
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO "compat_set_fd_set \n" );
+    }
 	if (!ufdset)
 		return 0;
 	return compat_put_bitmap(ufdset, fdset, nr);
@@ -1193,6 +1288,9 @@ static int compat_core_sys_select(int n, compat_ulong_t __user *inp,
 	struct fdtable *fdt;
 	long stack_fds[SELECT_STACK_ALLOC/sizeof(long)];
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " compat_core_sys_select\n" );
+    }
 	if (n < 0)
 		goto out_nofds;
 
@@ -1262,6 +1360,9 @@ COMPAT_SYSCALL_DEFINE5(select, int, n, compat_ulong_t __user *, inp,
 	struct compat_timeval tv;
 	int ret;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " select\n" );
+    }
 	if (tvp) {
 		if (copy_from_user(&tv, tvp, sizeof(tv)))
 			return -EFAULT;
@@ -1291,6 +1392,9 @@ COMPAT_SYSCALL_DEFINE1(old_select, struct compat_sel_arg_struct __user *, arg)
 {
 	struct compat_sel_arg_struct a;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " old_select\n" );
+    }
 	if (copy_from_user(&a, arg, sizeof(a)))
 		return -EFAULT;
 	return compat_sys_select(a.n, compat_ptr(a.inp), compat_ptr(a.outp),
@@ -1306,6 +1410,9 @@ static long do_compat_pselect(int n, compat_ulong_t __user *inp,
 	struct timespec64 ts, end_time, *to = NULL;
 	int ret;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " do_compat_pselect\n" );
+    }
 	if (tsp) {
 		if (compat_get_timespec64(&ts, tsp))
 			return -EFAULT;
@@ -1352,6 +1459,9 @@ COMPAT_SYSCALL_DEFINE6(pselect6, int, n, compat_ulong_t __user *, inp,
 	compat_size_t sigsetsize = 0;
 	compat_uptr_t up = 0;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " pselect6\n" );
+    }
 	if (sig) {
 		if (!access_ok(VERIFY_READ, sig,
 				sizeof(compat_uptr_t)+sizeof(compat_size_t)) ||
@@ -1372,6 +1482,9 @@ COMPAT_SYSCALL_DEFINE5(ppoll, struct pollfd __user *, ufds,
 	struct timespec64 ts, end_time, *to = NULL;
 	int ret;
 
+    if( fs_trace_enable && fs_select_trace_enable ){
+        printk(KERN_INFO " ppoll\n" );
+    }
 	if (tsp) {
 		if (compat_get_timespec64(&ts, tsp))
 			return -EFAULT;
