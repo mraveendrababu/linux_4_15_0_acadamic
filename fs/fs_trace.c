@@ -48,6 +48,7 @@ int fs_select_trace_enable=0;
 int fs_stack_trace_enable=0;
 int fs_stat_trace_enable=0;
 int fs_statfs_trace_enable=0;
+int fs_timerfd_trace_enable=0;
 
 EXPORT_SYMBOL(fs_trace_enable);
 EXPORT_SYMBOL(fs_open_trace_enable);
@@ -95,6 +96,7 @@ EXPORT_SYMBOL(fs_select_trace_enable);
 EXPORT_SYMBOL(fs_stack_trace_enable);
 EXPORT_SYMBOL(fs_stat_trace_enable);
 EXPORT_SYMBOL(fs_statfs_trace_enable);
+EXPORT_SYMBOL(fs_timerfd_trace_enable);
 
 
 int fs_trace_dummy(void){
