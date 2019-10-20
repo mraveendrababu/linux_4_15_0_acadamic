@@ -18,6 +18,9 @@
 #include "pnode.h"
 #include "internal.h"
 
+extern int fs_trace_enable;
+extern int fs_proc_namespace_trace_enable;
+
 static unsigned mounts_poll(struct file *file, poll_table *wait)
 {
 	struct seq_file *m = file->private_data;
@@ -26,6 +29,9 @@ static unsigned mounts_poll(struct file *file, poll_table *wait)
 	unsigned res = POLLIN | POLLRDNORM;
 	int event;
 
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO "mounts_poll \n" );
+    }
 	poll_wait(file, &p->ns->poll, wait);
 
 	event = READ_ONCE(ns->event);
@@ -53,6 +59,9 @@ static int show_sb_opts(struct seq_file *m, struct super_block *sb)
 	};
 	const struct proc_fs_info *fs_infop;
 
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO " show_sb_opts\n" );
+    }
 	for (fs_infop = fs_info; fs_infop->flag; fs_infop++) {
 		if (sb->s_flags & fs_infop->flag)
 			seq_puts(m, fs_infop->str);
@@ -74,6 +83,9 @@ static void show_mnt_opts(struct seq_file *m, struct vfsmount *mnt)
 	};
 	const struct proc_fs_info *fs_infop;
 
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO " show_mnt_opts\n" );
+    }
 	for (fs_infop = mnt_info; fs_infop->flag; fs_infop++) {
 		if (mnt->mnt_flags & fs_infop->flag)
 			seq_puts(m, fs_infop->str);
@@ -87,6 +99,9 @@ static inline void mangle(struct seq_file *m, const char *s)
 
 static void show_type(struct seq_file *m, struct super_block *sb)
 {
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO " show_type\n" );
+    }
 	mangle(m, sb->s_type->name);
 	if (sb->s_subtype && sb->s_subtype[0]) {
 		seq_putc(m, '.');
@@ -102,6 +117,9 @@ static int show_vfsmnt(struct seq_file *m, struct vfsmount *mnt)
 	struct super_block *sb = mnt_path.dentry->d_sb;
 	int err;
 
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO "show_vfsmnt \n" );
+    }
 	if (sb->s_op->show_devname) {
 		err = sb->s_op->show_devname(m, mnt_path.dentry);
 		if (err)
@@ -136,6 +154,9 @@ static int show_mountinfo(struct seq_file *m, struct vfsmount *mnt)
 	struct path mnt_path = { .dentry = mnt->mnt_root, .mnt = mnt };
 	int err;
 
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO "show_mountinfo \n" );
+    }
 	seq_printf(m, "%i %i %u:%u ", r->mnt_id, r->mnt_parent->mnt_id,
 		   MAJOR(sb->s_dev), MINOR(sb->s_dev));
 	if (sb->s_op->show_path) {
@@ -198,6 +219,9 @@ static int show_vfsstat(struct seq_file *m, struct vfsmount *mnt)
 	struct super_block *sb = mnt_path.dentry->d_sb;
 	int err;
 
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO "show_vfsstat \n" );
+    }
 	/* device */
 	if (sb->s_op->show_devname) {
 		seq_puts(m, "device ");
@@ -246,6 +270,9 @@ static int mounts_open_common(struct inode *inode, struct file *file,
 	struct seq_file *m;
 	int ret = -EINVAL;
 
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO "mounts_open_common \n" );
+    }
 	if (!task)
 		goto err;
 
@@ -295,6 +322,9 @@ static int mounts_release(struct inode *inode, struct file *file)
 {
 	struct seq_file *m = file->private_data;
 	struct proc_mounts *p = m->private;
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO "mounts_release \n" );
+    }
 	path_put(&p->root);
 	put_mnt_ns(p->ns);
 	return seq_release_private(inode, file);
@@ -302,16 +332,25 @@ static int mounts_release(struct inode *inode, struct file *file)
 
 static int mounts_open(struct inode *inode, struct file *file)
 {
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO " mounts_open\n" );
+    }
 	return mounts_open_common(inode, file, show_vfsmnt);
 }
 
 static int mountinfo_open(struct inode *inode, struct file *file)
 {
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO " mountinfo_open\n" );
+    }
 	return mounts_open_common(inode, file, show_mountinfo);
 }
 
 static int mountstats_open(struct inode *inode, struct file *file)
 {
+    if( fs_trace_enable && fs_proc_namespace_trace_enable ){
+        printk(KERN_INFO " mountstats_open\n" );
+    }
 	return mounts_open_common(inode, file, show_vfsstat);
 }
 
