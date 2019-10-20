@@ -46,6 +46,7 @@ int fs_pnode_trace_enable=0;
 int fs_proc_namespace_trace_enable=0;
 int fs_select_trace_enable=0;
 int fs_stack_trace_enable=0;
+int fs_stat_trace_enable=0;
 
 EXPORT_SYMBOL(fs_trace_enable);
 EXPORT_SYMBOL(fs_open_trace_enable);
@@ -91,6 +92,7 @@ EXPORT_SYMBOL(fs_pnode_trace_enable);
 EXPORT_SYMBOL(fs_proc_namespace_trace_enable);
 EXPORT_SYMBOL(fs_select_trace_enable);
 EXPORT_SYMBOL(fs_stack_trace_enable);
+EXPORT_SYMBOL(fs_stat_trace_enable);
 
 
 int fs_trace_dummy(void){
