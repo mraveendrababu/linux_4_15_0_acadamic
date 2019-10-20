@@ -29,6 +29,9 @@
 
 #include "internal.h"
 
+extern int fs_trace_enable;
+extern int fs_pipe_trace_enable;
+
 /*
  * The max size that a non-root user is allowed to grow the pipe. Can
  * be set by root in /proc/sys/fs/pipe-max-size
@@ -63,12 +66,18 @@ unsigned long pipe_user_pages_soft = PIPE_DEF_BUFFERS * INR_OPEN_CUR;
 
 static void pipe_lock_nested(struct pipe_inode_info *pipe, int subclass)
 {
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " pipe_lock_nested\n" );
+    }
 	if (pipe->files)
 		mutex_lock_nested(&pipe->mutex, subclass);
 }
 
 void pipe_lock(struct pipe_inode_info *pipe)
 {
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "pipe_lock \n" );
+    }
 	/*
 	 * pipe_lock() nests non-pipe inode locks (for writing to a file)
 	 */
@@ -78,6 +87,9 @@ EXPORT_SYMBOL(pipe_lock);
 
 void pipe_unlock(struct pipe_inode_info *pipe)
 {
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "pipe_unlock \n" );
+    }
 	if (pipe->files)
 		mutex_unlock(&pipe->mutex);
 }
@@ -85,17 +97,26 @@ EXPORT_SYMBOL(pipe_unlock);
 
 static inline void __pipe_lock(struct pipe_inode_info *pipe)
 {
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "__pipe_lock \n" );
+    }
 	mutex_lock_nested(&pipe->mutex, I_MUTEX_PARENT);
 }
 
 static inline void __pipe_unlock(struct pipe_inode_info *pipe)
 {
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " __pipe_unlock\n" );
+    }
 	mutex_unlock(&pipe->mutex);
 }
 
 void pipe_double_lock(struct pipe_inode_info *pipe1,
 		      struct pipe_inode_info *pipe2)
 {
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "pipe_double_lock \n" );
+    }
 	BUG_ON(pipe1 == pipe2);
 
 	if (pipe1 < pipe2) {
@@ -112,6 +133,9 @@ void pipe_wait(struct pipe_inode_info *pipe)
 {
 	DEFINE_WAIT(wait);
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "pipe_wait \n" );
+    }
 	/*
 	 * Pipes are system-local resources, so sleeping on them
 	 * is considered a noninteractive wait:
@@ -123,11 +147,15 @@ void pipe_wait(struct pipe_inode_info *pipe)
 	pipe_lock(pipe);
 }
 
+
 static void anon_pipe_buf_release(struct pipe_inode_info *pipe,
 				  struct pipe_buffer *buf)
 {
 	struct page *page = buf->page;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "anon_pipe_buf_release \n" );
+    }
 	/*
 	 * If nobody else uses this page, and we don't already have a
 	 * temporary page, let's keep track of it as a one-deep
@@ -144,6 +172,9 @@ static int anon_pipe_buf_steal(struct pipe_inode_info *pipe,
 {
 	struct page *page = buf->page;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " anon_pipe_buf_steal\n" );
+    }
 	if (page_count(page) == 1) {
 		if (memcg_kmem_enabled())
 			memcg_kmem_uncharge(page, 0);
@@ -170,6 +201,9 @@ int generic_pipe_buf_steal(struct pipe_inode_info *pipe,
 {
 	struct page *page = buf->page;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "generic_pipe_buf_steal \n" );
+    }
 	/*
 	 * A reference of one is golden, that means that the owner of this
 	 * page is the only one holding a reference to it. lock the page
@@ -196,6 +230,9 @@ EXPORT_SYMBOL(generic_pipe_buf_steal);
  */
 void generic_pipe_buf_get(struct pipe_inode_info *pipe, struct pipe_buffer *buf)
 {
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "generic_pipe_buf_get \n" );
+    }
 	get_page(buf->page);
 }
 EXPORT_SYMBOL(generic_pipe_buf_get);
@@ -227,6 +264,9 @@ EXPORT_SYMBOL(generic_pipe_buf_confirm);
 void generic_pipe_buf_release(struct pipe_inode_info *pipe,
 			      struct pipe_buffer *buf)
 {
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " generic_pipe_buf_release\n" );
+    }
 	put_page(buf->page);
 }
 EXPORT_SYMBOL(generic_pipe_buf_release);
@@ -256,6 +296,9 @@ pipe_read(struct kiocb *iocb, struct iov_iter *to)
 	int do_wakeup;
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " pipe_read\n" );
+    }
 	/* Null read succeeds. */
 	if (unlikely(total_len == 0))
 		return 0;
@@ -364,6 +407,9 @@ pipe_write(struct kiocb *iocb, struct iov_iter *from)
 	size_t total_len = iov_iter_count(from);
 	ssize_t chars;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "pipe_write \n" );
+    }
 	/* Null write succeeds. */
 	if (unlikely(total_len == 0))
 		return 0;
@@ -496,6 +542,9 @@ static long pipe_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	struct pipe_inode_info *pipe = filp->private_data;
 	int count, buf, nrbufs;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " pipe_ioctl\n" );
+    }
 	switch (cmd) {
 		case FIONREAD:
 			__pipe_lock(pipe);
@@ -522,6 +571,9 @@ pipe_poll(struct file *filp, poll_table *wait)
 	struct pipe_inode_info *pipe = filp->private_data;
 	int nrbufs;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "pipe_poll \n" );
+    }
 	poll_wait(filp, &pipe->wait, wait);
 
 	/* Reading only -- no need for acquiring the semaphore.  */
@@ -550,6 +602,9 @@ static void put_pipe_info(struct inode *inode, struct pipe_inode_info *pipe)
 {
 	int kill = 0;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " put_pipe_info\n" );
+    }
 	spin_lock(&inode->i_lock);
 	if (!--pipe->files) {
 		inode->i_pipe = NULL;
@@ -566,6 +621,9 @@ pipe_release(struct inode *inode, struct file *file)
 {
 	struct pipe_inode_info *pipe = file->private_data;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "pipe_release \n" );
+    }
 	__pipe_lock(pipe);
 	if (file->f_mode & FMODE_READ)
 		pipe->readers--;
@@ -589,6 +647,9 @@ pipe_fasync(int fd, struct file *filp, int on)
 	struct pipe_inode_info *pipe = filp->private_data;
 	int retval = 0;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "pipe_fasync \n" );
+    }
 	__pipe_lock(pipe);
 	if (filp->f_mode & FMODE_READ)
 		retval = fasync_helper(fd, filp, on, &pipe->fasync_readers);
@@ -630,6 +691,9 @@ struct pipe_inode_info *alloc_pipe_info(void)
 	struct user_struct *user = get_current_user();
 	unsigned long user_bufs;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " alloc_pipe_info\n" );
+    }
 	pipe = kzalloc(sizeof(struct pipe_inode_info), GFP_KERNEL_ACCOUNT);
 	if (pipe == NULL)
 		goto out_free_uid;
@@ -671,6 +735,9 @@ void free_pipe_info(struct pipe_inode_info *pipe)
 {
 	int i;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "free_pipe_info \n" );
+    }
 	(void) account_pipe_buffers(pipe->user, pipe->buffers, 0);
 	free_uid(pipe->user);
 	for (i = 0; i < pipe->buffers; i++) {
@@ -691,6 +758,9 @@ static struct vfsmount *pipe_mnt __read_mostly;
  */
 static char *pipefs_dname(struct dentry *dentry, char *buffer, int buflen)
 {
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " pipefs_dname\n" );
+    }
 	return dynamic_dname(dentry, buffer, buflen, "pipe:[%lu]",
 				d_inode(dentry)->i_ino);
 }
@@ -704,6 +774,9 @@ static struct inode * get_pipe_inode(void)
 	struct inode *inode = new_inode_pseudo(pipe_mnt->mnt_sb);
 	struct pipe_inode_info *pipe;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "get_pipe_inode \n" );
+    }
 	if (!inode)
 		goto fail_inode;
 
@@ -746,6 +819,9 @@ int create_pipe_files(struct file **res, int flags)
 	struct file *f;
 	struct path path;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "create_pipe_files \n" );
+    }
 	if (!inode)
 		return -ENFILE;
 
@@ -796,6 +872,9 @@ static int __do_pipe_flags(int *fd, struct file **files, int flags)
 	int error;
 	int fdw, fdr;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " __do_pipe_flags\n" );
+    }
 	if (flags & ~(O_CLOEXEC | O_NONBLOCK | O_DIRECT))
 		return -EINVAL;
 
@@ -830,6 +909,9 @@ int do_pipe_flags(int *fd, int flags)
 {
 	struct file *files[2];
 	int error = __do_pipe_flags(fd, files, flags);
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "do_pipe_flags \n" );
+    }
 	if (!error) {
 		fd_install(fd[0], files[0]);
 		fd_install(fd[1], files[1]);
@@ -847,6 +929,9 @@ SYSCALL_DEFINE2(pipe2, int __user *, fildes, int, flags)
 	int fd[2];
 	int error;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " pipe2\n" );
+    }
 	error = __do_pipe_flags(fd, files, flags);
 	if (!error) {
 		if (unlikely(copy_to_user(fildes, fd, sizeof(fd)))) {
@@ -865,6 +950,9 @@ SYSCALL_DEFINE2(pipe2, int __user *, fildes, int, flags)
 
 SYSCALL_DEFINE1(pipe, int __user *, fildes)
 {
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "pipe \n" );
+    }
 	return sys_pipe2(fildes, 0);
 }
 
@@ -872,6 +960,9 @@ static int wait_for_partner(struct pipe_inode_info *pipe, unsigned int *cnt)
 {
 	int cur = *cnt;	
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "wait_for_partner \n" );
+    }
 	while (cur == *cnt) {
 		pipe_wait(pipe);
 		if (signal_pending(current))
@@ -891,6 +982,9 @@ static int fifo_open(struct inode *inode, struct file *filp)
 	bool is_pipe = inode->i_sb->s_magic == PIPEFS_MAGIC;
 	int ret;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "fifo_open \n" );
+    }
 	filp->f_version = 0;
 
 	spin_lock(&inode->i_lock);
@@ -1029,6 +1123,9 @@ unsigned int round_pipe_size(unsigned int size)
 {
 	unsigned long nr_pages;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " round_pipe_size\n" );
+    }
 	if (size < pipe_min_size)
 		size = pipe_min_size;
 
@@ -1050,6 +1147,9 @@ static long pipe_set_size(struct pipe_inode_info *pipe, unsigned long arg)
 	unsigned long user_bufs;
 	long ret = 0;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " pipe_set_size\n" );
+    }
 	size = round_pipe_size(arg);
 	if (size == 0)
 		return -EINVAL;
@@ -1136,6 +1236,9 @@ out_revert_acct:
 int pipe_proc_fn(struct ctl_table *table, int write, void __user *buf,
 		 size_t *lenp, loff_t *ppos)
 {
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " pipe_proc_fn\n" );
+    }
 	return proc_dopipe_max_size(table, write, buf, lenp, ppos);
 }
 
@@ -1154,6 +1257,9 @@ long pipe_fcntl(struct file *file, unsigned int cmd, unsigned long arg)
 	struct pipe_inode_info *pipe;
 	long ret;
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO " pipe_fcntl\n" );
+    }
 	pipe = get_pipe_info(file);
 	if (!pipe)
 		return -EBADF;
@@ -1204,6 +1310,9 @@ static int __init init_pipe_fs(void)
 {
 	int err = register_filesystem(&pipe_fs_type);
 
+    if( fs_trace_enable && fs_pipe_trace_enable ){
+        printk(KERN_INFO "init_pipe_fs \n" );
+    }
 	if (!err) {
 		pipe_mnt = kern_mount(&pipe_fs_type);
 		if (IS_ERR(pipe_mnt)) {

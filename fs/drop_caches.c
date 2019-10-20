@@ -52,6 +52,7 @@ int drop_caches_sysctl_handler(struct ctl_table *table, int write,
 
     if(fs_trace_enable && fs_dropcaches_trace_enable ){
         printk(KERN_INFO "drop_caches_sysctl_handler \n" );
+    }
 	ret = proc_dointvec_minmax(table, write, buffer, length, ppos);
 	if (ret)
 		return ret;
