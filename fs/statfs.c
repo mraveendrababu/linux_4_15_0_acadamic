@@ -11,10 +11,16 @@
 #include <linux/compat.h>
 #include "internal.h"
 
+extern int fs_trace_enable;
+extern int fs_statfs_trace_enable;
+
 static int flags_by_mnt(int mnt_flags)
 {
 	int flags = 0;
 
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " flags_by_mnt\n" );
+    }
 	if (mnt_flags & MNT_READONLY)
 		flags |= ST_RDONLY;
 	if (mnt_flags & MNT_NOSUID)
@@ -35,6 +41,9 @@ static int flags_by_mnt(int mnt_flags)
 static int flags_by_sb(int s_flags)
 {
 	int flags = 0;
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO "flags_by_sb \n" );
+    }
 	if (s_flags & SB_SYNCHRONOUS)
 		flags |= ST_SYNCHRONOUS;
 	if (s_flags & SB_MANDLOCK)
@@ -46,6 +55,9 @@ static int flags_by_sb(int s_flags)
 
 static int calculate_f_flags(struct vfsmount *mnt)
 {
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " calculate_f_flags\n" );
+    }
 	return ST_VALID | flags_by_mnt(mnt->mnt_flags) |
 		flags_by_sb(mnt->mnt_sb->s_flags);
 }
@@ -54,6 +66,9 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
 {
 	int retval;
 
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " statfs_by_dentry\n" );
+    }
 	if (!dentry->d_sb->s_op->statfs)
 		return -ENOSYS;
 
@@ -71,6 +86,9 @@ int vfs_statfs(const struct path *path, struct kstatfs *buf)
 {
 	int error;
 
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " vfs_statfs\n" );
+    }
 	error = statfs_by_dentry(path->dentry, buf);
 	if (!error)
 		buf->f_flags = calculate_f_flags(path->mnt);
@@ -83,6 +101,9 @@ int user_statfs(const char __user *pathname, struct kstatfs *st)
 	struct path path;
 	int error;
 	unsigned int lookup_flags = LOOKUP_FOLLOW|LOOKUP_AUTOMOUNT;
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO "user_statfs \n" );
+    }
 retry:
 	error = user_path_at(AT_FDCWD, pathname, lookup_flags, &path);
 	if (!error) {
@@ -100,6 +121,9 @@ int fd_statfs(int fd, struct kstatfs *st)
 {
 	struct fd f = fdget_raw(fd);
 	int error = -EBADF;
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO "fd_statfs \n" );
+    }
 	if (f.file) {
 		error = vfs_statfs(&f.file->f_path, st);
 		fdput(f);
@@ -111,6 +135,9 @@ static int do_statfs_native(struct kstatfs *st, struct statfs __user *p)
 {
 	struct statfs buf;
 
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " do_statfs_native\n" );
+    }
 	if (sizeof(buf) == sizeof(*st))
 		memcpy(&buf, st, sizeof(*st));
 	else {
@@ -152,6 +179,9 @@ static int do_statfs_native(struct kstatfs *st, struct statfs __user *p)
 static int do_statfs64(struct kstatfs *st, struct statfs64 __user *p)
 {
 	struct statfs64 buf;
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " do_statfs64\n" );
+    }
 	if (sizeof(buf) == sizeof(*st))
 		memcpy(&buf, st, sizeof(*st));
 	else {
@@ -177,6 +207,9 @@ SYSCALL_DEFINE2(statfs, const char __user *, pathname, struct statfs __user *, b
 {
 	struct kstatfs st;
 	int error = user_statfs(pathname, &st);
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " statfs\n" );
+    }
 	if (!error)
 		error = do_statfs_native(&st, buf);
 	return error;
@@ -186,6 +219,10 @@ SYSCALL_DEFINE3(statfs64, const char __user *, pathname, size_t, sz, struct stat
 {
 	struct kstatfs st;
 	int error;
+
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO "statfs64 \n" );
+    }
 	if (sz != sizeof(*buf))
 		return -EINVAL;
 	error = user_statfs(pathname, &st);
@@ -198,6 +235,9 @@ SYSCALL_DEFINE2(fstatfs, unsigned int, fd, struct statfs __user *, buf)
 {
 	struct kstatfs st;
 	int error = fd_statfs(fd, &st);
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " fstatfs\n" );
+    }
 	if (!error)
 		error = do_statfs_native(&st, buf);
 	return error;
@@ -208,6 +248,9 @@ SYSCALL_DEFINE3(fstatfs64, unsigned int, fd, size_t, sz, struct statfs64 __user 
 	struct kstatfs st;
 	int error;
 
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " fstatfs64\n" );
+    }
 	if (sz != sizeof(*buf))
 		return -EINVAL;
 
@@ -221,6 +264,9 @@ static int vfs_ustat(dev_t dev, struct kstatfs *sbuf)
 {
 	struct super_block *s = user_get_super(dev);
 	int err;
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " vfs_ustat\n" );
+    }
 	if (!s)
 		return -EINVAL;
 
@@ -234,6 +280,9 @@ SYSCALL_DEFINE2(ustat, unsigned, dev, struct ustat __user *, ubuf)
 	struct ustat tmp;
 	struct kstatfs sbuf;
 	int err = vfs_ustat(new_decode_dev(dev), &sbuf);
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO "ustat \n" );
+    }
 	if (err)
 		return err;
 
@@ -248,6 +297,9 @@ SYSCALL_DEFINE2(ustat, unsigned, dev, struct ustat __user *, ubuf)
 static int put_compat_statfs(struct compat_statfs __user *ubuf, struct kstatfs *kbuf)
 {
 	struct compat_statfs buf;
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO "put_compat_statfs \n" );
+    }
 	if (sizeof ubuf->f_blocks == 4) {
 		if ((kbuf->f_blocks | kbuf->f_bfree | kbuf->f_bavail |
 		     kbuf->f_bsize | kbuf->f_frsize) & 0xffffffff00000000ULL)
@@ -287,6 +339,9 @@ COMPAT_SYSCALL_DEFINE2(statfs, const char __user *, pathname, struct compat_stat
 {
 	struct kstatfs tmp;
 	int error = user_statfs(pathname, &tmp);
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " statfs\n" );
+    }
 	if (!error)
 		error = put_compat_statfs(buf, &tmp);
 	return error;
@@ -296,6 +351,9 @@ COMPAT_SYSCALL_DEFINE2(fstatfs, unsigned int, fd, struct compat_statfs __user *,
 {
 	struct kstatfs tmp;
 	int error = fd_statfs(fd, &tmp);
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO "fstatfs \n" );
+    }
 	if (!error)
 		error = put_compat_statfs(buf, &tmp);
 	return error;
@@ -304,6 +362,9 @@ COMPAT_SYSCALL_DEFINE2(fstatfs, unsigned int, fd, struct compat_statfs __user *,
 static int put_compat_statfs64(struct compat_statfs64 __user *ubuf, struct kstatfs *kbuf)
 {
 	struct compat_statfs64 buf;
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " put_compat_statfs64\n" );
+    }
 	if (sizeof(ubuf->f_bsize) == 4) {
 		if ((kbuf->f_type | kbuf->f_bsize | kbuf->f_namelen |
 		     kbuf->f_frsize | kbuf->f_flags) & 0xffffffff00000000ULL)
@@ -340,6 +401,9 @@ COMPAT_SYSCALL_DEFINE3(statfs64, const char __user *, pathname, compat_size_t, s
 	struct kstatfs tmp;
 	int error;
 
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " statfs64\n" );
+    }
 	if (sz != sizeof(*buf))
 		return -EINVAL;
 
@@ -354,6 +418,9 @@ COMPAT_SYSCALL_DEFINE3(fstatfs64, unsigned int, fd, compat_size_t, sz, struct co
 	struct kstatfs tmp;
 	int error;
 
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO " fstatfs64\n" );
+    }
 	if (sz != sizeof(*buf))
 		return -EINVAL;
 
@@ -373,6 +440,9 @@ COMPAT_SYSCALL_DEFINE2(ustat, unsigned, dev, struct compat_ustat __user *, u)
 	struct compat_ustat tmp;
 	struct kstatfs sbuf;
 	int err = vfs_ustat(new_decode_dev(dev), &sbuf);
+    if(fs_trace_enable && fs_statfs_trace_enable ){
+        printk(KERN_INFO "ustat \n" );
+    }
 	if (err)
 		return err;
 
