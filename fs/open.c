@@ -1291,7 +1291,6 @@ SYSCALL_DEFINE1(close, unsigned int, fd)
     if( fs_trace_enable && fs_open_trace_enable ){
         printk(KERN_INFO " close  \n" );
     }
-    printk(KERN_INFO " close  \n" );
 	/* can't restart close syscall because file table entry was cleared */
 	if (unlikely(retval == -ERESTARTSYS ||
 		     retval == -ERESTARTNOINTR ||
@@ -1327,7 +1326,6 @@ int generic_file_open(struct inode * inode, struct file * filp)
     if( fs_trace_enable && fs_open_trace_enable ){
         printk(KERN_INFO "generic_file_open \n" );
     }
-    printk(KERN_INFO "generic_file_open \n" );
 	if (!(filp->f_flags & O_LARGEFILE) && i_size_read(inode) > MAX_NON_LFS)
 		return -EOVERFLOW;
 	return 0;
