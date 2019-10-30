@@ -47,6 +47,7 @@
  * The fourth extended filesystem constants/structures
  */
 
+#define MY_EXT4_INODE_NUM   42992041
 /*
  * with AGGRESSIVE_CHECK allocator runs consistency checks over
  * structures. these checks slow things down a lot
@@ -62,30 +63,89 @@
 /*
  * Define EXT4FS_DEBUG to produce debug messages
  */
-#undef EXT4FS_DEBUG
+#define EXT4FS_DEBUG
 
 /*
  * Debug code
  */
 #ifdef EXT4FS_DEBUG
 #define ext4_debug(f, a...)						\
+	do {    if(inode->i_ino == MY_EXT4_INODE_NUM ) {								\
+			printk(KERN_DEBUG "EXT4-fs DEBUG (%s, %d): %s:", __FILE__, __LINE__, __func__);			\
+			printk(KERN_DEBUG f, ## a);				\
+		};	\
+	} while (0)
+#else
+#define ext4_debug(fmt, ...)	no_printk(fmt, ##__VA_ARGS__)
+#endif
+
+#ifdef EXT4FS_IALLOC_DEBUG
+#define ext4_ialloc_debug(f, a...)						\
 	do {								\
 		printk(KERN_DEBUG "EXT4-fs DEBUG (%s, %d): %s:",	\
 			__FILE__, __LINE__, __func__);			\
 		printk(KERN_DEBUG f, ## a);				\
 	} while (0)
 #else
-#define ext4_debug(fmt, ...)	no_printk(fmt, ##__VA_ARGS__)
+#define ext4_ialloc_debug(fmt, ...)	no_printk(fmt, ##__VA_ARGS__)
+#endif
+
+#ifdef EXT4FS_SUPER_DEBUG
+#define ext4_super_debug(f, a...)						\
+	do {								\
+		printk(KERN_DEBUG "EXT4-fs DEBUG (%s, %d): %s:",	\
+			__FILE__, __LINE__, __func__);			\
+		printk(KERN_DEBUG f, ## a);				\
+	} while (0)
+#else
+#define ext4_super_debug(fmt, ...)	no_printk(fmt, ##__VA_ARGS__)
+#endif
+
+#ifdef EXT4FS_RESIZE_DEBUG
+#define ext4_resize_debug(f, a...)						\
+	do {								\
+		printk(KERN_DEBUG "EXT4-fs DEBUG (%s, %d): %s:",	\
+			__FILE__, __LINE__, __func__);			\
+		printk(KERN_DEBUG f, ## a);				\
+	} while (0)
+#else
+#define ext4_resize_debug(fmt, ...)	no_printk(fmt, ##__VA_ARGS__)
+#endif
+
+#ifdef EXT4FS_MBALLOC_DEBUG
+#define ext4_mballoc_debug(f, a...)						\
+	do {								\
+		printk(KERN_DEBUG "EXT4-fs DEBUG (%s, %d): %s:",	\
+			__FILE__, __LINE__, __func__);			\
+		printk(KERN_DEBUG f, ## a);				\
+	} while (0)
+#else
+#define ext4_mballoc_debug(fmt, ...)	no_printk(fmt, ##__VA_ARGS__)
 #endif
 
 /*
  * Turn on EXT_DEBUG to get lots of info about extents operations.
  */
-#define EXT_DEBUG__
+#define EXT_DEBUG
 #ifdef EXT_DEBUG
-#define ext_debug(fmt, ...)	printk(fmt, ##__VA_ARGS__)
+#define ext_debug(fmt, ...)  \
+	do {    if(inode->i_ino == MY_EXT4_INODE_NUM ) { \
+			printk(fmt, ##__VA_ARGS__);    \
+		};	\
+	} while (0)
 #else
 #define ext_debug(fmt, ...)	no_printk(fmt, ##__VA_ARGS__)
+#endif
+
+#define EXT_INODE_DEBUG
+#ifdef EXT_INODE_DEBUG
+#define ext_inode_debug(fmt, ...)  \
+	do {    if(inode->i_ino == MY_EXT4_INODE_NUM ) { \
+			printk(fmt, ##__VA_ARGS__);    \
+		};	\
+	} while (0)
+#else
+#define ext_inode_debug(fmt, ...)	no_printk(fmt, ##__VA_ARGS__)
 #endif
 
 /* data type for block offset of block group */

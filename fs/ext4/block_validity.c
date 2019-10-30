@@ -215,7 +215,7 @@ int ext4_data_block_valid(struct ext4_sb_info *sbi, ext4_fsblk_t start_blk,
 	struct rb_node *n = sbi->system_blks.rb_node;
 
     if ( ext4_trace_enable && ext4_block_validity_trace_enable ){
-        printk(KERN_INFO "  ext4_data_block_valid \n"  );
+        //printk(KERN_INFO "  ext4_data_block_valid \n"  );
     }
 	if ((start_blk <= le32_to_cpu(sbi->s_es->s_first_data_block)) ||
 	    (start_blk + count < start_blk) ||

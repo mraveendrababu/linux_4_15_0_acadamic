@@ -70,9 +70,14 @@ static ssize_t ext4_dax_read_iter(struct kiocb *iocb, struct iov_iter *to)
 
 static ssize_t ext4_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
 {
+	struct inode *inode=NULL;
+
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(file_inode(iocb->ki_filp)->i_sb))))
 		return -EIO;
-
+	inode = file_inode(iocb->ki_filp);
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_read_iter is called \n" );
+	}
     if( ext4_trace_enable && ext4_file_trace_enable ){
         printk(KERN_INFO "ext4_file_read_iter \n"  );
     }

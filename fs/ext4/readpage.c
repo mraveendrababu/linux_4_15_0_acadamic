@@ -125,6 +125,9 @@ int ext4_mpage_readpages(struct address_space *mapping,
     if (ext4_trace_enable && ext4_readpage_trace_enable ){
         printk(KERN_INFO " ext4_mpage_readpages \n" );
     }
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_map_readpages \n");
+	}
 	map.m_pblk = 0;
 	map.m_lblk = 0;
 	map.m_len = 0;

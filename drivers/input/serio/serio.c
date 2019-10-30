@@ -1045,7 +1045,7 @@ irqreturn_t serio_interrupt(struct serio *serio,
 	unsigned long flags;
 	irqreturn_t ret = IRQ_NONE;
 
-    printk (KERN_INFO "serio_interrupt : Raveendra...  \n");
+    //printk (KERN_INFO "serio_interrupt : Raveendra...  \n");
 	spin_lock_irqsave(&serio->lock, flags);
 
         if (likely(serio->drv)) {

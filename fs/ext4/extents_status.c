@@ -187,18 +187,25 @@ static void ext4_es_print_tree(struct inode *inode)
     if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
         printk( KERN_INFO " ext4_es_print_tree \n" );
     }
-	printk(KERN_DEBUG "status extents for inode %lu:", inode->i_ino);
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "status extents for inode %lu:", inode->i_ino);
+	}
 	tree = &EXT4_I(inode)->i_es_tree;
 	node = rb_first(&tree->root);
 	while (node) {
 		struct extent_status *es;
 		es = rb_entry(node, struct extent_status, rb_node);
-		printk(KERN_DEBUG " [%u/%u) %llu %x",
-		       es->es_lblk, es->es_len,
-		       ext4_es_pblock(es), ext4_es_status(es));
+		
+		if( inode->i_ino == MY_EXT4_INODE_NUM ){
+			printk(KERN_DEBUG " [%u/%u) %llu %x",
+		       		es->es_lblk, es->es_len,
+		       		ext4_es_pblock(es), ext4_es_status(es));
+		}
 		node = rb_next(node);
 	}
-	printk(KERN_DEBUG "\n");
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "\n");
+	}
 }
 #else
 #define ext4_es_print_tree(inode)
@@ -844,7 +851,7 @@ int ext4_es_lookup_extent(struct inode *inode, ext4_lblk_t lblk,
         printk( KERN_INFO " ext4_es_lookup_extent \n" );
     }
 	trace_ext4_es_lookup_extent_enter(inode, lblk);
-	es_debug("lookup extent in block %u\n", lblk);
+	es_debug("lookup extent in logical  block means file block numer : fbn  %u   in the Inode : %lu \n", lblk, inode->i_ino);
 
 	tree = &EXT4_I(inode)->i_es_tree;
 	read_lock(&EXT4_I(inode)->i_es_lock);
@@ -881,6 +888,7 @@ out:
 		es->es_lblk = es1->es_lblk;
 		es->es_len = es1->es_len;
 		es->es_pblk = es1->es_pblk;
+		es_debug("lookup extent in lbn  %u   in the Inode : %lu  and PBN : %lu \n", lblk, inode->i_ino, es->es_pblk);
 		if (!ext4_es_is_referenced(es1))
 			ext4_es_set_referenced(es1);
 		stats->es_stats_cache_hits++;

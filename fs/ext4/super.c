@@ -2502,7 +2502,7 @@ static int ext4_check_descriptors(struct super_block *sb,
 	if (ext4_has_feature_flex_bg(sb))
 		flexbg_flag = 1;
 
-	ext4_debug("Checking group descriptors");
+		ext4_super_debug("Checking group descriptors");
 
 	for (i = 0; i < sbi->s_groups_count; i++) {
 		struct ext4_group_desc *gdp = ext4_get_group_desc(sb, i, NULL);

@@ -10,7 +10,7 @@ int ext4_balloc_trace_enable=0;
 EXPORT_SYMBOL(ext4_balloc_trace_enable);
 int ext4_bitmap_trace_enable=0;
 EXPORT_SYMBOL(ext4_bitmap_trace_enable);
-int ext4_block_validity_trace_enable=0;
+int ext4_block_validity_trace_enable=1;
 EXPORT_SYMBOL(ext4_block_validity_trace_enable);
 int ext4_dir_trace_enable=0;
 EXPORT_SYMBOL(ext4_dir_trace_enable);
@@ -68,6 +68,9 @@ int ext4_xattr_user_trace_enable=0;
 EXPORT_SYMBOL(ext4_xattr_user_trace_enable);
 int ext4_sysfs_trace_enable=0;
 EXPORT_SYMBOL(ext4_sysfs_trace_enable);
+
+int ext4_list_block_num_trace_enable=1;
+EXPORT_SYMBOL(ext4_list_block_num_trace_enable);
 
 
 int ext4_trace_dummy(void){

@@ -2521,7 +2521,7 @@ int ext4_mb_alloc_groupinfo(struct super_block *sb, ext4_group_t ngroups)
 	}
 	sbi->s_group_info = new_groupinfo;
 	sbi->s_group_info_size = size / sizeof(*sbi->s_group_info);
-	ext4_debug("allocated s_groupinfo array for %d meta_bg's\n", 
+	ext4_mballoc_debug("allocated s_groupinfo array for %d meta_bg's\n", 
 		   sbi->s_group_info_size);
 	return 0;
 }
@@ -3137,7 +3137,7 @@ ext4_mb_mark_diskspace_used(struct ext4_allocation_context *ac,
 	if (!gdp)
 		goto out_err;
 
-	ext4_debug("using block group %u(%d)\n", ac->ac_b_ex.fe_group,
+	ext4_mballoc_debug("using block group %u(%d)\n", ac->ac_b_ex.fe_group,
 			ext4_free_group_clusters(sb, gdp));
 
 	BUFFER_TRACE(gdp_bh, "get_write_access");
@@ -5008,7 +5008,7 @@ void ext4_free_blocks(handle_t *handle, struct inode *inode,
 		goto error_return;
 	}
 
-	ext4_debug("freeing block %llu\n", block);
+	ext4_mballoc_debug("freeing block %llu\n", block);
 	trace_ext4_free_blocks(inode, block, count, flags);
 
 	if (bh && (flags & EXT4_FREE_BLOCKS_FORGET)) {
@@ -5245,7 +5245,7 @@ int ext4_group_add_blocks(handle_t *handle, struct super_block *sb,
 	ext4_fsblk_t last_cluster = EXT4_B2C(sbi, block + count - 1);
 	unsigned long cluster_count = last_cluster - first_cluster + 1;
 
-	ext4_debug("Adding block(s) %llu-%llu\n", block, block + count - 1);
+	ext4_mballoc_debug("Adding block(s) %llu-%llu\n", block, block + count - 1);
 
     if(ext4_trace_enable && ext4_mballoc_trace_enable ){
         printk(KERN_INFO " ext4_group_add_blocks \n" );
@@ -5493,7 +5493,7 @@ out:
 	ext4_unlock_group(sb, group);
 	ext4_mb_unload_buddy(&e4b);
 
-	ext4_debug("trimmed %d blocks in the group %d\n",
+	ext4_mballoc_debug("trimmed %d blocks in the group %d\n",
 		count, group);
 
 	return ret;

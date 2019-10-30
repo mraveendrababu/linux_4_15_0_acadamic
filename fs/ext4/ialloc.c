@@ -60,8 +60,7 @@ void ext4_mark_bitmap_end(int start_bit, int end_bit, char *bitmap)
 
 	if (start_bit >= end_bit)
 		return;
-
-	ext4_debug("mark end bits +%d through +%d used\n", start_bit, end_bit);
+	ext4_ialloc_debug("mark end bits +%d through +%d used\n", start_bit, end_bit);
 	for (i = start_bit; i < ((start_bit + 7) & ~7UL); i++)
 		ext4_set_bit(i, bitmap);
 	if (i < end_bit)
@@ -277,7 +276,7 @@ void ext4_free_inode(handle_t *handle, struct inode *inode)
 	sbi = EXT4_SB(sb);
 
 	ino = inode->i_ino;
-	ext4_debug("freeing inode %lu\n", ino);
+	ext4_ialloc_debug("freeing inode %lu\n", ino);
 	trace_ext4_free_inode(inode);
 
 	/*
@@ -1219,7 +1218,7 @@ got:
 		goto fail_free_drop;
 	}
 
-	ext4_debug("allocating inode %lu\n", inode->i_ino);
+	ext4_ialloc_debug("allocating inode %lu\n", inode->i_ino);
 	trace_ext4_allocate_inode(inode, dir, mode);
 	brelse(inode_bitmap_bh);
 	return ret;
@@ -1471,7 +1470,7 @@ int ext4_init_inode_table(struct super_block *sb, ext4_group_t group,
 	if (unlikely(num == 0))
 		goto skip_zeroout;
 
-	ext4_debug("going to zero out inode table in group %d\n",
+	ext4_ialloc_debug("going to zero out inode table in group %d\n",
 		   group);
 	ret = sb_issue_zeroout(sb, blk, num, GFP_NOFS);
 	if (ret < 0)

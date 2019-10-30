@@ -482,6 +482,7 @@ mext_check_arguments(struct inode *orig_inode,
 	__u64 orig_eof, donor_eof;
 	unsigned int blkbits = orig_inode->i_blkbits;
 	unsigned int blocksize = 1 << blkbits;
+	struct inode *inode= orig_inode;
 
     if( ext4_trace_enable && ext4_move_extent_trace_enable ){
         printk(KERN_INFO " mext_check_arguments\n" );
@@ -593,6 +594,8 @@ ext4_move_extents(struct file *o_filp, struct file *d_filp, __u64 orig_blk,
 	ext4_lblk_t o_end, o_start = orig_blk;
 	ext4_lblk_t d_start = donor_blk;
 	int ret;
+
+	struct inode *inode = orig_inode;
 
     if( ext4_trace_enable && ext4_move_extent_trace_enable ){
         printk(KERN_INFO "ext4_move_extents \n" );

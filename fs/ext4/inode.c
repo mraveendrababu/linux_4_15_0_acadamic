@@ -546,7 +546,7 @@ int ext4_map_blocks(handle_t *handle, struct inode *inode,
         printk( KERN_INFO " ext4_map_blocks \n" );
     }
 	map->m_flags = 0;
-	ext_debug("ext4_map_blocks(): inode %lu, flag %d, max_blocks %u,"
+	ext_inode_debug("ext4_map_blocks(): inode %lu, flag %d, max_blocks %u,"
 		  "logical block %lu\n", inode->i_ino, flags, map->m_len,
 		  (unsigned long) map->m_lblk);
 
@@ -1919,7 +1919,7 @@ static int ext4_da_map_blocks(struct inode *inode, sector_t iblock,
 		invalid_block = ~0;
 
 	map->m_flags = 0;
-	ext_debug("ext4_da_map_blocks(): inode %lu, max_blocks %u,"
+	ext_inode_debug("ext4_da_map_blocks(): inode %lu, max_blocks %u,"
 		  "logical block %lu\n", inode->i_ino, map->m_len,
 		  (unsigned long) map->m_lblk);
 
@@ -3497,7 +3497,9 @@ static int ext4_readpage(struct file *file, struct page *page)
         printk( KERN_INFO " ext4_readpage \n" );
     }
 	trace_ext4_readpage(page);
-
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_readpage \n");
+	}
 	if (ext4_has_inline_data(inode))
 		ret = ext4_readpage_inline(inode, page);
 
@@ -3520,6 +3522,9 @@ ext4_readpages(struct file *file, struct address_space *mapping,
 	if (ext4_has_inline_data(inode))
 		return 0;
 
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_readpages  num_pages : %d \n", nr_pages );
+	}
 	return ext4_mpage_readpages(mapping, pages, NULL, nr_pages);
 }
 
@@ -3587,6 +3592,9 @@ static bool ext4_inode_datasync_dirty(struct inode *inode)
 {
 	journal_t *journal = EXT4_SB(inode->i_sb)->s_journal;
 
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_inode_datasync \n");
+	}
     if(ext4_trace_enable && ext4_inode_trace_enable ){
         printk( KERN_INFO " ext4_inode_datasync_dirty \n" );
     }
@@ -3609,6 +3617,9 @@ static int ext4_iomap_begin(struct inode *inode, loff_t offset, loff_t length,
 	bool delalloc = false;
 	int ret;
 
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_iomap_begin \n");
+	}
     if(ext4_trace_enable && ext4_inode_trace_enable ){
         printk( KERN_INFO "  ext4_iomap_begin\n" );
     }
@@ -3755,6 +3766,9 @@ static int ext4_iomap_end(struct inode *inode, loff_t offset, loff_t length,
 	int blkbits = inode->i_blkbits;
 	bool truncate = false;
 
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_iomap_end \n");
+	}
     if(ext4_trace_enable && ext4_inode_trace_enable ){
         printk( KERN_INFO " ext4_iomap_end \n" );
     }
@@ -3811,6 +3825,7 @@ static int ext4_end_io_dio(struct kiocb *iocb, loff_t offset,
 			    ssize_t size, void *private)
 {
         ext4_io_end_t *io_end = private;
+	struct inode *inode = NULL;
 
     if(ext4_trace_enable && ext4_inode_trace_enable ){
         printk( KERN_INFO " ext4_end_io_dio \n" );
@@ -3818,8 +3833,8 @@ static int ext4_end_io_dio(struct kiocb *iocb, loff_t offset,
 	/* if not async direct IO just return */
 	if (!io_end)
 		return 0;
-
-	ext_debug("ext4_end_io_dio(): io_end 0x%p "
+	inode = io_end->inode ;
+	ext_inode_debug("ext4_end_io_dio(): io_end 0x%p "
 		  "for inode %lu, iocb 0x%p, offset %llu, size %zd\n",
 		  io_end, io_end->inode->i_ino, iocb, offset, size);
 
@@ -4575,6 +4590,9 @@ int ext4_inode_attach_jinode(struct inode *inode)
 	if (ei->jinode || !EXT4_SB(inode->i_sb)->s_journal)
 		return 0;
 
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_inode_attach_jinode \n");
+	}
 	jinode = jbd2_alloc_inode(GFP_KERNEL);
 	spin_lock(&inode->i_lock);
 	if (!ei->jinode) {
@@ -4742,6 +4760,9 @@ static int __ext4_get_inode_loc(struct inode *inode,
     if(ext4_trace_enable && ext4_inode_trace_enable ){
         printk( KERN_INFO " __ext4_get_inode_loc \n" );
     }
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " __ext4_get_inode_loc \n");
+	}
 	iloc->bh = NULL;
 	if (inode->i_ino < EXT4_ROOT_INO ||
 	    inode->i_ino > le32_to_cpu(EXT4_SB(sb)->s_es->s_inodes_count))
@@ -4876,6 +4897,9 @@ int ext4_get_inode_loc(struct inode *inode, struct ext4_iloc *iloc)
     if(ext4_trace_enable && ext4_inode_trace_enable ){
         printk( KERN_INFO " ext4_get_inode_loc \n" );
     }
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_get_inode_loc \n");
+	}
 	/* We have all inode data except xattrs in memory here. */
 	return __ext4_get_inode_loc(inode, iloc,
 		!ext4_test_inode_state(inode, EXT4_STATE_XATTR));
@@ -4936,6 +4960,9 @@ static blkcnt_t ext4_inode_blocks(struct ext4_inode *raw_inode,
     if(ext4_trace_enable && ext4_inode_trace_enable ){
         printk( KERN_INFO "ext4_inode_blocks  \n" );
     }
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_inode_blocks \n");
+	}
 	if (ext4_has_feature_huge_file(sb)) {
 		/* we are using combined 48 bit field */
 		i_blocks = ((u64)le16_to_cpu(raw_inode->i_blocks_high)) << 32 |
@@ -4958,6 +4985,9 @@ static inline int ext4_iget_extra_inode(struct inode *inode,
 	__le32 *magic = (void *)raw_inode +
 			EXT4_GOOD_OLD_INODE_SIZE + ei->i_extra_isize;
 
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_iget_extra_inode \n");
+	}
     if(ext4_trace_enable && ext4_inode_trace_enable ){
         printk( KERN_INFO " ext4_iget_extra_inode \n" );
     }
@@ -5002,6 +5032,9 @@ struct inode *ext4_iget(struct super_block *sb, unsigned long ino)
 	if (!(inode->i_state & I_NEW))
 		return inode;
 
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_iget \n");
+	}
 	ei = EXT4_I(inode);
 	iloc.bh = NULL;
 
@@ -5557,6 +5590,9 @@ int ext4_write_inode(struct inode *inode, struct writeback_control *wbc)
 	if (WARN_ON_ONCE(current->flags & PF_MEMALLOC))
 		return 0;
 
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_write_inode \n");
+	}
 	if (EXT4_SB(inode->i_sb)->s_journal) {
 		if (ext4_journal_current_handle()) {
 			jbd_debug(1, "called recursively, non-PF_MEMALLOC!\n");
