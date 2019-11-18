@@ -127,6 +127,9 @@ extern int fs_namei_trace_enable;
 
 #define EMBEDDED_NAME_MAX	(PATH_MAX - offsetof(struct filename, iname))
 
+#define VFS_NAME_INODE_NUM 10000
+#define VFS_DIR_INODE_NUM 10050
+
 struct filename *
 getname_flags(const char __user *filename, int flags, int *empty)
 {
@@ -269,7 +272,9 @@ static int check_acl(struct inode *inode, int mask)
 {
 #ifdef CONFIG_FS_POSIX_ACL
 	struct posix_acl *acl;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " check_acl\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " check_acl \n" );
     }
@@ -302,7 +307,9 @@ static int check_acl(struct inode *inode, int mask)
 static int acl_permission_check(struct inode *inode, int mask)
 {
 	unsigned int mode = inode->i_mode;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "acl_permission_check \n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " acl_permission_check \n" );
     }
@@ -344,7 +351,9 @@ static int acl_permission_check(struct inode *inode, int mask)
 int generic_permission(struct inode *inode, int mask)
 {
 	int ret;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "generic_permission \n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO "generic_permission  \n" );
     }
@@ -394,6 +403,9 @@ EXPORT_SYMBOL(generic_permission);
  */
 static inline int do_inode_permission(struct inode *inode, int mask)
 {
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "do_inode_permission \n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO "do_inode_permission  \n" );
     }
@@ -424,7 +436,9 @@ static inline int do_inode_permission(struct inode *inode, int mask)
 int __inode_permission(struct inode *inode, int mask)
 {
 	int retval;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "__inode_permission \n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " __inode_permission \n" );
     }
@@ -466,6 +480,9 @@ EXPORT_SYMBOL(__inode_permission);
  */
 static int sb_permission(struct super_block *sb, struct inode *inode, int mask)
 {
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " sb_permission\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " sb_permission \n" );
     }
@@ -493,7 +510,9 @@ static int sb_permission(struct super_block *sb, struct inode *inode, int mask)
 int inode_permission(struct inode *inode, int mask)
 {
 	int retval;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "inode_permission \n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " inode_permission \n" );
     }
@@ -1058,7 +1077,9 @@ static inline int may_follow_link(struct nameidata *nd)
 static bool safe_hardlink_source(struct inode *inode)
 {
 	umode_t mode = inode->i_mode;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " safe_hardlink_source\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " safe_hardlink_source \n" );
     }
@@ -1104,6 +1125,9 @@ static int may_linkat(struct path *link)
 		return 0;
 
 	inode = link->dentry->d_inode;
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " may_linkat\n " );
+	}
 
 	/* Source inode owner (or CAP_FOWNER) can hardlink all they like,
 	 * otherwise, it must be a safe source.
@@ -1141,6 +1165,9 @@ static int may_create_in_sticky(struct dentry * const dir,
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " may_create_in_sticky \n" );
     }
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "may_create_in_sticky \n " );
+	}
 	if ((!sysctl_protected_fifos && S_ISFIFO(inode->i_mode)) ||
 	    (!sysctl_protected_regular && S_ISREG(inode->i_mode)) ||
 	    likely(!(dir->d_inode->i_mode & S_ISVTX)) ||
@@ -1165,7 +1192,9 @@ const char *get_link(struct nameidata *nd)
 	struct inode *inode = nd->link_inode;
 	int error;
 	const char *res;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " get_link\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO "  get_link\n" );
     }
@@ -1485,7 +1514,9 @@ static bool __follow_mount_rcu(struct nameidata *nd, struct path *path,
 static int follow_dotdot_rcu(struct nameidata *nd)
 {
 	struct inode *inode = nd->inode;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " follow_dotdot_rcu\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " follow_dotdot_rcu \n" );
     }
@@ -1821,6 +1852,9 @@ static struct dentry *lookup_slow(const struct qstr *name,
         printk(KERN_INFO " lookup_slow  \n" );
     }
 	inode_lock_shared(inode);
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " lookup_slow\n " );
+	}
 	/* Don't go there if it's already dead */
 	if (unlikely(IS_DEADDIR(inode)))
 		goto out;
@@ -1890,6 +1924,10 @@ static int pick_link(struct nameidata *nd, struct path *link,
 {
 	int error;
 	struct saved *last;
+
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " pick_link\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " pick_link \n" );
     }
@@ -1944,6 +1982,10 @@ static inline int step_into(struct nameidata *nd, struct path *path,
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " step_into \n" );
     }
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " step_into\n " );
+	}
+
 	if (!(flags & WALK_MORE) && nd->depth)
 		put_link(nd);
 	if (likely(!d_is_symlink(path->dentry)) ||
@@ -2119,7 +2161,7 @@ unsigned int full_name_hash(const void *salt, const char *name, unsigned int len
 	unsigned long a, x = 0, y = (unsigned long)salt;
 
     if( fs_trace_enable && fs_namei_trace_enable  ){
-        printk(KERN_INFO "  \n" );
+        printk(KERN_INFO " full_name_hash \n" );
     }
 	for (;;) {
 		if (!len)
@@ -2478,7 +2520,9 @@ static int handle_lookup_down(struct nameidata *nd)
 	struct inode *inode = nd->inode;
 	unsigned seq = nd->seq;
 	int err;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " handle_lookup_down\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " handle_lookup_down \n" );
     }
@@ -3004,7 +3048,9 @@ EXPORT_SYMBOL(kern_path_mountpoint);
 int __check_sticky(struct inode *dir, struct inode *inode)
 {
 	kuid_t fsuid = current_fsuid();
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " __check_sticky\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " __check_sticky \n" );
     }
@@ -3089,6 +3135,9 @@ static inline int may_create(struct inode *dir, struct dentry *child)
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " may_create \n" );
     }
+	if( (dir->i_ino == VFS_NAME_INODE_NUM )  || ( dir->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " may_create\n " );
+	}
 	audit_inode_child(dir, child, AUDIT_TYPE_CHILD_CREATE);
 	if (child->d_inode)
 		return -EEXIST;
@@ -3158,6 +3207,9 @@ int vfs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " vfs_create \n" );
     }
+	if( (dir->i_ino == VFS_NAME_INODE_NUM )  || ( dir->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "vfs_create \n " );
+	}
 	if (error)
 		return error;
 
@@ -3240,6 +3292,9 @@ static int handle_truncate(struct file *filp)
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " handle_truncate \n" );
     }
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "handle_truncate \n " );
+	}
 	if (error)
 		return error;
 	/*
@@ -3311,6 +3366,9 @@ static int atomic_open(struct nameidata *nd, struct dentry *dentry,
 	struct dentry *const DENTRY_NOT_SET = (void *) -1UL;
 	struct inode *dir =  nd->path.dentry->d_inode;
 	int error;
+	if( (dir->i_ino == VFS_NAME_INODE_NUM )  || ( dir->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " atomic_open\n " );
+	}
 
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " atomic_open \n" );
@@ -3394,7 +3452,9 @@ static int lookup_open(struct nameidata *nd, struct path *path,
 	int error, create_error = 0;
 	umode_t mode = op->mode;
 	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
-
+	if( (dir_inode->i_ino == VFS_NAME_INODE_NUM )  || ( dir_inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " lookup_open\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " lookup_open \n" );
     }
@@ -3644,6 +3704,9 @@ static int do_last(struct nameidata *nd,
 
 	seq = 0;	/* out of RCU mode, so the value doesn't matter */
 	inode = d_backing_inode(path.dentry);
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " do_last\n " );
+	}
 finish_lookup:
 	error = step_into(nd, &path, 0, inode, seq);
 	if (unlikely(error))
@@ -3712,6 +3775,9 @@ struct dentry *vfs_tmpfile(struct dentry *dentry, umode_t mode, int open_flag)
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " vfs_tmpfile \n" );
     }
+	if( (dir->i_ino == VFS_NAME_INODE_NUM )  || ( dir->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "vfs_tmpfile \n " );
+	}
 	/* we want directory to be writable */
 	error = inode_permission(dir, MAY_WRITE | MAY_EXEC);
 	if (error)
@@ -4019,6 +4085,9 @@ int vfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, dev_t dev)
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO "vfs_mknod  \n" );
     }
+	if( (dir->i_ino == VFS_NAME_INODE_NUM )  || ( dir->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " vfs_mknod\n " );
+	}
 	if (error)
 		return error;
 
@@ -4117,6 +4186,9 @@ int vfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 	int error = may_create(dir, dentry);
 	unsigned max_links = dir->i_sb->s_max_links;
 
+	if( (dir->i_ino == VFS_NAME_INODE_NUM )  || ( dir->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "vfs_mkdir \n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " vfs_mkdir \n" );
     }
@@ -4177,7 +4249,9 @@ SYSCALL_DEFINE2(mkdir, const char __user *, pathname, umode_t, mode)
 int vfs_rmdir(struct inode *dir, struct dentry *dentry)
 {
 	int error = may_delete(dir, dentry, 1);
-
+	if( (dir->i_ino == VFS_NAME_INODE_NUM )  || ( dir->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " vfs_rmdir\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " vfs_rmdir \n" );
     }
@@ -4306,7 +4380,9 @@ int vfs_unlink(struct inode *dir, struct dentry *dentry, struct inode **delegate
 {
 	struct inode *target = dentry->d_inode;
 	int error = may_delete(dir, dentry, 0);
-
+	if( (dir->i_ino == VFS_NAME_INODE_NUM )  || ( dir->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "vfs_unlink \n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " vfs_unlink \n" );
     }
@@ -4537,7 +4613,9 @@ int vfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_de
 	struct inode *inode = old_dentry->d_inode;
 	unsigned max_links = dir->i_sb->s_max_links;
 	int error;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " \n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " vfs_link \n" );
     }
@@ -4739,7 +4817,9 @@ int vfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 	bool new_is_dir = false;
 	unsigned max_links = new_dir->i_sb->s_max_links;
 	struct name_snapshot old_name;
-
+	if( (old_dir->i_ino == VFS_DIR_INODE_NUM )  || ( new_dir->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " vfs_rename\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " vfs_rename \n" );
     }
@@ -5024,7 +5104,9 @@ int vfs_whiteout(struct inode *dir, struct dentry *dentry)
 	int error = may_create(dir, dentry);
 	if (error)
 		return error;
-
+	if( (dir->i_ino == VFS_NAME_INODE_NUM )  || ( dir->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  " vfs_whiteout\n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " vfs_whiteout \n" );
     }
@@ -5148,7 +5230,9 @@ const char *page_get_link(struct dentry *dentry, struct inode *inode,
 	char *kaddr;
 	struct page *page;
 	struct address_space *mapping = inode->i_mapping;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "page_get_link \n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " page_get_link \n" );
     }
@@ -5206,7 +5290,9 @@ int __page_symlink(struct inode *inode, const char *symname, int len, int nofs)
 	unsigned int flags = 0;
 	if (nofs)
 		flags |= AOP_FLAG_NOFS;
-
+	if( (inode->i_ino == VFS_NAME_INODE_NUM )  || ( inode->i_ino == VFS_DIR_INODE_NUM ) ){
+		printk(KERN_INFO  "__page_symlink \n " );
+	}
     if( fs_trace_enable && fs_namei_trace_enable  ){
         printk(KERN_INFO " __page_symlink \n" );
     }

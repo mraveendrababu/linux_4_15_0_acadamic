@@ -37,6 +37,8 @@ static inline int __sync_blockdev(struct block_device *bdev, int wait)
 }
 #endif
 
+#define MY_VFS_INODE_NUM   42992041
+
 /*
  * buffer.c
  */

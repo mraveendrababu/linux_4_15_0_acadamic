@@ -21,6 +21,8 @@
 #include <trace/events/writeback.h>
 #include "internal.h"
 
+#define  VFS_INODE_TRACE_NUM    15873378
+
 extern int fs_trace_enable;
 extern int fs_inode_trace_enable;
 /*
@@ -133,7 +135,10 @@ int inode_init_always(struct super_block *sb, struct inode *inode)
 	static const struct inode_operations empty_iops;
 	static const struct file_operations no_open_fops = {.open = no_open};
 	struct address_space *const mapping = &inode->i_data;
-
+	/*
+	if( inode->i_ino == VFS_INODE_TRACE_NUM ){
+		printk(KERN_INFO "inode_init_always \n" );
+	}*/
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " inode_init_always  \n");
     }
@@ -243,6 +248,9 @@ void __destroy_inode(struct inode *inode)
 	BUG_ON(inode_has_buffers(inode));
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " __destroy_inode  \n"); }
+	if((inode) && (inode->i_ino == VFS_INODE_TRACE_NUM )){
+		printk(KERN_INFO " __destroy_inode\n" );
+	}
 	inode_detach_wb(inode);
 	security_inode_free(inode);
 	fsnotify_inode_delete(inode);
@@ -270,6 +278,9 @@ static void i_callback(struct rcu_head *head)
 
 static void destroy_inode(struct inode *inode)
 {
+	if( inode->i_ino == VFS_INODE_TRACE_NUM ){
+		printk(KERN_INFO " \n" );
+	}
 	BUG_ON(!list_empty(&inode->i_lru));
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " destroy_inode  \n"); }
@@ -293,6 +304,9 @@ static void destroy_inode(struct inode *inode)
  */
 void drop_nlink(struct inode *inode)
 {
+	if( inode->i_ino == VFS_INODE_TRACE_NUM ){
+		printk(KERN_INFO " drop_nlink \n" );
+	}
 	WARN_ON(inode->i_nlink == 0);
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " drop_nlink  \n"); }
@@ -312,6 +326,9 @@ EXPORT_SYMBOL(drop_nlink);
  */
 void clear_nlink(struct inode *inode)
 {
+	if( inode->i_ino == VFS_INODE_TRACE_NUM ){
+		printk(KERN_INFO " clear_nlink\n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO "  clear_nlink \n"); }
 	if (inode->i_nlink) {
@@ -331,6 +348,9 @@ EXPORT_SYMBOL(clear_nlink);
  */
 void set_nlink(struct inode *inode, unsigned int nlink)
 {
+	if( (inode) && ( inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO "set_nlink \n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " set_nlink  \n");  }
  	if (!nlink) {
@@ -355,6 +375,9 @@ EXPORT_SYMBOL(set_nlink);
  */
 void inc_nlink(struct inode *inode)
 {
+	if( inode->i_ino == VFS_INODE_TRACE_NUM ){
+		printk(KERN_INFO " inc_nlink\n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " inc_nlink  \n"); }
 	if (unlikely(inode->i_nlink == 0)) {
@@ -412,6 +435,9 @@ static void init_once(void *foo)
  */
 void __iget(struct inode *inode)
 {
+	if((inode) && ( inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO " __iget\n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO "  __iget \n"); }
 	atomic_inc(&inode->i_count);
@@ -422,6 +448,9 @@ void __iget(struct inode *inode)
  */
 void ihold(struct inode *inode)
 {
+	if( (inode ) && (inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO " ihold\n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " ihold  \n"); }
 	WARN_ON(atomic_inc_return(&inode->i_count) < 2);
@@ -579,7 +608,9 @@ EXPORT_SYMBOL(clear_inode);
 static void evict(struct inode *inode)
 {
 	const struct super_operations *op = inode->i_sb->s_op;
-
+	if((inode )&& (inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO " evict\n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " evict  \n"); }
 	BUG_ON(!(inode->i_state & I_FREEING));
@@ -712,6 +743,9 @@ int invalidate_inodes(struct super_block *sb, bool kill_dirty)
         printk( KERN_INFO "  invalidate_inodes \n"); }
 	spin_lock(&sb->s_inode_list_lock);
 	list_for_each_entry_safe(inode, next, &sb->s_inodes, i_sb_list) {
+		if( (inode) &&( inode->i_ino == VFS_INODE_TRACE_NUM) ){
+			printk(KERN_INFO "invalidate_inodes \n" );
+		}
 		spin_lock(&inode->i_lock);
 		if (inode->i_state & (I_NEW | I_FREEING | I_WILL_FREE)) {
 			spin_unlock(&inode->i_lock);
@@ -760,7 +794,9 @@ static enum lru_status inode_lru_isolate(struct list_head *item,
 {
 	struct list_head *freeable = arg;
 	struct inode	*inode = container_of(item, struct inode, i_lru);
-
+	if((inode)&&(inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO " inode_lru_isolate\n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " inode_lru_isolate  \n"); }
 	/*
@@ -851,6 +887,9 @@ static struct inode *find_inode(struct super_block *sb,
         printk( KERN_INFO " find_inode  \n"); }
 repeat:
 	hlist_for_each_entry(inode, head, i_hash) {
+		if( (inode) && (inode->i_ino == VFS_INODE_TRACE_NUM) ){
+			printk(KERN_INFO "find_inode \n" );
+		}
 		if (inode->i_sb != sb)
 			continue;
 		if (!test(inode, data))
@@ -880,6 +919,9 @@ static struct inode *find_inode_fast(struct super_block *sb,
         printk( KERN_INFO " find_inode_fast  \n"); }
 repeat:
 	hlist_for_each_entry(inode, head, i_hash) {
+		if( (inode) && (inode->i_ino == VFS_INODE_TRACE_NUM) ){
+			printk(KERN_INFO "find_inode_fast \n" );
+		}
 		if (inode->i_ino != ino)
 			continue;
 		if (inode->i_sb != sb)
@@ -953,6 +995,10 @@ EXPORT_SYMBOL(get_next_ino);
 struct inode *new_inode_pseudo(struct super_block *sb)
 {
 	struct inode *inode = alloc_inode(sb);
+	/*
+	if( inode->i_ino == VFS_INODE_TRACE_NUM ){
+		printk(KERN_INFO "new_inode_pseudo \n" );
+	}*/
 
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO "  new_inode_pseudo \n"); }
@@ -988,6 +1034,10 @@ struct inode *new_inode(struct super_block *sb)
 	inode = new_inode_pseudo(sb);
 	if (inode)
 		inode_sb_list_add(inode);
+	/*
+	if( inode->i_ino == VFS_INODE_TRACE_NUM ){
+		printk(KERN_INFO " new_inode\n" );
+	}*/
 	return inode;
 }
 EXPORT_SYMBOL(new_inode);
@@ -1045,6 +1095,9 @@ EXPORT_SYMBOL(unlock_new_inode);
  */
 void lock_two_nondirectories(struct inode *inode1, struct inode *inode2)
 {
+	if((inode1)&&(inode2)&&((inode1->i_ino == VFS_INODE_TRACE_NUM ) || (inode2->i_ino == VFS_INODE_TRACE_NUM))){
+		printk(KERN_INFO " lock_two_nondirectories\n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " lock_two_nondirectories  \n"); }
 	if (inode1 > inode2)
@@ -1064,6 +1117,9 @@ EXPORT_SYMBOL(lock_two_nondirectories);
  */
 void unlock_two_nondirectories(struct inode *inode1, struct inode *inode2)
 {
+	if((inode1)&&(inode2)&&((inode1->i_ino == VFS_INODE_TRACE_NUM ) || (inode2->i_ino == VFS_INODE_TRACE_NUM))){
+		printk(KERN_INFO "unlock_two_nondirectories \n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " unlock_two_nondirectories  \n"); }
 	if (inode1 && !S_ISDIR(inode1->i_mode))
@@ -1105,7 +1161,9 @@ again:
 	spin_lock(&inode_hash_lock);
 	inode = find_inode(sb, head, test, data);
 	spin_unlock(&inode_hash_lock);
-
+	if((inode)&& (inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO " iget5_locked\n" );
+	}
 	if (inode) {
 		wait_on_inode(inode);
 		if (unlikely(inode_unhashed(inode))) {
@@ -1185,6 +1243,9 @@ again:
 	spin_lock(&inode_hash_lock);
 	inode = find_inode_fast(sb, head, ino);
 	spin_unlock(&inode_hash_lock);
+	if( (inode) &&( inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO "iget_locked \n" );
+	}
 	if (inode) {
 		wait_on_inode(inode);
 		if (unlikely(inode_unhashed(inode))) {
@@ -1302,7 +1363,11 @@ EXPORT_SYMBOL(iunique);
 struct inode *igrab(struct inode *inode)
 {
     if( fs_trace_enable && fs_inode_trace_enable ){
-        printk( KERN_INFO " igrab  \n");  }
+        printk( KERN_INFO " igrab  \n"); 
+     }
+	if( (inode) && (inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO " igrab\n" );
+	}
 	spin_lock(&inode->i_lock);
 	if (!(inode->i_state & (I_FREEING|I_WILL_FREE))) {
 		__iget(inode);
@@ -1316,6 +1381,10 @@ struct inode *igrab(struct inode *inode)
 		 */
 		inode = NULL;
 	}
+	/*
+	if( inode->i_ino == VFS_INODE_TRACE_NUM ){
+		printk(KERN_INFO " igrab\n" );
+	}*/
 	return inode;
 }
 EXPORT_SYMBOL(igrab);
@@ -1347,7 +1416,9 @@ struct inode *ilookup5_nowait(struct super_block *sb, unsigned long hashval,
 	spin_lock(&inode_hash_lock);
 	inode = find_inode(sb, head, test, data);
 	spin_unlock(&inode_hash_lock);
-
+	if( (inode) &&( inode->i_ino == VFS_INODE_TRACE_NUM )){
+		printk(KERN_INFO "ilookup5_nowait \n" );
+	}
 	return inode;
 }
 EXPORT_SYMBOL(ilookup5_nowait);
@@ -1383,6 +1454,9 @@ again:
 			iput(inode);
 			goto again;
 		}
+	if( ( inode) && ( inode->i_ino == VFS_INODE_TRACE_NUM ) ){
+		printk(KERN_INFO " ilookup5\n" );
+	}
 	}
 	return inode;
 }
@@ -1413,6 +1487,9 @@ again:
 			iput(inode);
 			goto again;
 		}
+	if ((inode ) &&( inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO "ilookup \n" );
+	}
 	}
 	return inode;
 }
@@ -1475,7 +1552,9 @@ int insert_inode_locked(struct inode *inode)
 	struct super_block *sb = inode->i_sb;
 	ino_t ino = inode->i_ino;
 	struct hlist_head *head = inode_hashtable + hash(sb, ino);
-
+	if( (inode) && (inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO " \n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " insert_inode_locked  \n");  }
 	while (1) {
@@ -1519,7 +1598,9 @@ int insert_inode_locked4(struct inode *inode, unsigned long hashval,
 {
 	struct super_block *sb = inode->i_sb;
 	struct hlist_head *head = inode_hashtable + hash(sb, hashval);
-
+	if( (inode) && (inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO "insert_inode_locked4 \n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " insert_inode_locked4  \n"); }
 	while (1) {
@@ -1562,6 +1643,9 @@ EXPORT_SYMBOL(insert_inode_locked4);
 
 int generic_delete_inode(struct inode *inode)
 {
+	if( (inode ) &&( inode->i_ino == VFS_INODE_TRACE_NUM )){
+		printk(KERN_INFO "generic_delete_inode \n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " generic_delete_inode  \n"); }
 	return 1;
@@ -1583,7 +1667,9 @@ static void iput_final(struct inode *inode)
 	struct super_block *sb = inode->i_sb;
 	const struct super_operations *op = inode->i_sb->s_op;
 	int drop;
-
+	if( (inode)&&(inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO " iput_final\n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO "  iput_final \n"); }
 	WARN_ON(inode->i_state & I_NEW);
@@ -1627,8 +1713,12 @@ static void iput_final(struct inode *inode)
  */
 void iput(struct inode *inode)
 {
-    if( fs_trace_enable && fs_inode_trace_enable ){
-        printk( KERN_INFO "iput   \n");  }
+	if( (inode) &&  ( inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO "iput \n" );
+	}
+    	if( fs_trace_enable && fs_inode_trace_enable ){
+        	printk( KERN_INFO "iput   \n");  
+	}
 	if (!inode)
 		return;
 	BUG_ON(inode->i_state & I_CLEAR);
@@ -1661,6 +1751,9 @@ EXPORT_SYMBOL(iput);
 sector_t bmap(struct inode *inode, sector_t block)
 {
 	sector_t res = 0;
+	if((inode)&& (inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO "bmap \n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO "  bmap \n");  }
 	if (inode->i_mapping->a_ops->bmap)
@@ -1941,7 +2034,9 @@ int file_remove_privs(struct file *file)
 	struct inode *inode = file_inode(file);
 	int kill;
 	int error = 0;
-
+	if( (inode) && (inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO "file_remove_privs \n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO "  file_remove_privs \n"); }
 	/* Fast path for nothing security related */
@@ -1979,7 +2074,9 @@ int file_update_time(struct file *file)
 	struct timespec now;
 	int sync_it = 0;
 	int ret;
-
+	if( (inode) && ( inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO " file_update_time\n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO " file_update_time  \n"); }
 	/* First try to exhaust all avenues to not sync */
@@ -2012,6 +2109,9 @@ EXPORT_SYMBOL(file_update_time);
 
 int inode_needs_sync(struct inode *inode)
 {
+	if( (inode)&& (inode->i_ino == VFS_INODE_TRACE_NUM) ){
+		printk(KERN_INFO "inode_needs_sync \n" );
+	}
     if( fs_trace_enable && fs_inode_trace_enable ){
         printk( KERN_INFO "  inode_needs_sync \n"); }
 	if (IS_SYNC(inode))

@@ -46,6 +46,7 @@
 #include <linux/bit_spinlock.h>
 #include <linux/pagevec.h>
 #include <trace/events/block.h>
+#include "internal.h"
 
 extern int fs_buffer_trace_enable;
 extern int fs_trace_enable;
@@ -2407,6 +2408,10 @@ int block_read_full_page(struct page *page, get_block_t *get_block)
     if( fs_trace_enable && fs_buffer_trace_enable ){
         printk(KERN_INFO " block_read_full_page \n" );
     }
+	if ( inode->i_ino == MY_VFS_INODE_NUM ){
+		printk(KERN_DEBUG " block_read_full_page Got a call on inode : %ld  \n", inode->i_ino );
+
+	}
 	head = create_page_buffers(page, inode, 0);
 	blocksize = head->b_size;
 	bbits = block_size_bits(blocksize);

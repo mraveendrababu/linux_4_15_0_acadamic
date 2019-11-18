@@ -41,7 +41,6 @@
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/filemap.h>
-
 /*
  * FIXME: remove all knowledge of the buffer layer from the core VM
  */
@@ -49,6 +48,8 @@
 
 #include <asm/mman.h>
 
+#define MM_INODE_NUM 15873378
+int mm_print_control=0;
 /*
  * Shared mappings implemented 30.11.1994. It's not fully working yet,
  * though.
@@ -3204,6 +3205,11 @@ ssize_t __generic_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	ssize_t		err;
 	ssize_t		status;
 
+	if( inode->i_ino != MM_INODE_NUM ){
+		//inode_lock(inode);
+	}else{
+		printk(KERN_INFO "__generic_file_write_iter called for inode %ld \n", MM_INODE_NUM );
+	}
 	/* We can write back this queue in page reclaim */
 	current->backing_dev_info = inode_to_bdi(inode);
 	err = file_remove_privs(file);
@@ -3284,12 +3290,28 @@ ssize_t generic_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	struct file *file = iocb->ki_filp;
 	struct inode *inode = file->f_mapping->host;
 	ssize_t ret;
+	static int gen_file_write = 0;
 
-	inode_lock(inode);
+	++gen_file_write;
+	++mm_print_control;
+
+	if( gen_file_write%500 == 0 )
+		printk(KERN_INFO "generic_file_write_iter  inode value  :  %ld ,  track_inode : %ld  \n", inode->i_ino, MM_INODE_NUM );
+
+	if( inode->i_ino != MM_INODE_NUM ){
+		inode_lock(inode);
+	}else{
+		printk(KERN_INFO "skipping the inode lock grab for  inode %ld \n", MM_INODE_NUM );
+	}
 	ret = generic_write_checks(iocb, from);
 	if (ret > 0)
 		ret = __generic_file_write_iter(iocb, from);
-	inode_unlock(inode);
+
+	if( inode->i_ino != MM_INODE_NUM ){
+		inode_unlock(inode);
+	}else{
+		printk(KERN_INFO "skipping the inode unlock release for  inode %ld \n", MM_INODE_NUM );
+	}
 
 	if (ret > 0)
 		ret = generic_write_sync(iocb, ret);

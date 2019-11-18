@@ -247,7 +247,13 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	int unaligned_aio = 0;
 	int overwrite = 0;
 	ssize_t ret;
-
+	static int in_cs=0;
+	static long int linecount=0;
+	int *p=NULL;
+	
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter is called inode number: %ld \n", inode->i_ino );
+	}
     if( ext4_trace_enable && ext4_file_trace_enable ){
         printk(KERN_INFO " ext4_file_write_iter\n"  );
     }
@@ -261,16 +267,39 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	if (!o_direct && (iocb->ki_flags & IOCB_NOWAIT))
 		return -EOPNOTSUPP;
 
-	if (!inode_trylock(inode)) {
-		if (iocb->ki_flags & IOCB_NOWAIT)
-			return -EAGAIN;
-		inode_lock(inode);
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter  STEP1   inodeNo: %ld \n", inode->i_ino );
+	}
+
+	if( inode->i_ino != MY_EXT4_INODE_NUM ){
+		if (!inode_trylock(inode)) {
+			if (iocb->ki_flags & IOCB_NOWAIT)
+				return -EAGAIN;
+			inode_lock(inode);
+		}
+	}
+	else{
+		printk(KERN_DEBUG "skipping inode lock for inode numer : %ld \n", inode->i_ino );
+		++in_cs;
+	}
+
+	if( in_cs > 1 ){
+		printk(KERN_DEBUG " BUG_ON  -  in_cs : %d  inode numer : %ld \n", in_cs, inode->i_ino );
+		BUG_ON( in_cs > 1 );
+		printk(KERN_DEBUG " Now accessing the invalid pointer  \n" );
+		*p=1000;
+	}
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter STEP2  inode number: %ld \n", inode->i_ino );
 	}
 
 	ret = ext4_write_checks(iocb, from);
 	if (ret <= 0)
 		goto out;
 
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter STEP3  inode number: %ld \n", inode->i_ino );
+	}
 	/*
 	 * Unaligned direct AIO must be serialized among each other as zeroing
 	 * of partial blocks of two competing unaligned AIOs can result in data
@@ -281,6 +310,10 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	    ext4_unaligned_aio(inode, from, iocb->ki_pos)) {
 		unaligned_aio = 1;
 		ext4_unwritten_wait(inode);
+	}
+	++linecount;
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter STEP4 inode number: %ld   linecount :  %ld  \n", inode->i_ino, linecount );
 	}
 
 	iocb->private = &overwrite;
@@ -295,11 +328,35 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 		}
 	}
 
-	ret = __generic_file_write_iter(iocb, from);
-	inode_unlock(inode);
 
-	if (ret > 0)
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter STEP5  inode number: %ld \n", inode->i_ino );
+	}
+
+
+
+	ret = __generic_file_write_iter(iocb, from);
+
+
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter STEP6   inode number: %ld \n", inode->i_ino );
+	}
+
+
+	if( inode->i_ino != MY_EXT4_INODE_NUM ){
+		inode_unlock(inode);
+	}
+	else{
+		printk(KERN_DEBUG "skipping inode unlock for inode numer : %ld \n", inode->i_ino );
+		--in_cs;
+	}
+
+	if (ret > 0){
+		if( inode->i_ino == MY_EXT4_INODE_NUM ){
+			printk(KERN_DEBUG "ext4_file_write_iter STEP7   inode number: %ld \n", inode->i_ino );
+		}
 		ret = generic_write_sync(iocb, ret);
+	}
 
 	return ret;
 

@@ -215,10 +215,15 @@ static struct kmem_cache *filelock_cache __read_mostly;
 extern int fs_trace_enable;
 extern int fs_locks_trace_enable;
 
+#define  VFS_LOCKS_INODE_NUM    15873378
+
 static struct file_lock_context *
 locks_get_lock_context(struct inode *inode, int type)
 {
 	struct file_lock_context *ctx;
+	if((inode) &&(inode->i_ino == VFS_LOCKS_INODE_NUM) ){
+		printk(KERN_INFO "locks_get_lock_context \n" );
+	}
 
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " locks_get_lock_context \n" );
@@ -267,7 +272,9 @@ static void
 locks_check_ctx_lists(struct inode *inode)
 {
 	struct file_lock_context *ctx = inode->i_flctx;
-
+	if((inode) &&(inode->i_ino == VFS_LOCKS_INODE_NUM) ){
+		printk(KERN_INFO " locks_check_ctx_lists\n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " locks_check_ctx_lists \n" );
     }
@@ -289,7 +296,9 @@ locks_check_ctx_file_list(struct file *filp, struct list_head *list,
 {
 	struct file_lock *fl;
 	struct inode *inode = locks_inode(filp);
-
+	if((inode) &&(inode->i_ino == VFS_LOCKS_INODE_NUM) ){
+		printk(KERN_INFO " locks_check_ctx_file_list\n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " locks_check_ctx_file_list \n" );
     }
@@ -306,7 +315,9 @@ void
 locks_free_lock_context(struct inode *inode)
 {
 	struct file_lock_context *ctx = inode->i_flctx;
-
+	if((inode) &&(inode->i_ino == VFS_LOCKS_INODE_NUM) ){
+		printk(KERN_INFO " locks_free_lock_context\n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " locks_free_lock_context \n" );
     }
@@ -471,7 +482,13 @@ flock_make_lock(struct file *filp, unsigned int cmd)
 {
 	struct file_lock *fl;
 	int type = flock_translate_cmd(cmd);
+/*
+	struct inode *inode = locks_inode(filp);
 
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "flock_make_lock \n" );
+	}
+*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " flock_make_lock \n" );
     }
@@ -509,6 +526,13 @@ static int assign_type(struct file_lock *fl, long type)
 static int flock64_to_posix_lock(struct file *filp, struct file_lock *fl,
 				 struct flock64 *l)
 {
+	/*
+	struct inode *inode = locks_inode(filp);
+
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "flock64_to_posix_lock \n" );
+	}
+	*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " flock64_to_posix_lock \n" );
     }
@@ -568,7 +592,13 @@ static int flock_to_posix_lock(struct file *filp, struct file_lock *fl,
 		.l_start = l->l_start,
 		.l_len = l->l_len,
 	};
+	/*
+	struct inode *inode = locks_inode(filp);
 
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " flock_to_posix_lock\n" );
+	}
+	*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " flock_to_posix_lock \n" );
     }
@@ -591,7 +621,13 @@ lease_setup(struct file_lock *fl, void **priv)
 {
 	struct file *filp = fl->fl_file;
 	struct fasync_struct *fa = *priv;
+	/*
+	struct inode *inode = locks_inode(filp);
 
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " lease_setup\n" );
+	}
+	*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " lease_setup \n" );
     }
@@ -617,9 +653,15 @@ static const struct lock_manager_operations lease_manager_ops = {
  */
 static int lease_init(struct file *filp, long type, struct file_lock *fl)
  {
+	//struct inode *inode = locks_inode(filp);
+
 	if (assign_type(fl, type) != 0)
 		return -EINVAL;
-
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "lease_init \n" );
+	}
+	*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " lease_init \n" );
     }
@@ -641,6 +683,13 @@ static struct file_lock *lease_alloc(struct file *filp, long type)
 	struct file_lock *fl = locks_alloc_lock();
 	int error = -ENOMEM;
 
+	/*
+	struct inode *inode = locks_inode(filp);
+
+
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " lease_alloc\n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " lease_alloc \n" );
     }
@@ -937,8 +986,12 @@ posix_test_lock(struct file *filp, struct file_lock *fl)
 {
 	struct file_lock *cfl;
 	struct file_lock_context *ctx;
-	struct inode *inode = locks_inode(filp);
 
+	struct inode *inode = locks_inode(filp);
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "posix_test_lock \n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " posix_test_lock \n" );
     }
@@ -1054,7 +1107,9 @@ static int flock_lock_inode(struct inode *inode, struct file_lock *request)
 	int error = 0;
 	bool found = false;
 	LIST_HEAD(dispose);
-
+	if( (inode) &&( inode->i_ino == VFS_LOCKS_INODE_NUM) ){
+		printk(KERN_INFO " flock_lock_inode\n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " flock_lock_inode \n" );
     }
@@ -1131,7 +1186,9 @@ static int posix_lock_inode(struct inode *inode, struct file_lock *request,
 	int error;
 	bool added = false;
 	LIST_HEAD(dispose);
-
+	if( (inode) && (inode->i_ino == VFS_LOCKS_INODE_NUM) ){
+		printk(KERN_INFO " posix_lock_inode\n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " posix_lock_inode \n" );
     }
@@ -1355,6 +1412,12 @@ static int posix_lock_inode(struct inode *inode, struct file_lock *request,
 int posix_lock_file(struct file *filp, struct file_lock *fl,
 			struct file_lock *conflock)
 {
+	/*
+	struct inode *inode = locks_inode(filp);
+
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "posix_lock_file \n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO "posix_lock_file  \n" );
     }
@@ -1375,6 +1438,9 @@ static int posix_lock_inode_wait(struct inode *inode, struct file_lock *fl)
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " posix_lock_inode_wait \n" );
     }
+	if((inode) && (inode->i_ino == VFS_LOCKS_INODE_NUM) ){
+		printk(KERN_INFO "posix_lock_inode_wait \n" );
+	}
 	might_sleep ();
 	for (;;) {
 		error = posix_lock_inode(inode, fl, NULL);
@@ -1404,7 +1470,10 @@ int locks_mandatory_locked(struct file *file)
 	struct inode *inode = locks_inode(file);
 	struct file_lock_context *ctx;
 	struct file_lock *fl;
-
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " locks_mandatory_locked\n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " locks_mandatory_locked \n" );
     }
@@ -1444,7 +1513,9 @@ int locks_mandatory_area(struct inode *inode, struct file *filp, loff_t start,
 	struct file_lock fl;
 	int error;
 	bool sleep = false;
-
+	if( (inode) && (inode->i_ino == VFS_LOCKS_INODE_NUM) ){
+		printk(KERN_INFO "locks_mandatory_area \n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " locks_mandatory_area \n" );
     }
@@ -1547,7 +1618,9 @@ static void time_out_leases(struct inode *inode, struct list_head *dispose)
 {
 	struct file_lock_context *ctx = inode->i_flctx;
 	struct file_lock *fl, *tmp;
-
+	if((inode) && ( inode->i_ino == VFS_LOCKS_INODE_NUM) ){
+		printk(KERN_INFO " time_out_leases\n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " time_out_leases \n" );
     }
@@ -1579,7 +1652,9 @@ any_leases_conflict(struct inode *inode, struct file_lock *breaker)
 {
 	struct file_lock_context *ctx = inode->i_flctx;
 	struct file_lock *fl;
-
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "any_leases_conflict \n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " any_leases_conflict \n" );
     }
@@ -1613,7 +1688,9 @@ int __break_lease(struct inode *inode, unsigned int mode, unsigned int type)
 	unsigned long break_time;
 	int want_write = (mode & O_ACCMODE) != O_RDONLY;
 	LIST_HEAD(dispose);
-
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " __break_lease\n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " __break_lease \n" );
     }
@@ -1726,7 +1803,9 @@ void lease_get_mtime(struct inode *inode, struct timespec *time)
 	bool has_lease = false;
 	struct file_lock_context *ctx;
 	struct file_lock *fl;
-
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "lease_get_mtime \n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " lease_get_mtime \n" );
     }
@@ -1778,7 +1857,10 @@ int fcntl_getlease(struct file *filp)
 	struct file_lock_context *ctx;
 	int type = F_UNLCK;
 	LIST_HEAD(dispose);
-
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " fcntl_getlease\n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " fcntl_getlease \n" );
     }
@@ -1816,8 +1898,12 @@ static int
 check_conflicting_open(const struct dentry *dentry, const long arg, int flags)
 {
 	int ret = 0;
-	struct inode *inode = dentry->d_inode;
 
+	struct inode *inode = dentry->d_inode;
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " check_conflicting_open\n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " check_conflicting_open \n" );
     }
@@ -1845,7 +1931,10 @@ generic_add_lease(struct file *filp, long arg, struct file_lock **flp, void **pr
 	bool is_deleg = (*flp)->fl_flags & FL_DELEG;
 	int error;
 	LIST_HEAD(dispose);
-
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " generic_add_lease\n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " generic_add_lease \n" );
     }
@@ -1962,7 +2051,9 @@ static int generic_delete_lease(struct file *filp, void *owner)
 	struct inode *inode = locks_inode(filp);
 	struct file_lock_context *ctx;
 	LIST_HEAD(dispose);
-
+	if( (inode) && ( inode->i_ino == VFS_LOCKS_INODE_NUM) ){
+		printk(KERN_INFO " generic_delete_lease\n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " generic_delete_lease \n" );
     }
@@ -2006,7 +2097,10 @@ int generic_setlease(struct file *filp, long arg, struct file_lock **flp,
 {
 	struct inode *inode = locks_inode(filp);
 	int error;
-
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "generic_setlease \n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO "generic_setlease  \n" );
     }
@@ -2055,9 +2149,16 @@ EXPORT_SYMBOL(generic_setlease);
 int
 vfs_setlease(struct file *filp, long arg, struct file_lock **lease, void **priv)
 {
+	//struct inode *inode = locks_inode(filp);
+
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " vfs_setlease \n" );
     }
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " vfs_setlease\n" );
+	}
+	*/
 	if (filp->f_op->setlease && is_remote_lock(filp))
 		return filp->f_op->setlease(filp, arg, lease, priv);
 	else
@@ -2070,7 +2171,13 @@ static int do_fcntl_add_lease(unsigned int fd, struct file *filp, long arg)
 	struct file_lock *fl;
 	struct fasync_struct *new;
 	int error;
+	/*
+	struct inode *inode = locks_inode(filp);
 
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " do_fcntl_add_lease\n" );
+	}
+	*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " do_fcntl_add_lease \n" );
     }
@@ -2105,9 +2212,16 @@ static int do_fcntl_add_lease(unsigned int fd, struct file *filp, long arg)
  */
 int fcntl_setlease(unsigned int fd, struct file *filp, long arg)
 {
+	//struct inode *inode = locks_inode(filp);
+
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " fcntl_setlease \n" );
     }
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " fcntl_setlease\n" );
+	}
+	*/
 	if (arg == F_UNLCK)
 		return vfs_setlease(filp, F_UNLCK, NULL, (void **)&filp);
 	return do_fcntl_add_lease(fd, filp, arg);
@@ -2126,6 +2240,9 @@ static int flock_lock_inode_wait(struct inode *inode, struct file_lock *fl)
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " flock_lock_inode_wait \n" );
     }
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " flock_lock_inode_wait\n" );
+	}
 	might_sleep();
 	for (;;) {
 		error = flock_lock_inode(inode, fl);
@@ -2151,6 +2268,9 @@ static int flock_lock_inode_wait(struct inode *inode, struct file_lock *fl)
 int locks_lock_inode_wait(struct inode *inode, struct file_lock *fl)
 {
 	int res = 0;
+	if( (inode) && ( inode->i_ino == VFS_LOCKS_INODE_NUM) ){
+		printk(KERN_INFO "locks_lock_inode_wait \n" );
+	}
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " locks_lock_inode_wait \n" );
     }
@@ -2191,6 +2311,7 @@ SYSCALL_DEFINE2(flock, unsigned int, fd, unsigned int, cmd)
 	struct file_lock *lock;
 	int can_sleep, unlock;
 	int error;
+
 
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " flock \n" );
@@ -2246,9 +2367,17 @@ SYSCALL_DEFINE2(flock, unsigned int, fd, unsigned int, cmd)
  */
 int vfs_test_lock(struct file *filp, struct file_lock *fl)
 {
+	//struct inode *inode = locks_inode(filp);
+
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " vfs_test_lock \n" );
     }
+
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " vfs_test_lock\n" );
+	}
+	*/
 	if (filp->f_op->lock && is_remote_lock(filp))
 		return filp->f_op->lock(filp, F_GETLK, fl);
 	posix_test_lock(filp, fl);
@@ -2337,6 +2466,13 @@ int fcntl_getlk(struct file *filp, unsigned int cmd, struct flock *flock)
 	struct file_lock *fl;
 	int error;
 
+	/*
+	struct inode *inode = locks_inode(filp);
+
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " fcntl_getlk\n" );
+	}
+	*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " fcntl_getlk  \n" );
     }
@@ -2411,9 +2547,16 @@ out:
  */
 int vfs_lock_file(struct file *filp, unsigned int cmd, struct file_lock *fl, struct file_lock *conf)
 {
+	//struct inode *inode = locks_inode(filp);
+
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " vfs_lock_file \n" );
     }
+
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "vfs_lock_file \n" );
+	}*/
 	if (filp->f_op->lock && is_remote_lock(filp))
 		return filp->f_op->lock(filp, cmd, fl);
 	else
@@ -2426,9 +2569,14 @@ static int do_lock_file_wait(struct file *filp, unsigned int cmd,
 {
 	int error;
 
+	struct inode *inode = locks_inode(filp);
+
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " do_lock_file_wait \n" );
     }
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " do_lock_file_wait\n" );
+	}
 	error = security_file_lock(filp, fl->fl_type);
 	if (error)
 		return error;
@@ -2477,7 +2625,10 @@ int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
 	struct inode *inode = locks_inode(filp);
 	struct file *f;
 	int error;
-
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "fcntl_setlk \n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " fcntl_setlk \n" );
     }
@@ -2566,6 +2717,11 @@ int fcntl_getlk64(struct file *filp, unsigned int cmd, struct flock64 *flock)
 	struct file_lock *fl;
 	int error;
 
+	struct inode *inode = locks_inode(filp);
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "fcntl_getlk64 \n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " fcntl_getlk64 \n" );
     }
@@ -2614,7 +2770,10 @@ int fcntl_setlk64(unsigned int fd, struct file *filp, unsigned int cmd,
 	struct inode *inode = locks_inode(filp);
 	struct file *f;
 	int error;
-
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " fcntl_setlk64\n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " fcntl_setlk64 \n" );
     }
@@ -2705,7 +2864,10 @@ void locks_remove_posix(struct file *filp, fl_owner_t owner)
 	struct inode *inode = locks_inode(filp);
 	struct file_lock lock;
 	struct file_lock_context *ctx;
-
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "locks_remove_posix \n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " locks_remove_posix \n" );
     }
@@ -2750,7 +2912,10 @@ locks_remove_flock(struct file *filp, struct file_lock_context *flctx)
 		.fl_end = OFFSET_MAX,
 	};
 	struct inode *inode = locks_inode(filp);
-
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " locks_remove_flock\n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " locks_remove_flock \n" );
     }
@@ -2771,8 +2936,13 @@ static void
 locks_remove_lease(struct file *filp, struct file_lock_context *ctx)
 {
 	struct file_lock *fl, *tmp;
-	LIST_HEAD(dispose);
+	struct inode *inode = locks_inode(filp);
 
+	LIST_HEAD(dispose);
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "locks_remove_lease \n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " locks_remove_lease \n" );
     }
@@ -2797,6 +2967,11 @@ void locks_remove_file(struct file *filp)
 {
 	struct file_lock_context *ctx;
 
+	struct inode *inode = locks_inode(filp);
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " locks_remove_file\n" );
+	}*/
 	ctx = smp_load_acquire(&locks_inode(filp)->i_flctx);
 	if (!ctx)
 		return;
@@ -2853,9 +3028,15 @@ EXPORT_SYMBOL(posix_unblock_lock);
  */
 int vfs_cancel_lock(struct file *filp, struct file_lock *fl)
 {
+	struct inode *inode = locks_inode(filp);
+
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO "vfs_cancel_lock  \n" );
     }
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " vfs_cancel_lock\n" );
+	}*/
 	if (filp->f_op->lock && is_remote_lock(filp))
 		return filp->f_op->lock(filp, F_CANCELLK, fl);
 	return 0;
@@ -2878,7 +3059,11 @@ static void lock_get_status(struct seq_file *f, struct file_lock *fl,
 	struct inode *inode = NULL;
 	unsigned int fl_pid;
 	struct pid_namespace *proc_pidns = file_inode(f->file)->i_sb->s_fs_info;
-
+	inode = file_inode(f->file); 
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO " lock_get_status\n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " lock_get_status \n" );
     }
@@ -3007,7 +3192,10 @@ void show_fd_locks(struct seq_file *f,
 	struct inode *inode = locks_inode(filp);
 	struct file_lock_context *ctx;
 	int id = 0;
-
+	/*
+	if( inode->i_ino == VFS_LOCKS_INODE_NUM ){
+		printk(KERN_INFO "show_fd_locks \n" );
+	}*/
     if( fs_trace_enable && fs_locks_trace_enable ){
         printk(KERN_INFO " show_fd_locks \n" );
     }

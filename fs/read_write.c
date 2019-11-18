@@ -28,6 +28,8 @@
 extern int fs_trace_enable;
 extern int fs_read_write_trace_enable;
 
+#define TRACE_FILE_INODE_NUM 15873378 
+
 const struct file_operations generic_ro_fops = {
 	.llseek		= generic_file_llseek,
 	.read_iter	= generic_file_read_iter,
@@ -405,6 +407,9 @@ int rw_verify_area(int read_write, struct file *file, const loff_t *ppos, size_t
 	struct inode *inode;
 	loff_t pos;
 	int retval = -EINVAL;
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "rw_verify_area inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
 
     if( fs_trace_enable && fs_read_write_trace_enable ){
         printk( KERN_INFO "rw_verify_area \n");
@@ -439,7 +444,9 @@ static ssize_t new_sync_read(struct file *filp, char __user *buf, size_t len, lo
 	struct kiocb kiocb;
 	struct iov_iter iter;
 	ssize_t ret;
-
+	if( filp->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "new_sync_read  inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
     if( fs_trace_enable && fs_read_write_trace_enable ){
         printk( KERN_INFO "new_sync_read \n");
     }
@@ -456,6 +463,9 @@ static ssize_t new_sync_read(struct file *filp, char __user *buf, size_t len, lo
 ssize_t __vfs_read(struct file *file, char __user *buf, size_t count,
 		   loff_t *pos)
 {
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "__vfs_read for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
 	if (file->f_op->read)
 		return file->f_op->read(file, buf, count, pos);
 	else if (file->f_op->read_iter)
@@ -468,7 +478,9 @@ ssize_t kernel_read(struct file *file, void *buf, size_t count, loff_t *pos)
 {
 	mm_segment_t old_fs;
 	ssize_t result;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "kernel_read for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
     if( fs_trace_enable && fs_read_write_trace_enable ){
         printk( KERN_INFO "kernel_read \n");
     }
@@ -484,7 +496,9 @@ EXPORT_SYMBOL(kernel_read);
 ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 {
 	ssize_t ret;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "vfs_read for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
     if( fs_trace_enable && fs_read_write_trace_enable ){
         printk( KERN_INFO "vfs_read \n");
     }
@@ -517,7 +531,9 @@ static ssize_t new_sync_write(struct file *filp, const char __user *buf, size_t 
 	struct kiocb kiocb;
 	struct iov_iter iter;
 	ssize_t ret;
-
+	if( filp->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "new_sync_write  inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
     if( fs_trace_enable && fs_read_write_trace_enable ){
         printk( KERN_INFO " new_sync_write\n");
     }
@@ -535,6 +551,9 @@ static ssize_t new_sync_write(struct file *filp, const char __user *buf, size_t 
 ssize_t __vfs_write(struct file *file, const char __user *p, size_t count,
 		    loff_t *pos)
 {
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "__vfs_write for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
     if( fs_trace_enable && fs_read_write_trace_enable ){
         printk( KERN_INFO "__vfs_write \n");
     }
@@ -550,6 +569,9 @@ vfs_readf_t vfs_readf(struct file *file)
 {
 	const struct file_operations *fop = file->f_op;
 
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "vfs_readf for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
     if( fs_trace_enable && fs_read_write_trace_enable ){
         printk( KERN_INFO " vfs_readf\n");
     }
@@ -564,7 +586,9 @@ EXPORT_SYMBOL_GPL(vfs_readf);
 vfs_writef_t vfs_writef(struct file *file)
 {
 	const struct file_operations *fop = file->f_op;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "vfs_writef for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
     if( fs_trace_enable && fs_read_write_trace_enable ){
         printk( KERN_INFO "vfs_writef \n");
     }
@@ -581,7 +605,9 @@ ssize_t __kernel_write(struct file *file, const void *buf, size_t count, loff_t 
 	mm_segment_t old_fs;
 	const char __user *p;
 	ssize_t ret;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "__vfs_write for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
     if( fs_trace_enable && fs_read_write_trace_enable ){
         printk( KERN_INFO "__kernel_write \n");
     }
@@ -609,7 +635,9 @@ ssize_t kernel_write(struct file *file, const void *buf, size_t count,
 {
 	mm_segment_t old_fs;
 	ssize_t res;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "kernel_write for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
     if( fs_trace_enable && fs_read_write_trace_enable ){
         printk( KERN_INFO "kernel_write \n");
     }
@@ -626,7 +654,9 @@ EXPORT_SYMBOL(kernel_write);
 ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_t *pos)
 {
 	ssize_t ret;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "vfs_write for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
     if( fs_trace_enable && fs_read_write_trace_enable ){
         printk( KERN_INFO "vfs_write \n");
     }

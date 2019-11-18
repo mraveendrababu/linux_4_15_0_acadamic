@@ -47,7 +47,7 @@
  * The fourth extended filesystem constants/structures
  */
 
-#define MY_EXT4_INODE_NUM   42992041
+#define MY_EXT4_INODE_NUM   15873378
 /*
  * with AGGRESSIVE_CHECK allocator runs consistency checks over
  * structures. these checks slow things down a lot

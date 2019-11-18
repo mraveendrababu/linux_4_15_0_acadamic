@@ -195,7 +195,6 @@ static void ext4_es_print_tree(struct inode *inode)
 	while (node) {
 		struct extent_status *es;
 		es = rb_entry(node, struct extent_status, rb_node);
-		
 		if( inode->i_ino == MY_EXT4_INODE_NUM ){
 			printk(KERN_DEBUG " [%u/%u) %llu %x",
 		       		es->es_lblk, es->es_len,
