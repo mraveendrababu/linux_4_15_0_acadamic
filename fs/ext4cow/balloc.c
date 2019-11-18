@@ -13,7 +13,7 @@
 
 #include <linux/quotaops.h>
 #include <linux/blkdev.h>
-#include "ext3cow.h"
+#include "ext4cow.h"
 
 /*
  * balloc.c contains the blocks allocation and deallocation routines

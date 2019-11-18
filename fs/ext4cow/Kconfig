@@ -1,6 +1,6 @@
-config EXT3COW_FS
-	tristate "Ext3 journalling file system support"
-	select JBD
+config EXT4COW_FS
+	tristate "Ext4 Raveendra journalling file system support"
+	select JBD2
 	help
 	  This is the journalling version of the Second extended file system
 	  (often called ext3cow), the de facto standard Linux file system
@@ -28,9 +28,9 @@ config EXT3COW_FS
 	  To compile this file system support as a module, choose M here: the
 	  module will be called ext3cow.
 
-config EXT3COW_DEFAULTS_TO_ORDERED
-	bool "Default to 'data=ordered' in ext3cow"
-	depends on EXT3COW_FS
+config EXT4COW_DEFAULTS_TO_ORDERED
+	bool "Default to 'data=ordered' in ext4cow"
+	depends on EXT4COW_FS
 	default y
 	help
 	  The journal mode options for ext3cow have different tradeoffs
@@ -50,9 +50,9 @@ config EXT3COW_DEFAULTS_TO_ORDERED
 	  privacy issues of data=writeback and are willing to make
 	  that trade off, answer 'n'.
 
-config EXT3COW_FS_XATTR
-	bool "Ext3 extended attributes"
-	depends on EXT3COW_FS
+config EXT4COW_FS_XATTR
+	bool "Ext4 Raveendra extended attributes"
+	depends on EXT4COW_FS
 	default y
 	help
 	  Extended attributes are name:value pairs associated with inodes by
@@ -63,9 +63,9 @@ config EXT3COW_FS_XATTR
 
 	  You need this for POSIX ACL support on ext3cow.
 
-config EXT3COW_FS_POSIX_ACL
-	bool "Ext3 POSIX Access Control Lists"
-	depends on EXT3COW_FS_XATTR
+config EXT4COW_FS_POSIX_ACL
+	bool "Ext4 Raveendra POSIX Access Control Lists"
+	depends on EXT4COW_FS_XATTR
 	select FS_POSIX_ACL
 	help
 	  Posix Access Control Lists (ACLs) support permissions for users and
@@ -76,9 +76,9 @@ config EXT3COW_FS_POSIX_ACL
 
 	  If you don't know what Access Control Lists are, say N
 
-config EXT3COW_FS_SECURITY
-	bool "Ext3 Security Labels"
-	depends on EXT3COW_FS_XATTR
+config EXT4COW_FS_SECURITY
+	bool "Ext4 Raveendra Security Labels"
+	depends on EXT4COW_FS_XATTR
 	help
 	  Security labels support alternative access control models
 	  implemented by security modules like SELinux.  This option

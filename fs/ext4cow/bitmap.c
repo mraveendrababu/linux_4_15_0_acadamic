@@ -7,7 +7,7 @@
  * Universite Pierre et Marie Curie (Paris VI)
  */
 
-#include "ext3cow.h"
+#include "ext4cow.h"
 
 #ifdef EXT3COWFS_DEBUG
 
