@@ -14,6 +14,9 @@
 #include "internal.h"
 #include "mount.h"
 
+extern int fs_trace_enable;
+extern int fs_fhandle_trace_enable;
+
 static long do_sys_name_to_handle(struct path *path,
 				  struct file_handle __user *ufh,
 				  int __user *mnt_id)
@@ -23,6 +26,9 @@ static long do_sys_name_to_handle(struct path *path,
 	int handle_dwords, handle_bytes;
 	struct file_handle *handle = NULL;
 
+    if(fs_trace_enable && fs_fhandle_trace_enable ){
+        printk(KERN_INFO "do_sys_name_to_handle \n" );
+    }
 	/*
 	 * We need to make sure whether the file system
 	 * support decoding of the file handle
@@ -99,6 +105,9 @@ SYSCALL_DEFINE5(name_to_handle_at, int, dfd, const char __user *, name,
 	int lookup_flags;
 	int err;
 
+    if(fs_trace_enable && fs_fhandle_trace_enable ){
+        printk(KERN_INFO " name_to_handle_at\n" );
+    }
 	if ((flag & ~(AT_SYMLINK_FOLLOW | AT_EMPTY_PATH)) != 0)
 		return -EINVAL;
 
@@ -117,6 +126,9 @@ static struct vfsmount *get_vfsmount_from_fd(int fd)
 {
 	struct vfsmount *mnt;
 
+    if(fs_trace_enable && fs_fhandle_trace_enable ){
+        printk(KERN_INFO "get_vfsmount_from_fd \n" );
+    }
 	if (fd == AT_FDCWD) {
 		struct fs_struct *fs = current->fs;
 		spin_lock(&fs->lock);
@@ -143,6 +155,9 @@ static int do_handle_to_path(int mountdirfd, struct file_handle *handle,
 	int retval = 0;
 	int handle_dwords;
 
+    if(fs_trace_enable && fs_fhandle_trace_enable ){
+        printk(KERN_INFO "do_handle_to_path \n" );
+    }
 	path->mnt = get_vfsmount_from_fd(mountdirfd);
 	if (IS_ERR(path->mnt)) {
 		retval = PTR_ERR(path->mnt);
@@ -172,6 +187,9 @@ static int handle_to_path(int mountdirfd, struct file_handle __user *ufh,
 	struct file_handle f_handle;
 	struct file_handle *handle = NULL;
 
+    if(fs_trace_enable && fs_fhandle_trace_enable ){
+        printk(KERN_INFO " handle_to_path\n" );
+    }
 	/*
 	 * With handle we don't look at the execute bit on the
 	 * the directory. Ideally we would like CAP_DAC_SEARCH.
@@ -221,6 +239,9 @@ static long do_handle_open(int mountdirfd, struct file_handle __user *ufh,
 	struct file *file;
 	int fd;
 
+    if(fs_trace_enable && fs_fhandle_trace_enable ){
+        printk(KERN_INFO "do_handle_open \n" );
+    }
 	retval = handle_to_path(mountdirfd, ufh, &path);
 	if (retval)
 		return retval;
@@ -260,6 +281,9 @@ SYSCALL_DEFINE3(open_by_handle_at, int, mountdirfd,
 {
 	long ret;
 
+    if(fs_trace_enable && fs_fhandle_trace_enable ){
+        printk(KERN_INFO " open_by_handle_at\n" );
+    }
 	if (force_o_largefile())
 		flags |= O_LARGEFILE;
 
@@ -275,6 +299,9 @@ SYSCALL_DEFINE3(open_by_handle_at, int, mountdirfd,
 COMPAT_SYSCALL_DEFINE3(open_by_handle_at, int, mountdirfd,
 			     struct file_handle __user *, handle, int, flags)
 {
+    if(fs_trace_enable && fs_fhandle_trace_enable ){
+        printk(KERN_INFO "open_by_handle_at \n" );
+    }
 	return do_handle_open(mountdirfd, handle, flags);
 }
 #endif

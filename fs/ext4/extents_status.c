@@ -143,6 +143,9 @@
 
 static struct kmem_cache *ext4_es_cachep;
 
+extern int ext4_trace_enable;
+extern int ext4_extents_status_trace_enable;
+
 static int __es_insert_extent(struct inode *inode, struct extent_status *newes);
 static int __es_remove_extent(struct inode *inode, ext4_lblk_t lblk,
 			      ext4_lblk_t end);
@@ -155,6 +158,9 @@ int __init ext4_init_es(void)
 	ext4_es_cachep = kmem_cache_create("ext4_extent_status",
 					   sizeof(struct extent_status),
 					   0, (SLAB_RECLAIM_ACCOUNT), NULL);
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_init_es \n" );
+    }
 	if (ext4_es_cachep == NULL)
 		return -ENOMEM;
 	return 0;
@@ -178,18 +184,27 @@ static void ext4_es_print_tree(struct inode *inode)
 	struct ext4_es_tree *tree;
 	struct rb_node *node;
 
-	printk(KERN_DEBUG "status extents for inode %lu:", inode->i_ino);
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_print_tree \n" );
+    }
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "status extents for inode %lu:", inode->i_ino);
+	}
 	tree = &EXT4_I(inode)->i_es_tree;
 	node = rb_first(&tree->root);
 	while (node) {
 		struct extent_status *es;
 		es = rb_entry(node, struct extent_status, rb_node);
-		printk(KERN_DEBUG " [%u/%u) %llu %x",
-		       es->es_lblk, es->es_len,
-		       ext4_es_pblock(es), ext4_es_status(es));
+		if( inode->i_ino == MY_EXT4_INODE_NUM ){
+			printk(KERN_DEBUG " [%u/%u) %llu %x",
+		       		es->es_lblk, es->es_len,
+		       		ext4_es_pblock(es), ext4_es_status(es));
+		}
 		node = rb_next(node);
 	}
-	printk(KERN_DEBUG "\n");
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "\n");
+	}
 }
 #else
 #define ext4_es_print_tree(inode)
@@ -211,6 +226,9 @@ static struct extent_status *__es_tree_search(struct rb_root *root,
 	struct rb_node *node = root->rb_node;
 	struct extent_status *es = NULL;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO "__es_tree_search  \n" );
+    }
 	while (node) {
 		es = rb_entry(node, struct extent_status, rb_node);
 		if (lblk < es->es_lblk)
@@ -250,6 +268,9 @@ void ext4_es_find_delayed_extent_range(struct inode *inode,
 	struct extent_status *es1 = NULL;
 	struct rb_node *node;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_find_delayed_extent_range \n" );
+    }
 	BUG_ON(es == NULL);
 	BUG_ON(end < lblk);
 	trace_ext4_es_find_delayed_extent_range_enter(inode, lblk);
@@ -301,6 +322,9 @@ static void ext4_es_list_add(struct inode *inode)
 	struct ext4_inode_info *ei = EXT4_I(inode);
 	struct ext4_sb_info *sbi = EXT4_SB(inode->i_sb);
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_list_add \n" );
+    }
 	if (!list_empty(&ei->i_es_list))
 		return;
 
@@ -317,6 +341,9 @@ static void ext4_es_list_del(struct inode *inode)
 	struct ext4_inode_info *ei = EXT4_I(inode);
 	struct ext4_sb_info *sbi = EXT4_SB(inode->i_sb);
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_list_del \n" );
+    }
 	spin_lock(&sbi->s_es_lock);
 	if (!list_empty(&ei->i_es_list)) {
 		list_del_init(&ei->i_es_list);
@@ -338,6 +365,9 @@ ext4_es_alloc_extent(struct inode *inode, ext4_lblk_t lblk, ext4_lblk_t len,
 	es->es_len = len;
 	es->es_pblk = pblk;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_alloc_extent \n" );
+    }
 	/*
 	 * We don't count delayed extent because we never try to reclaim them
 	 */
@@ -359,6 +389,9 @@ static void ext4_es_free_extent(struct inode *inode, struct extent_status *es)
 	EXT4_I(inode)->i_es_all_nr--;
 	percpu_counter_dec(&EXT4_SB(inode->i_sb)->s_es_stats.es_stats_all_cnt);
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_free_extent \n" );
+    }
 	/* Decrease the shrink counter when this es is not delayed */
 	if (!ext4_es_is_delayed(es)) {
 		BUG_ON(EXT4_I(inode)->i_es_shk_nr == 0);
@@ -381,6 +414,9 @@ static void ext4_es_free_extent(struct inode *inode, struct extent_status *es)
 static int ext4_es_can_be_merged(struct extent_status *es1,
 				 struct extent_status *es2)
 {
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_can_be_merged \n" );
+    }
 	if (ext4_es_type(es1) != ext4_es_type(es2))
 		return 0;
 
@@ -417,6 +453,9 @@ ext4_es_try_to_merge_left(struct inode *inode, struct extent_status *es)
 	struct extent_status *es1;
 	struct rb_node *node;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_try_to_merge_left \n" );
+    }
 	node = rb_prev(&es->rb_node);
 	if (!node)
 		return es;
@@ -441,6 +480,9 @@ ext4_es_try_to_merge_right(struct inode *inode, struct extent_status *es)
 	struct extent_status *es1;
 	struct rb_node *node;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_try_to_merge_right \n" );
+    }
 	node = rb_next(&es->rb_node);
 	if (!node)
 		return es;
@@ -470,6 +512,9 @@ static void ext4_es_insert_extent_ext_check(struct inode *inode,
 	unsigned short ee_len;
 	int depth, ee_status, es_status;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_insert_extent_ext_check \n" );
+    }
 	path = ext4_find_extent(inode, es->es_lblk, NULL, EXT4_EX_NOCACHE);
 	if (IS_ERR(path))
 		return;
@@ -553,6 +598,9 @@ static void ext4_es_insert_extent_ind_check(struct inode *inode,
 	struct ext4_map_blocks map;
 	int retval;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_insert_extent_ind_check \n" );
+    }
 	/*
 	 * Here we call ext4_ind_map_blocks to lookup a block mapping because
 	 * 'Indirect' structure is defined in indirect.c.  So we couldn't
@@ -613,6 +661,9 @@ static void ext4_es_insert_extent_ind_check(struct inode *inode,
 static inline void ext4_es_insert_extent_check(struct inode *inode,
 					       struct extent_status *es)
 {
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_insert_extent_check \n" );
+    }
 	/*
 	 * We don't need to worry about the race condition because
 	 * caller takes i_data_sem locking.
@@ -637,6 +688,9 @@ static int __es_insert_extent(struct inode *inode, struct extent_status *newes)
 	struct rb_node *parent = NULL;
 	struct extent_status *es;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " __es_insert_extent \n" );
+    }
 	while (*p) {
 		parent = *p;
 		es = rb_entry(parent, struct extent_status, rb_node);
@@ -696,6 +750,9 @@ int ext4_es_insert_extent(struct inode *inode, ext4_lblk_t lblk,
 	ext4_lblk_t end = lblk + len - 1;
 	int err = 0;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_insert_extent \n" );
+    }
 	es_debug("add [%u/%u) %llu %x to extent status tree of inode %lu\n",
 		 lblk, len, pblk, status, inode->i_ino);
 
@@ -752,6 +809,9 @@ void ext4_es_cache_extent(struct inode *inode, ext4_lblk_t lblk,
 	struct extent_status newes;
 	ext4_lblk_t end = lblk + len - 1;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_cache_extent \n" );
+    }
 	newes.es_lblk = lblk;
 	newes.es_len = len;
 	ext4_es_store_pblock_status(&newes, pblk, status);
@@ -786,8 +846,11 @@ int ext4_es_lookup_extent(struct inode *inode, ext4_lblk_t lblk,
 	struct rb_node *node;
 	int found = 0;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_lookup_extent \n" );
+    }
 	trace_ext4_es_lookup_extent_enter(inode, lblk);
-	es_debug("lookup extent in block %u\n", lblk);
+	es_debug("lookup extent in logical  block means file block numer : fbn  %u   in the Inode : %lu \n", lblk, inode->i_ino);
 
 	tree = &EXT4_I(inode)->i_es_tree;
 	read_lock(&EXT4_I(inode)->i_es_lock);
@@ -824,6 +887,7 @@ out:
 		es->es_lblk = es1->es_lblk;
 		es->es_len = es1->es_len;
 		es->es_pblk = es1->es_pblk;
+		es_debug("lookup extent in lbn  %u   in the Inode : %lu  and PBN : %lu \n", lblk, inode->i_ino, es->es_pblk);
 		if (!ext4_es_is_referenced(es1))
 			ext4_es_set_referenced(es1);
 		stats->es_stats_cache_hits++;
@@ -848,6 +912,9 @@ static int __es_remove_extent(struct inode *inode, ext4_lblk_t lblk,
 	ext4_fsblk_t block;
 	int err;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " __es_remove_extent \n" );
+    }
 retry:
 	err = 0;
 	es = __es_tree_search(&tree->root, lblk);
@@ -948,6 +1015,9 @@ int ext4_es_remove_extent(struct inode *inode, ext4_lblk_t lblk,
 	ext4_lblk_t end;
 	int err = 0;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_remove_extent \n" );
+    }
 	trace_ext4_es_remove_extent(inode, lblk, len);
 	es_debug("remove [%u/%u) from extent status tree of inode %lu\n",
 		 lblk, len, inode->i_ino);
@@ -981,6 +1051,9 @@ static int __es_shrink(struct ext4_sb_info *sbi, int nr_to_scan,
 	int nr_shrunk = 0;
 	int retried = 0, nr_skipped = 0;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " __es_shrink \n" );
+    }
 	es_stats = &sbi->s_es_stats;
 	start_time = ktime_get();
 
@@ -1064,6 +1137,9 @@ static unsigned long ext4_es_count(struct shrinker *shrink,
 	unsigned long nr;
 	struct ext4_sb_info *sbi;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_count \n" );
+    }
 	sbi = container_of(shrink, struct ext4_sb_info, s_es_shrinker);
 	nr = percpu_counter_read_positive(&sbi->s_es_stats.es_stats_shk_cnt);
 	trace_ext4_es_shrink_count(sbi->s_sb, sc->nr_to_scan, nr);
@@ -1078,6 +1154,9 @@ static unsigned long ext4_es_scan(struct shrinker *shrink,
 	int nr_to_scan = sc->nr_to_scan;
 	int ret, nr_shrunk;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_scan \n" );
+    }
 	ret = percpu_counter_read_positive(&sbi->s_es_stats.es_stats_shk_cnt);
 	trace_ext4_es_shrink_scan_enter(sbi->s_sb, nr_to_scan, ret);
 
@@ -1097,6 +1176,9 @@ int ext4_seq_es_shrinker_info_show(struct seq_file *seq, void *v)
 	struct ext4_inode_info *ei, *max = NULL;
 	unsigned int inode_cnt = 0;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_seq_es_shrinker_info_show \n" );
+    }
 	if (v != SEQ_START_TOKEN)
 		return 0;
 
@@ -1137,6 +1219,9 @@ int ext4_es_register_shrinker(struct ext4_sb_info *sbi)
 {
 	int err;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_register_shrinker \n" );
+    }
 	/* Make sure we have enough bits for physical block number */
 	BUILD_BUG_ON(ES_SHIFT < 48);
 	INIT_LIST_HEAD(&sbi->s_es_list);
@@ -1172,6 +1257,9 @@ err1:
 
 void ext4_es_unregister_shrinker(struct ext4_sb_info *sbi)
 {
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " ext4_es_unregister_shrinker \n" );
+    }
 	percpu_counter_destroy(&sbi->s_es_stats.es_stats_all_cnt);
 	percpu_counter_destroy(&sbi->s_es_stats.es_stats_shk_cnt);
 	unregister_shrinker(&sbi->s_es_shrinker);
@@ -1193,6 +1281,9 @@ static int es_do_reclaim_extents(struct ext4_inode_info *ei, ext4_lblk_t end,
 	struct extent_status *es;
 	struct rb_node *node;
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " es_do_reclaim_extents \n" );
+    }
 	es = __es_tree_search(&tree->root, ei->i_es_shrink_lblk);
 	if (!es)
 		goto out_wrap;
@@ -1239,6 +1330,9 @@ static int es_reclaim_extents(struct ext4_inode_info *ei, int *nr_to_scan)
 	static DEFINE_RATELIMIT_STATE(_rs, DEFAULT_RATELIMIT_INTERVAL,
 				      DEFAULT_RATELIMIT_BURST);
 
+    if ( ext4_trace_enable && ext4_extents_status_trace_enable ){
+        printk( KERN_INFO " es_reclaim_extents \n" );
+    }
 	if (ei->i_es_shk_nr == 0)
 		return 0;
 

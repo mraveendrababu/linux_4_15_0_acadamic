@@ -21,6 +21,9 @@
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
 
+extern int fs_trace_enable;
+extern int fs_stat_trace_enable;
+
 /**
  * generic_fillattr - Fill in the basic attributes from the inode struct
  * @inode: Inode to use as the source
@@ -46,6 +49,9 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
 	stat->blksize = i_blocksize(inode);
 	stat->blocks = inode->i_blocks;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "generic_fillattr \n"  );
+    }
 	if (IS_NOATIME(inode))
 		stat->result_mask &= ~STATX_ATIME;
 	if (IS_AUTOMOUNT(inode))
@@ -71,6 +77,9 @@ int vfs_getattr_nosec(const struct path *path, struct kstat *stat,
 {
 	struct inode *inode = d_backing_inode(path->dentry);
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " vfs_getattr_nosec\n"  );
+    }
 	memset(stat, 0, sizeof(*stat));
 	stat->result_mask |= STATX_BASIC_STATS;
 	request_mask &= STATX_ALL;
@@ -110,6 +119,9 @@ int vfs_getattr(const struct path *path, struct kstat *stat,
 {
 	int retval;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "vfs_getattr \n"  );
+    }
 	retval = security_inode_getattr(path);
 	if (retval)
 		return retval;
@@ -135,6 +147,9 @@ int vfs_statx_fd(unsigned int fd, struct kstat *stat,
 	struct fd f;
 	int error = -EBADF;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "vfs_statx_fd \n"  );
+    }
 	if (query_flags & ~KSTAT_QUERY_FLAGS)
 		return -EINVAL;
 
@@ -170,6 +185,9 @@ int vfs_statx(int dfd, const char __user *filename, int flags,
 	int error = -EINVAL;
 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_AUTOMOUNT;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " vfs_statx\n"  );
+    }
 	if ((flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
 		       AT_EMPTY_PATH | KSTAT_QUERY_FLAGS)) != 0)
 		return -EINVAL;
@@ -209,6 +227,9 @@ static int cp_old_stat(struct kstat *stat, struct __old_kernel_stat __user * sta
 	static int warncount = 5;
 	struct __old_kernel_stat tmp;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " cp_old_stat\n"  );
+    }
 	if (warncount > 0) {
 		warncount--;
 		printk(KERN_WARNING "VFS: Warning: %s using old stat() call. Recompile your binary.\n",
@@ -247,6 +268,9 @@ SYSCALL_DEFINE2(stat, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " stat\n"  );
+    }
 	error = vfs_stat(filename, &stat);
 	if (error)
 		return error;
@@ -260,6 +284,9 @@ SYSCALL_DEFINE2(lstat, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "lstat \n"  );
+    }
 	error = vfs_lstat(filename, &stat);
 	if (error)
 		return error;
@@ -272,6 +299,9 @@ SYSCALL_DEFINE2(fstat, unsigned int, fd, struct __old_kernel_stat __user *, stat
 	struct kstat stat;
 	int error = vfs_fstat(fd, &stat);
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "fstat \n"  );
+    }
 	if (!error)
 		error = cp_old_stat(&stat, statbuf);
 
@@ -297,6 +327,9 @@ static int cp_new_stat(struct kstat *stat, struct stat __user *statbuf)
 {
 	struct stat tmp;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "cp_new_stat \n"  );
+    }
 	if (!valid_dev(stat->dev) || !valid_dev(stat->rdev))
 		return -EOVERFLOW;
 #if BITS_PER_LONG == 32
@@ -336,6 +369,9 @@ SYSCALL_DEFINE2(newstat, const char __user *, filename,
 	struct kstat stat;
 	int error = vfs_stat(filename, &stat);
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "newstat \n"  );
+    }
 	if (error)
 		return error;
 	return cp_new_stat(&stat, statbuf);
@@ -347,6 +383,9 @@ SYSCALL_DEFINE2(newlstat, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " newlstat\n"  );
+    }
 	error = vfs_lstat(filename, &stat);
 	if (error)
 		return error;
@@ -361,6 +400,9 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "newfstatat \n"  );
+    }
 	error = vfs_fstatat(dfd, filename, &stat, flag);
 	if (error)
 		return error;
@@ -373,6 +415,9 @@ SYSCALL_DEFINE2(newfstat, unsigned int, fd, struct stat __user *, statbuf)
 	struct kstat stat;
 	int error = vfs_fstat(fd, &stat);
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " newfstat\n"  );
+    }
 	if (!error)
 		error = cp_new_stat(&stat, statbuf);
 
@@ -387,6 +432,9 @@ SYSCALL_DEFINE4(readlinkat, int, dfd, const char __user *, pathname,
 	int empty = 0;
 	unsigned int lookup_flags = LOOKUP_EMPTY;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "readlinkat \n"  );
+    }
 	if (bufsiz <= 0)
 		return -EINVAL;
 
@@ -418,6 +466,9 @@ retry:
 SYSCALL_DEFINE3(readlink, const char __user *, path, char __user *, buf,
 		int, bufsiz)
 {
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "readlink \n"  );
+    }
 	return sys_readlinkat(AT_FDCWD, path, buf, bufsiz);
 }
 
@@ -433,6 +484,9 @@ static long cp_new_stat64(struct kstat *stat, struct stat64 __user *statbuf)
 {
 	struct stat64 tmp;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " cp_new_stat64\n"  );
+    }
 	INIT_STRUCT_STAT64_PADDING(tmp);
 #ifdef CONFIG_MIPS
 	/* mips has weird padding, so we don't get 64 bits there */
@@ -470,6 +524,9 @@ SYSCALL_DEFINE2(stat64, const char __user *, filename,
 	struct kstat stat;
 	int error = vfs_stat(filename, &stat);
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "stat64 \n"  );
+    }
 	if (!error)
 		error = cp_new_stat64(&stat, statbuf);
 
@@ -482,6 +539,9 @@ SYSCALL_DEFINE2(lstat64, const char __user *, filename,
 	struct kstat stat;
 	int error = vfs_lstat(filename, &stat);
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " lstat64\n"  );
+    }
 	if (!error)
 		error = cp_new_stat64(&stat, statbuf);
 
@@ -493,6 +553,9 @@ SYSCALL_DEFINE2(fstat64, unsigned long, fd, struct stat64 __user *, statbuf)
 	struct kstat stat;
 	int error = vfs_fstat(fd, &stat);
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " fstat64\n"  );
+    }
 	if (!error)
 		error = cp_new_stat64(&stat, statbuf);
 
@@ -505,6 +568,9 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "fstatat64 \n"  );
+    }
 	error = vfs_fstatat(dfd, filename, &stat, flag);
 	if (error)
 		return error;
@@ -517,6 +583,9 @@ cp_statx(const struct kstat *stat, struct statx __user *buffer)
 {
 	struct statx tmp;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "cp_statx \n"  );
+    }
 	memset(&tmp, 0, sizeof(tmp));
 
 	tmp.stx_mask = stat->result_mask;
@@ -565,6 +634,9 @@ SYSCALL_DEFINE5(statx,
 	struct kstat stat;
 	int error;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "statx \n"  );
+    }
 	if (mask & STATX__RESERVED)
 		return -EINVAL;
 	if ((flags & AT_STATX_SYNC_TYPE) == AT_STATX_SYNC_TYPE)
@@ -582,6 +654,9 @@ static int cp_compat_stat(struct kstat *stat, struct compat_stat __user *ubuf)
 {
 	struct compat_stat tmp;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "cp_compat_stat \n"  );
+    }
 	if (!old_valid_dev(stat->dev) || !old_valid_dev(stat->rdev))
 		return -EOVERFLOW;
 
@@ -617,6 +692,9 @@ COMPAT_SYSCALL_DEFINE2(newstat, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "newstat \n"  );
+    }
 	error = vfs_stat(filename, &stat);
 	if (error)
 		return error;
@@ -629,6 +707,9 @@ COMPAT_SYSCALL_DEFINE2(newlstat, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " newlstat\n"  );
+    }
 	error = vfs_lstat(filename, &stat);
 	if (error)
 		return error;
@@ -643,6 +724,9 @@ COMPAT_SYSCALL_DEFINE4(newfstatat, unsigned int, dfd,
 	struct kstat stat;
 	int error;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " newfstatat\n"  );
+    }
 	error = vfs_fstatat(dfd, filename, &stat, flag);
 	if (error)
 		return error;
@@ -656,6 +740,9 @@ COMPAT_SYSCALL_DEFINE2(newfstat, unsigned int, fd,
 	struct kstat stat;
 	int error = vfs_fstat(fd, &stat);
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " newfstat\n"  );
+    }
 	if (!error)
 		error = cp_compat_stat(&stat, statbuf);
 	return error;
@@ -665,6 +752,9 @@ COMPAT_SYSCALL_DEFINE2(newfstat, unsigned int, fd,
 /* Caller is here responsible for sufficient locking (ie. inode->i_lock) */
 void __inode_add_bytes(struct inode *inode, loff_t bytes)
 {
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "__inode_add_bytes \n"  );
+    }
 	inode->i_blocks += bytes >> 9;
 	bytes &= 511;
 	inode->i_bytes += bytes;
@@ -677,6 +767,9 @@ EXPORT_SYMBOL(__inode_add_bytes);
 
 void inode_add_bytes(struct inode *inode, loff_t bytes)
 {
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "inode_add_bytes \n"  );
+    }
 	spin_lock(&inode->i_lock);
 	__inode_add_bytes(inode, bytes);
 	spin_unlock(&inode->i_lock);
@@ -686,6 +779,9 @@ EXPORT_SYMBOL(inode_add_bytes);
 
 void __inode_sub_bytes(struct inode *inode, loff_t bytes)
 {
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " __inode_sub_bytes\n"  );
+    }
 	inode->i_blocks -= bytes >> 9;
 	bytes &= 511;
 	if (inode->i_bytes < bytes) {
@@ -699,6 +795,9 @@ EXPORT_SYMBOL(__inode_sub_bytes);
 
 void inode_sub_bytes(struct inode *inode, loff_t bytes)
 {
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO "inode_sub_bytes \n"  );
+    }
 	spin_lock(&inode->i_lock);
 	__inode_sub_bytes(inode, bytes);
 	spin_unlock(&inode->i_lock);
@@ -710,6 +809,9 @@ loff_t inode_get_bytes(struct inode *inode)
 {
 	loff_t ret;
 
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " inode_get_bytes\n"  );
+    }
 	spin_lock(&inode->i_lock);
 	ret = __inode_get_bytes(inode);
 	spin_unlock(&inode->i_lock);
@@ -720,6 +822,9 @@ EXPORT_SYMBOL(inode_get_bytes);
 
 void inode_set_bytes(struct inode *inode, loff_t bytes)
 {
+    if( fs_trace_enable && fs_stat_trace_enable ){
+        printk(KERN_INFO " inode_set_bytes\n"  );
+    }
 	/* Caller is here responsible for sufficient locking
 	 * (ie. inode->i_lock) */
 	inode->i_blocks = bytes >> 9;

@@ -488,7 +488,7 @@ static void i8042_stop(struct serio *serio)
 static bool i8042_filter(unsigned char data, unsigned char str,
 			 struct serio *serio)
 {
-    printk(KERN_INFO "i8042_filter \n" );
+    //printk(KERN_INFO "i8042_filter \n" );
 	if (unlikely(i8042_suppress_kbd_ack)) {
 		if ((~str & I8042_STR_AUXDATA) &&
 		    (data == 0xfa || data == 0xfe)) {
@@ -523,7 +523,7 @@ static irqreturn_t i8042_interrupt(int irq, void *dev_id)
 	bool filtered;
 	int ret = 1;
     
-    printk(KERN_INFO "i8042_interrupt : Raveendra");
+    //printk(KERN_INFO "i8042_interrupt : Raveendra");
 	spin_lock_irqsave(&i8042_lock, flags);
 
 	str = i8042_read_status();

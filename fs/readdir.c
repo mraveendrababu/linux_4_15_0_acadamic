@@ -23,11 +23,19 @@
 
 #include <linux/uaccess.h>
 
+extern int fs_trace_enable;
+extern int fs_readdir_trace_enable;
+
 int iterate_dir(struct file *file, struct dir_context *ctx)
 {
 	struct inode *inode = file_inode(file);
 	bool shared = false;
 	int res = -ENOTDIR;
+
+    if( fs_trace_enable && fs_readdir_trace_enable ){
+        printk(KERN_INFO " iterate_dir \n" );
+    }
+
 	if (file->f_op->iterate_shared)
 		shared = true;
 	else if (!file->f_op->iterate)
@@ -96,6 +104,9 @@ static int fillonedir(struct dir_context *ctx, const char *name, int namlen,
 	struct old_linux_dirent __user * dirent;
 	unsigned long d_ino;
 
+    if( fs_trace_enable && fs_readdir_trace_enable ){
+        printk(KERN_INFO "fillonedir \n" );
+    }
 	if (buf->result)
 		return -EINVAL;
 	d_ino = ino;
@@ -131,6 +142,9 @@ SYSCALL_DEFINE3(old_readdir, unsigned int, fd,
 		.dirent = dirent
 	};
 
+    if( fs_trace_enable && fs_readdir_trace_enable ){
+        printk(KERN_INFO "old_readdir \n" );
+    }
 	if (!f.file)
 		return -EBADF;
 
@@ -173,6 +187,9 @@ static int filldir(struct dir_context *ctx, const char *name, int namlen,
 	int reclen = ALIGN(offsetof(struct linux_dirent, d_name) + namlen + 2,
 		sizeof(long));
 
+    if( fs_trace_enable && fs_readdir_trace_enable ){
+        printk(KERN_INFO " filldir\n" );
+    }
 	buf->error = -EINVAL;	/* only used if we fail.. */
 	if (reclen > buf->count)
 		return -EINVAL;
@@ -221,6 +238,9 @@ SYSCALL_DEFINE3(getdents, unsigned int, fd,
 	};
 	int error;
 
+    if( fs_trace_enable && fs_readdir_trace_enable ){
+        printk(KERN_INFO " getdents\n" );
+    }
 	if (!access_ok(VERIFY_WRITE, dirent, count))
 		return -EFAULT;
 
@@ -259,6 +279,9 @@ static int filldir64(struct dir_context *ctx, const char *name, int namlen,
 	int reclen = ALIGN(offsetof(struct linux_dirent64, d_name) + namlen + 1,
 		sizeof(u64));
 
+    if( fs_trace_enable && fs_readdir_trace_enable ){
+        printk(KERN_INFO " filldir64\n" );
+    }
 	buf->error = -EINVAL;	/* only used if we fail.. */
 	if (reclen > buf->count)
 		return -EINVAL;
@@ -304,6 +327,9 @@ SYSCALL_DEFINE3(getdents64, unsigned int, fd,
 	};
 	int error;
 
+    if( fs_trace_enable && fs_readdir_trace_enable ){
+        printk(KERN_INFO " getdents64\n" );
+    }
 	if (!access_ok(VERIFY_WRITE, dirent, count))
 		return -EFAULT;
 
@@ -349,6 +375,9 @@ static int compat_fillonedir(struct dir_context *ctx, const char *name,
 	struct compat_old_linux_dirent __user *dirent;
 	compat_ulong_t d_ino;
 
+    if( fs_trace_enable && fs_readdir_trace_enable ){
+        printk(KERN_INFO "compat_fillonedir \n" );
+    }
 	if (buf->result)
 		return -EINVAL;
 	d_ino = ino;
@@ -384,6 +413,9 @@ COMPAT_SYSCALL_DEFINE3(old_readdir, unsigned int, fd,
 		.dirent = dirent
 	};
 
+    if( fs_trace_enable && fs_readdir_trace_enable ){
+        printk(KERN_INFO " old_readdir\n" );
+    }
 	if (!f.file)
 		return -EBADF;
 
@@ -420,6 +452,9 @@ static int compat_filldir(struct dir_context *ctx, const char *name, int namlen,
 	int reclen = ALIGN(offsetof(struct compat_linux_dirent, d_name) +
 		namlen + 2, sizeof(compat_long_t));
 
+    if( fs_trace_enable && fs_readdir_trace_enable ){
+        printk(KERN_INFO "compat_filldir \n" );
+    }
 	buf->error = -EINVAL;	/* only used if we fail.. */
 	if (reclen > buf->count)
 		return -EINVAL;
@@ -468,6 +503,9 @@ COMPAT_SYSCALL_DEFINE3(getdents, unsigned int, fd,
 	};
 	int error;
 
+    if( fs_trace_enable && fs_readdir_trace_enable ){
+        printk(KERN_INFO "getdents \n" );
+    }
 	if (!access_ok(VERIFY_WRITE, dirent, count))
 		return -EFAULT;
 

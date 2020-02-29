@@ -22,8 +22,14 @@
 #include <linux/export.h>
 #include <linux/user_namespace.h>
 
+extern int fs_trace_enable;
+extern int fs_posixacl_trace_enable;
+
 static struct posix_acl **acl_by_type(struct inode *inode, int type)
 {
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "acl_by_type \n" );
+    }
 	switch (type) {
 	case ACL_TYPE_ACCESS:
 		return &inode->i_acl;
@@ -39,6 +45,9 @@ struct posix_acl *get_cached_acl(struct inode *inode, int type)
 	struct posix_acl **p = acl_by_type(inode, type);
 	struct posix_acl *acl;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " get_cached_acl\n" );
+    }
 	for (;;) {
 		rcu_read_lock();
 		acl = rcu_dereference(*p);
@@ -64,6 +73,9 @@ void set_cached_acl(struct inode *inode, int type, struct posix_acl *acl)
 	struct posix_acl **p = acl_by_type(inode, type);
 	struct posix_acl *old;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " set_cached_acl\n" );
+    }
 	old = xchg(p, posix_acl_dup(acl));
 	if (!is_uncached_acl(old))
 		posix_acl_release(old);
@@ -74,6 +86,9 @@ static void __forget_cached_acl(struct posix_acl **p)
 {
 	struct posix_acl *old;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " __forget_cached_acl\n" );
+    }
 	old = xchg(p, ACL_NOT_CACHED);
 	if (!is_uncached_acl(old))
 		posix_acl_release(old);
@@ -98,6 +113,9 @@ struct posix_acl *get_acl(struct inode *inode, int type)
 	struct posix_acl **p;
 	struct posix_acl *acl;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "get_acl \n" );
+    }
 	/*
 	 * The sentinel is used to detect when another operation like
 	 * set_cached_acl() or forget_cached_acl() races with get_acl().
@@ -164,6 +182,9 @@ EXPORT_SYMBOL(get_acl);
 void
 posix_acl_init(struct posix_acl *acl, int count)
 {
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " posix_acl_init\n" );
+    }
 	atomic_set(&acl->a_refcount, 1);
 	acl->a_count = count;
 }
@@ -178,6 +199,9 @@ posix_acl_alloc(int count, gfp_t flags)
 	const size_t size = sizeof(struct posix_acl) +
 	                    count * sizeof(struct posix_acl_entry);
 	struct posix_acl *acl = kmalloc(size, flags);
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " posix_acl_alloc\n" );
+    }
 	if (acl)
 		posix_acl_init(acl, count);
 	return acl;
@@ -192,6 +216,9 @@ posix_acl_clone(const struct posix_acl *acl, gfp_t flags)
 {
 	struct posix_acl *clone = NULL;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "posix_acl_clone \n" );
+    }
 	if (acl) {
 		int size = sizeof(struct posix_acl) + acl->a_count *
 		           sizeof(struct posix_acl_entry);
@@ -212,6 +239,9 @@ posix_acl_valid(struct user_namespace *user_ns, const struct posix_acl *acl)
 	int state = ACL_USER_OBJ;
 	int needs_mask = 0;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "posix_acl_valid \n" );
+    }
 	FOREACH_ACL_ENTRY(pa, acl, pe) {
 		if (pa->e_perm & ~(ACL_READ|ACL_WRITE|ACL_EXECUTE))
 			return -EINVAL;
@@ -281,6 +311,9 @@ posix_acl_equiv_mode(const struct posix_acl *acl, umode_t *mode_p)
 	umode_t mode = 0;
 	int not_equiv = 0;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "posix_acl_equiv_mode \n" );
+    }
 	/*
 	 * A null ACL can always be presented as mode bits.
 	 */
@@ -324,6 +357,9 @@ struct posix_acl *
 posix_acl_from_mode(umode_t mode, gfp_t flags)
 {
 	struct posix_acl *acl = posix_acl_alloc(3, flags);
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " posix_acl_from_mode\n" );
+    }
 	if (!acl)
 		return ERR_PTR(-ENOMEM);
 
@@ -349,6 +385,9 @@ posix_acl_permission(struct inode *inode, const struct posix_acl *acl, int want)
 	const struct posix_acl_entry *pa, *pe, *mask_obj;
 	int found = 0;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " posix_acl_permission\n" );
+    }
 	want &= MAY_READ | MAY_WRITE | MAY_EXEC | MAY_NOT_BLOCK;
 
 	FOREACH_ACL_ENTRY(pa, acl, pe) {
@@ -419,6 +458,9 @@ static int posix_acl_create_masq(struct posix_acl *acl, umode_t *mode_p)
 	umode_t mode = *mode_p;
 	int not_equiv = 0;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " posix_acl_create_masq\n" );
+    }
 	/* assert(atomic_read(acl->a_refcount) == 1); */
 
 	FOREACH_ACL_ENTRY(pa, acl, pe) {
@@ -474,6 +516,9 @@ static int __posix_acl_chmod_masq(struct posix_acl *acl, umode_t mode)
 	struct posix_acl_entry *group_obj = NULL, *mask_obj = NULL;
 	struct posix_acl_entry *pa, *pe;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " __posix_acl_chmod_masq\n" );
+    }
 	/* assert(atomic_read(acl->a_refcount) == 1); */
 
 	FOREACH_ACL_ENTRY(pa, acl, pe) {
@@ -519,6 +564,9 @@ __posix_acl_create(struct posix_acl **acl, gfp_t gfp, umode_t *mode_p)
 {
 	struct posix_acl *clone = posix_acl_clone(*acl, gfp);
 	int err = -ENOMEM;
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "__posix_acl_create \n" );
+    }
 	if (clone) {
 		err = posix_acl_create_masq(clone, mode_p);
 		if (err < 0) {
@@ -537,6 +585,9 @@ __posix_acl_chmod(struct posix_acl **acl, gfp_t gfp, umode_t mode)
 {
 	struct posix_acl *clone = posix_acl_clone(*acl, gfp);
 	int err = -ENOMEM;
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "__posix_acl_chmod \n" );
+    }
 	if (clone) {
 		err = __posix_acl_chmod_masq(clone, mode);
 		if (err) {
@@ -556,6 +607,9 @@ posix_acl_chmod(struct inode *inode, umode_t mode)
 	struct posix_acl *acl;
 	int ret = 0;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " posix_acl_chmod\n" );
+    }
 	if (!IS_POSIXACL(inode))
 		return 0;
 	if (!inode->i_op->set_acl)
@@ -585,6 +639,9 @@ posix_acl_create(struct inode *dir, umode_t *mode,
 	struct posix_acl *clone;
 	int ret;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "posix_acl_create \n" );
+    }
 	*acl = NULL;
 	*default_acl = NULL;
 
@@ -646,6 +703,9 @@ int posix_acl_update_mode(struct inode *inode, umode_t *mode_p,
 	umode_t mode = inode->i_mode;
 	int error;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " posix_acl_update_mode\n" );
+    }
 	error = posix_acl_equiv_mode(*acl, &mode);
 	if (error < 0)
 		return error;
@@ -672,6 +732,9 @@ static void posix_acl_fix_xattr_userns(
 	kuid_t uid;
 	kgid_t gid;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "posix_acl_fix_xattr_userns \n" );
+    }
 	if (!value)
 		return;
 	if (size < sizeof(struct posix_acl_xattr_header))
@@ -704,6 +767,9 @@ static void posix_acl_fix_xattr_userns(
 void posix_acl_fix_xattr_from_user(void *value, size_t size)
 {
 	struct user_namespace *user_ns = current_user_ns();
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "posix_acl_fix_xattr_from_user \n" );
+    }
 	if (user_ns == &init_user_ns)
 		return;
 	posix_acl_fix_xattr_userns(&init_user_ns, user_ns, value, size);
@@ -712,6 +778,9 @@ void posix_acl_fix_xattr_from_user(void *value, size_t size)
 void posix_acl_fix_xattr_to_user(void *value, size_t size)
 {
 	struct user_namespace *user_ns = current_user_ns();
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "posix_acl_fix_xattr_to_user \n" );
+    }
 	if (user_ns == &init_user_ns)
 		return;
 	posix_acl_fix_xattr_userns(user_ns, &init_user_ns, value, size);
@@ -730,6 +799,9 @@ posix_acl_from_xattr(struct user_namespace *user_ns,
 	struct posix_acl *acl;
 	struct posix_acl_entry *acl_e;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " posix_acl_from_xattr\n" );
+    }
 	if (!value)
 		return NULL;
 	if (size < sizeof(struct posix_acl_xattr_header))
@@ -797,6 +869,9 @@ posix_acl_to_xattr(struct user_namespace *user_ns, const struct posix_acl *acl,
 	struct posix_acl_xattr_entry *ext_entry;
 	int real_size, n;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "posix_acl_to_xattr \n" );
+    }
 	real_size = posix_acl_xattr_size(acl->a_count);
 	if (!buffer)
 		return real_size;
@@ -836,6 +911,9 @@ posix_acl_xattr_get(const struct xattr_handler *handler,
 	struct posix_acl *acl;
 	int error;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "posix_acl_xattr_get \n" );
+    }
 	if (!IS_POSIXACL(inode))
 		return -EOPNOTSUPP;
 	if (S_ISLNK(inode->i_mode))
@@ -856,6 +934,9 @@ posix_acl_xattr_get(const struct xattr_handler *handler,
 int
 set_posix_acl(struct inode *inode, int type, struct posix_acl *acl)
 {
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "set_posix_acl \n" );
+    }
 	if (!IS_POSIXACL(inode))
 		return -EOPNOTSUPP;
 	if (!inode->i_op->set_acl)
@@ -884,6 +965,9 @@ posix_acl_xattr_set(const struct xattr_handler *handler,
 	struct posix_acl *acl = NULL;
 	int ret;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO "posix_acl_xattr_set \n" );
+    }
 	if (value) {
 		acl = posix_acl_from_xattr(&init_user_ns, value, size);
 		if (IS_ERR(acl))
@@ -922,6 +1006,9 @@ int simple_set_acl(struct inode *inode, struct posix_acl *acl, int type)
 {
 	int error;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " simple_set_acl\n" );
+    }
 	if (type == ACL_TYPE_ACCESS) {
 		error = posix_acl_update_mode(inode,
 				&inode->i_mode, &acl);
@@ -939,6 +1026,9 @@ int simple_acl_create(struct inode *dir, struct inode *inode)
 	struct posix_acl *default_acl, *acl;
 	int error;
 
+    if( fs_trace_enable && fs_posixacl_trace_enable ){
+        printk(KERN_INFO " simple_acl_create\n" );
+    }
 	error = posix_acl_create(dir, &inode->i_mode, &default_acl, &acl);
 	if (error)
 		return error;

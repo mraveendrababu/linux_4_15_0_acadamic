@@ -7,6 +7,8 @@
 #include <linux/workqueue.h>
 #include <linux/mbcache.h>
 
+extern int fs_trace_enable;
+extern int fs_mbcache_trace_enable;
 /*
  * Mbcache is a simple key-value store. Keys need not be unique, however
  * key-value pairs are expected to be unique (we use this fact in
@@ -77,6 +79,10 @@ int mb_cache_entry_create(struct mb_cache *cache, gfp_t mask, u32 key,
 	struct hlist_bl_node *dup_node;
 	struct hlist_bl_head *head;
 
+    if( fs_trace_enable && fs_mbcache_trace_enable ){
+        printk(KERN_INFO " mb_cache_entry_create \n" );
+    }
+
 	/* Schedule background reclaim if there are too many entries */
 	if (cache->c_entry_count >= cache->c_max_entries)
 		schedule_work(&cache->c_shrink_work);
@@ -132,6 +138,9 @@ static struct mb_cache_entry *__entry_find(struct mb_cache *cache,
 	struct hlist_bl_node *node;
 	struct hlist_bl_head *head;
 
+    if( fs_trace_enable && fs_mbcache_trace_enable ){
+        printk(KERN_INFO " __entry_find \n" );
+    }
 	head = mb_cache_entry_head(cache, key);
 	hlist_bl_lock(head);
 	if (entry && !hlist_bl_unhashed(&entry->e_hash_list))
@@ -201,6 +210,9 @@ struct mb_cache_entry *mb_cache_entry_get(struct mb_cache *cache, u32 key,
 	struct hlist_bl_head *head;
 	struct mb_cache_entry *entry;
 
+    if( fs_trace_enable && fs_mbcache_trace_enable ){
+        printk(KERN_INFO " mb_cache_entry_get \n" );
+    }
 	head = mb_cache_entry_head(cache, key);
 	hlist_bl_lock(head);
 	hlist_bl_for_each_entry(entry, node, head, e_hash_list) {
@@ -229,6 +241,9 @@ void mb_cache_entry_delete(struct mb_cache *cache, u32 key, u64 value)
 	struct hlist_bl_head *head;
 	struct mb_cache_entry *entry;
 
+    if( fs_trace_enable && fs_mbcache_trace_enable ){
+        printk(KERN_INFO " mb_cache_entry_delete \n" );
+    }
 	head = mb_cache_entry_head(cache, key);
 	hlist_bl_lock(head);
 	hlist_bl_for_each_entry(entry, node, head, e_hash_list) {
@@ -270,6 +285,9 @@ static unsigned long mb_cache_count(struct shrinker *shrink,
 	struct mb_cache *cache = container_of(shrink, struct mb_cache,
 					      c_shrink);
 
+    if( fs_trace_enable && fs_mbcache_trace_enable ){
+        printk(KERN_INFO " mb_cache_entry_touch \n" );
+    }
 	/* Unlikely, but not impossible */
 	if (unlikely(cache->c_entry_count < 0))
 		return 0;
@@ -284,6 +302,9 @@ static unsigned long mb_cache_shrink(struct mb_cache *cache,
 	struct hlist_bl_head *head;
 	unsigned long shrunk = 0;
 
+    if( fs_trace_enable && fs_mbcache_trace_enable ){
+        printk(KERN_INFO " mb_cache_shrink \n" );
+    }
 	spin_lock(&cache->c_list_lock);
 	while (nr_to_scan-- && !list_empty(&cache->c_list)) {
 		entry = list_first_entry(&cache->c_list,
@@ -322,6 +343,9 @@ static unsigned long mb_cache_scan(struct shrinker *shrink,
 {
 	struct mb_cache *cache = container_of(shrink, struct mb_cache,
 					      c_shrink);
+    if( fs_trace_enable && fs_mbcache_trace_enable ){
+        printk(KERN_INFO " mb_cache_scan \n" );
+    }
 	return mb_cache_shrink(cache, sc->nr_to_scan);
 }
 
@@ -332,6 +356,9 @@ static void mb_cache_shrink_worker(struct work_struct *work)
 {
 	struct mb_cache *cache = container_of(work, struct mb_cache,
 					      c_shrink_work);
+    if( fs_trace_enable && fs_mbcache_trace_enable ){
+        printk(KERN_INFO " mb_cache_shrink_worker \n" );
+    }
 	mb_cache_shrink(cache, cache->c_max_entries / SHRINK_DIVISOR);
 }
 
@@ -347,6 +374,9 @@ struct mb_cache *mb_cache_create(int bucket_bits)
 	unsigned long bucket_count = 1UL << bucket_bits;
 	unsigned long i;
 
+    if( fs_trace_enable && fs_mbcache_trace_enable ){
+        printk(KERN_INFO " mb_cache_create \n" );
+    }
 	cache = kzalloc(sizeof(struct mb_cache), GFP_KERNEL);
 	if (!cache)
 		goto err_out;
@@ -392,6 +422,9 @@ void mb_cache_destroy(struct mb_cache *cache)
 {
 	struct mb_cache_entry *entry, *next;
 
+    if( fs_trace_enable && fs_mbcache_trace_enable ){
+        printk(KERN_INFO " mb_cache_destroy \n" );
+    }
 	unregister_shrinker(&cache->c_shrink);
 
 	/*

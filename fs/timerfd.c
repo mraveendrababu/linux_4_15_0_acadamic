@@ -27,6 +27,9 @@
 #include <linux/compat.h>
 #include <linux/rcupdate.h>
 
+extern int fs_trace_enable;
+extern int fs_timerfd_trace_enable;
+
 struct timerfd_ctx {
 	union {
 		struct hrtimer tmr;
@@ -62,7 +65,9 @@ static inline bool isalarm(struct timerfd_ctx *ctx)
 static void timerfd_triggered(struct timerfd_ctx *ctx)
 {
 	unsigned long flags;
-
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_triggered\n" );
+    }
 	spin_lock_irqsave(&ctx->wqh.lock, flags);
 	ctx->expired = 1;
 	ctx->ticks++;
@@ -116,6 +121,9 @@ void timerfd_clock_was_set(void)
 
 static void __timerfd_remove_cancel(struct timerfd_ctx *ctx)
 {
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " __timerfd_remove_cancel\n" );
+    }
 	if (ctx->might_cancel) {
 		ctx->might_cancel = false;
 		spin_lock(&cancel_lock);
@@ -126,6 +134,9 @@ static void __timerfd_remove_cancel(struct timerfd_ctx *ctx)
 
 static void timerfd_remove_cancel(struct timerfd_ctx *ctx)
 {
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_remove_cancel\n" );
+    }
 	spin_lock(&ctx->cancel_lock);
 	__timerfd_remove_cancel(ctx);
 	spin_unlock(&ctx->cancel_lock);
@@ -133,6 +144,9 @@ static void timerfd_remove_cancel(struct timerfd_ctx *ctx)
 
 static bool timerfd_canceled(struct timerfd_ctx *ctx)
 {
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_canceled\n" );
+    }
 	if (!ctx->might_cancel || ctx->moffs != KTIME_MAX)
 		return false;
 	ctx->moffs = ktime_mono_to_real(0);
@@ -141,6 +155,9 @@ static bool timerfd_canceled(struct timerfd_ctx *ctx)
 
 static void timerfd_setup_cancel(struct timerfd_ctx *ctx, int flags)
 {
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_setup_cancel\n" );
+    }
 	spin_lock(&ctx->cancel_lock);
 	if ((ctx->clockid == CLOCK_REALTIME ||
 	     ctx->clockid == CLOCK_REALTIME_ALARM) &&
@@ -161,6 +178,9 @@ static ktime_t timerfd_get_remaining(struct timerfd_ctx *ctx)
 {
 	ktime_t remaining;
 
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO "timerfd_get_remaining \n" );
+    }
 	if (isalarm(ctx))
 		remaining = alarm_expires_remaining(&ctx->t.alarm);
 	else
@@ -176,6 +196,9 @@ static int timerfd_setup(struct timerfd_ctx *ctx, int flags,
 	ktime_t texp;
 	int clockid = ctx->clockid;
 
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO "timerfd_setup \n" );
+    }
 	htmode = (flags & TFD_TIMER_ABSTIME) ?
 		HRTIMER_MODE_ABS: HRTIMER_MODE_REL;
 
@@ -217,6 +240,9 @@ static int timerfd_release(struct inode *inode, struct file *file)
 {
 	struct timerfd_ctx *ctx = file->private_data;
 
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO "timerfd_release \n" );
+    }
 	timerfd_remove_cancel(ctx);
 
 	if (isalarm(ctx))
@@ -233,6 +259,9 @@ static unsigned int timerfd_poll(struct file *file, poll_table *wait)
 	unsigned int events = 0;
 	unsigned long flags;
 
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_poll\n" );
+    }
 	poll_wait(file, &ctx->wqh, wait);
 
 	spin_lock_irqsave(&ctx->wqh.lock, flags);
@@ -250,6 +279,9 @@ static ssize_t timerfd_read(struct file *file, char __user *buf, size_t count,
 	ssize_t res;
 	u64 ticks = 0;
 
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_read\n" );
+    }
 	if (count < sizeof(ticks))
 		return -EINVAL;
 	spin_lock_irq(&ctx->wqh.lock);
@@ -309,6 +341,9 @@ static void timerfd_show(struct seq_file *m, struct file *file)
 	t.it_interval = ktime_to_timespec(ctx->tintv);
 	spin_unlock_irq(&ctx->wqh.lock);
 
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_show\n" );
+    }
 	seq_printf(m,
 		   "clockid: %d\n"
 		   "ticks: %llu\n"
@@ -333,6 +368,9 @@ static long timerfd_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 	struct timerfd_ctx *ctx = file->private_data;
 	int ret = 0;
 
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_ioctl\n" );
+    }
 	switch (cmd) {
 	case TFD_IOC_SET_TICKS: {
 		u64 ticks;
@@ -374,6 +412,9 @@ static const struct file_operations timerfd_fops = {
 static int timerfd_fget(int fd, struct fd *p)
 {
 	struct fd f = fdget(fd);
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_fget\n" );
+    }
 	if (!f.file)
 		return -EBADF;
 	if (f.file->f_op != &timerfd_fops) {
@@ -389,6 +430,9 @@ SYSCALL_DEFINE2(timerfd_create, int, clockid, int, flags)
 	int ufd;
 	struct timerfd_ctx *ctx;
 
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_create\n" );
+    }
 	/* Check the TFD_* constants for consistency.  */
 	BUILD_BUG_ON(TFD_CLOEXEC != O_CLOEXEC);
 	BUILD_BUG_ON(TFD_NONBLOCK != O_NONBLOCK);
@@ -440,6 +484,9 @@ static int do_timerfd_settime(int ufd, int flags,
 	struct timerfd_ctx *ctx;
 	int ret;
 
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " do_timerfd_settime\n" );
+    }
 	if ((flags & ~TFD_SETTIME_FLAGS) ||
 		 !itimerspec64_valid(new))
 		return -EINVAL;
@@ -505,6 +552,9 @@ static int do_timerfd_gettime(int ufd, struct itimerspec64 *t)
 	struct fd f;
 	struct timerfd_ctx *ctx;
 	int ret = timerfd_fget(ufd, &f);
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO "do_timerfd_gettime \n" );
+    }
 	if (ret)
 		return ret;
 	ctx = f.file->private_data;
@@ -539,6 +589,9 @@ SYSCALL_DEFINE4(timerfd_settime, int, ufd, int, flags,
 	struct itimerspec64 new, old;
 	int ret;
 
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_settime\n" );
+    }
 	if (get_itimerspec64(&new, utmr))
 		return -EFAULT;
 	ret = do_timerfd_settime(ufd, flags, &new, &old);
@@ -554,6 +607,9 @@ SYSCALL_DEFINE2(timerfd_gettime, int, ufd, struct itimerspec __user *, otmr)
 {
 	struct itimerspec64 kotmr;
 	int ret = do_timerfd_gettime(ufd, &kotmr);
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_gettime\n" );
+    }
 	if (ret)
 		return ret;
 	return put_itimerspec64(&kotmr, otmr) ? -EFAULT : 0;
@@ -567,6 +623,9 @@ COMPAT_SYSCALL_DEFINE4(timerfd_settime, int, ufd, int, flags,
 	struct itimerspec64 new, old;
 	int ret;
 
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_settime\n" );
+    }
 	if (get_compat_itimerspec64(&new, utmr))
 		return -EFAULT;
 	ret = do_timerfd_settime(ufd, flags, &new, &old);
@@ -582,6 +641,9 @@ COMPAT_SYSCALL_DEFINE2(timerfd_gettime, int, ufd,
 {
 	struct itimerspec64 kotmr;
 	int ret = do_timerfd_gettime(ufd, &kotmr);
+    if( fs_trace_enable && fs_timerfd_trace_enable ){
+        printk(KERN_INFO " timerfd_gettime\n" );
+    }
 	if (ret)
 		return ret;
 	return put_compat_itimerspec64(&kotmr, otmr) ? -EFAULT : 0;

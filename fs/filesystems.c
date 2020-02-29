@@ -17,6 +17,8 @@
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 
+extern int fs_trace_enable;
+extern int fs_filesystems_trace_enable;
 /*
  * Handling of filesystem drivers list.
  * Rules:
@@ -36,18 +38,27 @@ static DEFINE_RWLOCK(file_systems_lock);
 /* WARNING: This can be used only if we _already_ own a reference */
 struct file_system_type *get_filesystem(struct file_system_type *fs)
 {
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO " get_filesystem\n"  );
+    }
 	__module_get(fs->owner);
 	return fs;
 }
 
 void put_filesystem(struct file_system_type *fs)
 {
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO "put_filesystem \n"  );
+    }
 	module_put(fs->owner);
 }
 
 static struct file_system_type **find_filesystem(const char *name, unsigned len)
 {
 	struct file_system_type **p;
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO " find_filesystem\n"  );
+    }
 	for (p = &file_systems; *p; p = &(*p)->next)
 		if (strncmp((*p)->name, name, len) == 0 &&
 		    !(*p)->name[len])
@@ -73,6 +84,9 @@ int register_filesystem(struct file_system_type * fs)
 	int res = 0;
 	struct file_system_type ** p;
 
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO " register_filesystem\n"  );
+    }
 	BUG_ON(strchr(fs->name, '.'));
 	if (fs->next)
 		return -EBUSY;
@@ -104,6 +118,9 @@ int unregister_filesystem(struct file_system_type * fs)
 {
 	struct file_system_type ** tmp;
 
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO "unregister_filesystem \n"  );
+    }
 	write_lock(&file_systems_lock);
 	tmp = &file_systems;
 	while (*tmp) {
@@ -130,6 +147,9 @@ static int fs_index(const char __user * __name)
 	struct filename *name;
 	int err, index;
 
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO "fs_index \n"  );
+    }
 	name = getname(__name);
 	err = PTR_ERR(name);
 	if (IS_ERR(name))
@@ -153,6 +173,9 @@ static int fs_name(unsigned int index, char __user * buf)
 	struct file_system_type * tmp;
 	int len, res;
 
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO "fs_name \n"  );
+    }
 	read_lock(&file_systems_lock);
 	for (tmp = file_systems; tmp; tmp = tmp->next, index--)
 		if (index <= 0 && try_module_get(tmp->owner))
@@ -173,6 +196,9 @@ static int fs_maxindex(void)
 	struct file_system_type * tmp;
 	int index;
 
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO " fs_maxindex\n"  );
+    }
 	read_lock(&file_systems_lock);
 	for (tmp = file_systems, index = 0 ; tmp ; tmp = tmp->next, index++)
 		;
@@ -187,6 +213,9 @@ SYSCALL_DEFINE3(sysfs, int, option, unsigned long, arg1, unsigned long, arg2)
 {
 	int retval = -EINVAL;
 
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO "sysfs \n"  );
+    }
 	switch (option) {
 		case 1:
 			retval = fs_index((const char __user *) arg1);
@@ -209,6 +238,9 @@ int __init get_filesystem_list(char *buf)
 	int len = 0;
 	struct file_system_type * tmp;
 
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO " get_filesystem_list\n"  );
+    }
 	read_lock(&file_systems_lock);
 	tmp = file_systems;
 	while (tmp && len < PAGE_SIZE - 80) {
@@ -226,6 +258,9 @@ static int filesystems_proc_show(struct seq_file *m, void *v)
 {
 	struct file_system_type * tmp;
 
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO " \n"  );
+    }
 	read_lock(&file_systems_lock);
 	tmp = file_systems;
 	while (tmp) {
@@ -240,6 +275,9 @@ static int filesystems_proc_show(struct seq_file *m, void *v)
 
 static int filesystems_proc_open(struct inode *inode, struct file *file)
 {
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO "filesystems_proc_open \n"  );
+    }
 	return single_open(file, filesystems_proc_show, NULL);
 }
 
@@ -252,6 +290,9 @@ static const struct file_operations filesystems_proc_fops = {
 
 static int __init proc_filesystems_init(void)
 {
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO "proc_filesystems_init \n"  );
+    }
 	proc_create("filesystems", 0, NULL, &filesystems_proc_fops);
 	return 0;
 }
@@ -262,6 +303,9 @@ static struct file_system_type *__get_fs_type(const char *name, int len)
 {
 	struct file_system_type *fs;
 
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO " __get_fs_type\n"  );
+    }
 	read_lock(&file_systems_lock);
 	fs = *(find_filesystem(name, len));
 	if (fs && !try_module_get(fs->owner))
@@ -276,6 +320,9 @@ struct file_system_type *get_fs_type(const char *name)
 	const char *dot = strchr(name, '.');
 	int len = dot ? dot - name : strlen(name);
 
+    if( fs_trace_enable && fs_filesystems_trace_enable ){
+        printk(KERN_INFO "get_fs_type \n"  );
+    }
 	fs = __get_fs_type(name, len);
 	if (!fs && (request_module("fs-%.*s", len, name) == 0)) {
 		fs = __get_fs_type(name, len);

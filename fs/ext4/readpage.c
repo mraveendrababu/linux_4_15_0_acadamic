@@ -47,6 +47,9 @@
 
 #include "ext4.h"
 
+extern int ext4_trace_enable;
+extern int ext4_readpage_trace_enable;
+
 static inline bool ext4_bio_encrypted(struct bio *bio)
 {
 #ifdef CONFIG_EXT4_FS_ENCRYPTION
@@ -72,7 +75,9 @@ static void mpage_end_io(struct bio *bio)
 {
 	struct bio_vec *bv;
 	int i;
-
+    if (ext4_trace_enable && ext4_readpage_trace_enable ){
+        printk(KERN_INFO " mpage_end_io \n" );
+    }
 	if (ext4_bio_encrypted(bio)) {
 		if (bio->bi_status) {
 			fscrypt_release_ctx(bio->bi_private);
@@ -117,6 +122,12 @@ int ext4_mpage_readpages(struct address_space *mapping,
 	unsigned relative_block = 0;
 	struct ext4_map_blocks map;
 
+    if (ext4_trace_enable && ext4_readpage_trace_enable ){
+        printk(KERN_INFO " ext4_mpage_readpages \n" );
+    }
+	if( inode->i_ino == MY_EXT4_INODE_NUM){
+		printk( KERN_INFO " ext4_map_readpages \n");
+	}
 	map.m_pblk = 0;
 	map.m_lblk = 0;
 	map.m_len = 0;

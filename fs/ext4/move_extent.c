@@ -20,6 +20,9 @@
 #include "ext4.h"
 #include "ext4_extents.h"
 
+extern int ext4_trace_enable;
+extern int ext4_move_extent_trace_enable;
+
 /**
  * get_ext_path - Find an extent path for designated logical block number.
  *
@@ -36,6 +39,9 @@ get_ext_path(struct inode *inode, ext4_lblk_t lblock,
 {
 	struct ext4_ext_path *path;
 
+    if( ext4_trace_enable && ext4_move_extent_trace_enable ){
+        printk(KERN_INFO "get_ext_path \n" );
+    }
 	path = ext4_find_extent(inode, lblock, ppath, EXT4_EX_NOCACHE);
 	if (IS_ERR(path))
 		return PTR_ERR(path);
@@ -58,6 +64,9 @@ get_ext_path(struct inode *inode, ext4_lblk_t lblock,
 void
 ext4_double_down_write_data_sem(struct inode *first, struct inode *second)
 {
+    if( ext4_trace_enable && ext4_move_extent_trace_enable ){
+        printk(KERN_INFO "ext4_double_down_write_data_sem \n" );
+    }
 	if (first < second) {
 		down_write(&EXT4_I(first)->i_data_sem);
 		down_write_nested(&EXT4_I(second)->i_data_sem, I_DATA_SEM_OTHER);
@@ -101,6 +110,9 @@ mext_check_coverage(struct inode *inode, ext4_lblk_t from, ext4_lblk_t count,
 	struct ext4_ext_path *path = NULL;
 	struct ext4_extent *ext;
 	int ret = 0;
+    if( ext4_trace_enable && ext4_move_extent_trace_enable ){
+        printk(KERN_INFO "mext_check_coverage \n" );
+    }
 	ext4_lblk_t last = from + count;
 	while (from < last) {
 		*err = get_ext_path(inode, from, &path);
@@ -137,6 +149,9 @@ mext_page_double_lock(struct inode *inode1, struct inode *inode2,
 	struct address_space *mapping[2];
 	unsigned fl = AOP_FLAG_NOFS;
 
+    if( ext4_trace_enable && ext4_move_extent_trace_enable ){
+        printk(KERN_INFO " mext_page_double_lock\n" );
+    }
 	BUG_ON(!inode1 || !inode2);
 	if (inode1 < inode2) {
 		mapping[0] = inode1->i_mapping;
@@ -184,6 +199,9 @@ mext_page_mkuptodate(struct page *page, unsigned from, unsigned to)
 	BUG_ON(!PageLocked(page));
 	BUG_ON(PageWriteback(page));
 
+    if( ext4_trace_enable && ext4_move_extent_trace_enable ){
+        printk(KERN_INFO "mext_page_mkuptodate \n" );
+    }
 	if (PageUptodate(page))
 		return 0;
 
@@ -272,6 +290,9 @@ move_extent_per_page(struct file *o_filp, struct inode *donor_inode,
 	struct super_block *sb = orig_inode->i_sb;
 	struct buffer_head *bh = NULL;
 
+    if( ext4_trace_enable && ext4_move_extent_trace_enable ){
+        printk(KERN_INFO " move_extent_per_page\n" );
+    }
 	/*
 	 * It needs twice the amount of ordinary journal buffers because
 	 * inode and donor_inode may change each different metadata blocks.
@@ -461,7 +482,11 @@ mext_check_arguments(struct inode *orig_inode,
 	__u64 orig_eof, donor_eof;
 	unsigned int blkbits = orig_inode->i_blkbits;
 	unsigned int blocksize = 1 << blkbits;
+	struct inode *inode= orig_inode;
 
+    if( ext4_trace_enable && ext4_move_extent_trace_enable ){
+        printk(KERN_INFO " mext_check_arguments\n" );
+    }
 	orig_eof = (i_size_read(orig_inode) + blocksize - 1) >> blkbits;
 	donor_eof = (i_size_read(donor_inode) + blocksize - 1) >> blkbits;
 
@@ -570,6 +595,11 @@ ext4_move_extents(struct file *o_filp, struct file *d_filp, __u64 orig_blk,
 	ext4_lblk_t d_start = donor_blk;
 	int ret;
 
+	struct inode *inode = orig_inode;
+
+    if( ext4_trace_enable && ext4_move_extent_trace_enable ){
+        printk(KERN_INFO "ext4_move_extents \n" );
+    }
 	if (orig_inode->i_sb != donor_inode->i_sb) {
 		ext4_debug("ext4 move extent: The argument files "
 			"should be in same FS [ino:orig %lu, donor %lu]\n",

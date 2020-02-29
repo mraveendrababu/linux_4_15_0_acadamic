@@ -20,6 +20,9 @@
 #include <linux/slab.h>
 #include "ext4.h"
 
+extern int ext4_trace_enable;
+extern int ext4_block_validity_trace_enable;
+
 struct ext4_system_zone {
 	struct rb_node	node;
 	ext4_fsblk_t	start_blk;
@@ -61,7 +64,9 @@ static int add_system_zone(struct ext4_sb_info *sbi,
 	struct ext4_system_zone *new_entry = NULL, *entry;
 	struct rb_node **n = &sbi->system_blks.rb_node, *node;
 	struct rb_node *parent = NULL, *new_node = NULL;
-
+    if ( ext4_trace_enable && ext4_block_validity_trace_enable ){
+        printk(KERN_INFO "  add_system_zone \n"  );
+    }
 	while (*n) {
 		parent = *n;
 		entry = rb_entry(parent, struct ext4_system_zone, node);
@@ -125,6 +130,9 @@ static void debug_print_tree(struct ext4_sb_info *sbi)
 	struct ext4_system_zone *entry;
 	int first = 1;
 
+    if ( ext4_trace_enable && ext4_block_validity_trace_enable ){
+        printk(KERN_INFO " debug_print_tree  \n"  );
+    }
 	printk(KERN_INFO "System zones: ");
 	node = rb_first(&sbi->system_blks);
 	while (node) {
@@ -146,6 +154,9 @@ int ext4_setup_system_zone(struct super_block *sb)
 	int flex_size = ext4_flex_bg_size(sbi);
 	int ret;
 
+    if ( ext4_trace_enable && ext4_block_validity_trace_enable ){
+        printk(KERN_INFO " ext4_setup_system_zone  \n"  );
+    }
 	if (!test_opt(sb, BLOCK_VALIDITY)) {
 		if (EXT4_SB(sb)->system_blks.rb_node)
 			ext4_release_system_zone(sb);
@@ -182,6 +193,9 @@ void ext4_release_system_zone(struct super_block *sb)
 {
 	struct ext4_system_zone	*entry, *n;
 
+    if ( ext4_trace_enable && ext4_block_validity_trace_enable ){
+        printk(KERN_INFO "   \n"  );
+    }
 	rbtree_postorder_for_each_entry_safe(entry, n,
 			&EXT4_SB(sb)->system_blks, node)
 		kmem_cache_free(ext4_system_zone_cachep, entry);
@@ -200,6 +214,9 @@ int ext4_data_block_valid(struct ext4_sb_info *sbi, ext4_fsblk_t start_blk,
 	struct ext4_system_zone *entry;
 	struct rb_node *n = sbi->system_blks.rb_node;
 
+    if ( ext4_trace_enable && ext4_block_validity_trace_enable ){
+        //printk(KERN_INFO "  ext4_data_block_valid \n"  );
+    }
 	if ((start_blk <= le32_to_cpu(sbi->s_es->s_first_data_block)) ||
 	    (start_blk + count < start_blk) ||
 	    (start_blk + count > ext4_blocks_count(sbi->s_es))) {
@@ -227,6 +244,9 @@ int ext4_check_blockref(const char *function, unsigned int line,
 	__le32 *bref = p;
 	unsigned int blk;
 
+    if ( ext4_trace_enable && ext4_block_validity_trace_enable ){
+        printk(KERN_INFO " ext4_check_blockref  \n"  );
+    }
 	while (bref < p+max) {
 		blk = le32_to_cpu(*bref++);
 		if (blk &&

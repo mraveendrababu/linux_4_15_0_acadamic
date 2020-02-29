@@ -48,11 +48,17 @@ struct ext4_attr {
 	} u;
 };
 
+extern int ext4_trace_enable;
+extern int ext4_sysfs_trace_enable;
+
 static ssize_t session_write_kbytes_show(struct ext4_attr *a,
 					 struct ext4_sb_info *sbi, char *buf)
 {
 	struct super_block *sb = sbi->s_buddy_cache->i_sb;
 
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO " session_write_kbytes_show \n" );
+    }
 	if (!sb->s_bdev->bd_part)
 		return snprintf(buf, PAGE_SIZE, "0\n");
 	return snprintf(buf, PAGE_SIZE, "%lu\n",
@@ -65,6 +71,9 @@ static ssize_t lifetime_write_kbytes_show(struct ext4_attr *a,
 {
 	struct super_block *sb = sbi->s_buddy_cache->i_sb;
 
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO " lifetime_write_kbytes_show \n" );
+    }
 	if (!sb->s_bdev->bd_part)
 		return snprintf(buf, PAGE_SIZE, "0\n");
 	return snprintf(buf, PAGE_SIZE, "%llu\n",
@@ -80,6 +89,9 @@ static ssize_t inode_readahead_blks_store(struct ext4_attr *a,
 	unsigned long t;
 	int ret;
 
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO " inode_readahead_blks_store \n" );
+    }
 	ret = kstrtoul(skip_spaces(buf), 0, &t);
 	if (ret)
 		return ret;
@@ -100,6 +112,9 @@ static ssize_t reserved_clusters_store(struct ext4_attr *a,
 				 sbi->s_cluster_bits);
 	int ret;
 
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO " reserved_clusters_store \n" );
+    }
 	ret = kstrtoull(skip_spaces(buf), 0, &val);
 	if (ret || val >= clusters)
 		return -EINVAL;
@@ -114,6 +129,9 @@ static ssize_t trigger_test_error(struct ext4_attr *a,
 {
 	int len = count;
 
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO " trigger_test_error \n" );
+    }
 	if (!capable(CAP_SYS_ADMIN))
 		return -EPERM;
 
@@ -261,6 +279,9 @@ static ssize_t ext4_attr_show(struct kobject *kobj,
 	struct ext4_attr *a = container_of(attr, struct ext4_attr, attr);
 	void *ptr = calc_ptr(a, sbi);
 
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO " ext4_attr_show \n" );
+    }
 	switch (a->attr_id) {
 	case attr_delayed_allocation_blocks:
 		return snprintf(buf, PAGE_SIZE, "%llu\n",
@@ -307,6 +328,9 @@ static ssize_t ext4_attr_store(struct kobject *kobj,
 	unsigned long t;
 	int ret;
 
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO " ext4_attr_store \n" );
+    }
 	switch (a->attr_id) {
 	case attr_reserved_clusters:
 		return reserved_clusters_store(a, sbi, buf, len);
@@ -333,6 +357,9 @@ static void ext4_sb_release(struct kobject *kobj)
 {
 	struct ext4_sb_info *sbi = container_of(kobj, struct ext4_sb_info,
 						s_kobj);
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO " ext4_sb_release \n" );
+    }
 	complete(&sbi->s_kobj_unregister);
 }
 
@@ -399,6 +426,9 @@ int ext4_register_sysfs(struct super_block *sb)
 	const struct ext4_proc_files *p;
 	int err;
 
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO " ext4_register_sysfs \n" );
+    }
 	sbi->s_kobj.kset = &ext4_kset;
 	init_completion(&sbi->s_kobj_unregister);
 	err = kobject_init_and_add(&sbi->s_kobj, &ext4_sb_ktype, NULL,
@@ -422,6 +452,9 @@ void ext4_unregister_sysfs(struct super_block *sb)
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	const struct ext4_proc_files *p;
 
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO "ext4_unregister_sysfs  \n" );
+    }
 	if (sbi->s_proc) {
 		for (p = proc_files; p->name; p++)
 			remove_proc_entry(p->name, sbi->s_proc);
@@ -440,6 +473,9 @@ int __init ext4_init_sysfs(void)
 	if (ret)
 		return ret;
 
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO " ext4_init_sysfs \n" );
+    }
 	ret = kobject_init_and_add(&ext4_feat, &ext4_feat_ktype,
 				   NULL, "features");
 	if (ret)
@@ -451,6 +487,9 @@ int __init ext4_init_sysfs(void)
 
 void ext4_exit_sysfs(void)
 {
+    if (ext4_trace_enable && ext4_sysfs_trace_enable  ){
+        printk(KERN_INFO " ext4_exit_sysfs \n" );
+    }
 	kobject_put(&ext4_feat);
 	kset_unregister(&ext4_kset);
 	remove_proc_entry(proc_dirname, NULL);

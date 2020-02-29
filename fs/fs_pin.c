@@ -5,10 +5,17 @@
 #include "internal.h"
 #include "mount.h"
 
+extern int fs_fs_pin_trace_enable;
+extern int fs_trace_enable;
+
 static DEFINE_SPINLOCK(pin_lock);
 
 void pin_remove(struct fs_pin *pin)
 {
+
+    if( fs_trace_enable && fs_fs_pin_trace_enable ){
+        printk(KERN_INFO " pin_remove \n" );
+    }
 	spin_lock(&pin_lock);
 	hlist_del_init(&pin->m_list);
 	hlist_del_init(&pin->s_list);
@@ -21,6 +28,9 @@ void pin_remove(struct fs_pin *pin)
 
 void pin_insert_group(struct fs_pin *pin, struct vfsmount *m, struct hlist_head *p)
 {
+    if( fs_trace_enable && fs_fs_pin_trace_enable ){
+        printk(KERN_INFO " pin_insert_group \n" );
+    }
 	spin_lock(&pin_lock);
 	if (p)
 		hlist_add_head(&pin->s_list, p);
@@ -30,6 +40,9 @@ void pin_insert_group(struct fs_pin *pin, struct vfsmount *m, struct hlist_head 
 
 void pin_insert(struct fs_pin *pin, struct vfsmount *m)
 {
+    if( fs_trace_enable && fs_fs_pin_trace_enable ){
+        printk(KERN_INFO " pin_insert  \n" );
+    }
 	pin_insert_group(pin, m, &m->mnt_sb->s_pins);
 }
 
@@ -37,6 +50,9 @@ void pin_kill(struct fs_pin *p)
 {
 	wait_queue_entry_t wait;
 
+    if( fs_trace_enable && fs_fs_pin_trace_enable ){
+        printk(KERN_INFO " pin_kill \n" );
+    }
 	if (!p) {
 		rcu_read_unlock();
 		return;
@@ -76,6 +92,9 @@ void pin_kill(struct fs_pin *p)
 
 void mnt_pin_kill(struct mount *m)
 {
+    if( fs_trace_enable && fs_fs_pin_trace_enable ){
+        printk(KERN_INFO " mnt_pin_kill \n" );
+    }
 	while (1) {
 		struct hlist_node *p;
 		rcu_read_lock();
@@ -90,6 +109,9 @@ void mnt_pin_kill(struct mount *m)
 
 void group_pin_kill(struct hlist_head *p)
 {
+    if( fs_trace_enable && fs_fs_pin_trace_enable ){
+        printk(KERN_INFO " group_pin_kill \n" );
+    }
 	while (1) {
 		struct hlist_node *q;
 		rcu_read_lock();

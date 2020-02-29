@@ -43,6 +43,9 @@
 #include "internal.h"
 #include "mount.h"
 
+extern int fs_trace_enable;
+extern int fs_dcache_trace_enable;
+
 /*
  * Usage:
  * dcache->d_inode->i_lock protects:
@@ -372,7 +375,9 @@ static void dentry_unlink_inode(struct dentry * dentry)
 	__releases(dentry->d_inode->i_lock)
 {
 	struct inode *inode = dentry->d_inode;
-
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " dentry_unlink_inode\n " );
+    }
 	raw_write_seqcount_begin(&dentry->d_seq);
 	__d_clear_type_and_inode(dentry);
 	hlist_del_init(&dentry->d_u.d_alias);
@@ -404,6 +409,9 @@ static void dentry_unlink_inode(struct dentry * dentry)
 #define D_FLAG_VERIFY(dentry,x) WARN_ON_ONCE(((dentry)->d_flags & (DCACHE_LRU_LIST | DCACHE_SHRINK_LIST)) != (x))
 static void d_lru_add(struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO "d_lru_add \n " );
+    }
 	D_FLAG_VERIFY(dentry, 0);
 	dentry->d_flags |= DCACHE_LRU_LIST;
 	this_cpu_inc(nr_dentry_unused);
@@ -412,6 +420,9 @@ static void d_lru_add(struct dentry *dentry)
 
 static void d_lru_del(struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_lru_del\n " );
+    }
 	D_FLAG_VERIFY(dentry, DCACHE_LRU_LIST);
 	dentry->d_flags &= ~DCACHE_LRU_LIST;
 	this_cpu_dec(nr_dentry_unused);
@@ -420,6 +431,9 @@ static void d_lru_del(struct dentry *dentry)
 
 static void d_shrink_del(struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO "d_shrink_del \n " );
+    }
 	D_FLAG_VERIFY(dentry, DCACHE_SHRINK_LIST | DCACHE_LRU_LIST);
 	list_del_init(&dentry->d_lru);
 	dentry->d_flags &= ~(DCACHE_SHRINK_LIST | DCACHE_LRU_LIST);
@@ -428,6 +442,9 @@ static void d_shrink_del(struct dentry *dentry)
 
 static void d_shrink_add(struct dentry *dentry, struct list_head *list)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO "d_shrink_add \n " );
+    }
 	D_FLAG_VERIFY(dentry, 0);
 	list_add(&dentry->d_lru, list);
 	dentry->d_flags |= DCACHE_SHRINK_LIST | DCACHE_LRU_LIST;
@@ -442,6 +459,9 @@ static void d_shrink_add(struct dentry *dentry, struct list_head *list)
  */
 static void d_lru_isolate(struct list_lru_one *lru, struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_lru_isolate\n " );
+    }
 	D_FLAG_VERIFY(dentry, DCACHE_LRU_LIST);
 	dentry->d_flags &= ~DCACHE_LRU_LIST;
 	this_cpu_dec(nr_dentry_unused);
@@ -451,6 +471,9 @@ static void d_lru_isolate(struct list_lru_one *lru, struct dentry *dentry)
 static void d_lru_shrink_move(struct list_lru_one *lru, struct dentry *dentry,
 			      struct list_head *list)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_lru_shrink_move\n " );
+    }
 	D_FLAG_VERIFY(dentry, DCACHE_LRU_LIST);
 	dentry->d_flags |= DCACHE_SHRINK_LIST;
 	list_lru_isolate_move(lru, &dentry->d_lru, list);
@@ -461,6 +484,9 @@ static void d_lru_shrink_move(struct list_lru_one *lru, struct dentry *dentry,
  */
 static void dentry_lru_add(struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO "dentry_lru_add \n " );
+    }
 	if (unlikely(!(dentry->d_flags & DCACHE_LRU_LIST)))
 		d_lru_add(dentry);
 	else if (unlikely(!(dentry->d_flags & DCACHE_REFERENCED)))
@@ -486,6 +512,9 @@ static void dentry_lru_add(struct dentry *dentry)
  */
 static void ___d_drop(struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO "___d_drop \n " );
+    }
 	if (!d_unhashed(dentry)) {
 		struct hlist_bl_head *b;
 		/*
@@ -508,6 +537,9 @@ static void ___d_drop(struct dentry *dentry)
 
 void __d_drop(struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_drop \n " );
+    }
 	___d_drop(dentry);
 	dentry->d_hash.pprev = NULL;
 }
@@ -515,6 +547,9 @@ EXPORT_SYMBOL(__d_drop);
 
 void d_drop(struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_drop \n " );
+    }
 	spin_lock(&dentry->d_lock);
 	__d_drop(dentry);
 	spin_unlock(&dentry->d_lock);
@@ -524,6 +559,9 @@ EXPORT_SYMBOL(d_drop);
 static inline void dentry_unlist(struct dentry *dentry, struct dentry *parent)
 {
 	struct dentry *next;
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " dentry_unlist \n " );
+    }
 	/*
 	 * Inform d_walk() and shrink_dentry_list() that we are no longer
 	 * attached to the dentry tree
@@ -563,6 +601,9 @@ static void __dentry_kill(struct dentry *dentry)
 {
 	struct dentry *parent = NULL;
 	bool can_free = true;
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __dentry_kill \n " );
+    }
 	if (!IS_ROOT(dentry))
 		parent = dentry->d_parent;
 
@@ -617,6 +658,9 @@ static struct dentry *dentry_kill(struct dentry *dentry)
 	struct inode *inode = dentry->d_inode;
 	struct dentry *parent = NULL;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " dentry_kill \n " );
+    }
 	if (inode && unlikely(!spin_trylock(&inode->i_lock)))
 		goto failed;
 
@@ -640,6 +684,9 @@ failed:
 static inline struct dentry *lock_parent(struct dentry *dentry)
 {
 	struct dentry *parent = dentry->d_parent;
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " lock_parent \n " );
+    }
 	if (IS_ROOT(dentry))
 		return NULL;
 	if (unlikely(dentry->d_lockref.count < 0))
@@ -689,6 +736,9 @@ static inline bool fast_dput(struct dentry *dentry)
 	int ret;
 	unsigned int d_flags;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " fast_dput\n " );
+    }
 	/*
 	 * If we have a d_op->d_delete() operation, we sould not
 	 * let the dentry count go to zero, so use "put_or_lock".
@@ -811,6 +861,9 @@ void dput(struct dentry *dentry)
 	if (unlikely(!dentry))
 		return;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " dput \n " );
+    }
 repeat:
 	might_sleep();
 
@@ -869,6 +922,9 @@ struct dentry *dget_parent(struct dentry *dentry)
 	int gotref;
 	struct dentry *ret;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO "dget_parent \n " );
+    }
 	/*
 	 * Do optimistic parent lookup without any
 	 * locking.
@@ -922,6 +978,9 @@ static struct dentry *__d_find_alias(struct inode *inode)
 {
 	struct dentry *alias, *discon_alias;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_find_alias \n " );
+    }
 again:
 	discon_alias = NULL;
 	hlist_for_each_entry(alias, &inode->i_dentry, d_u.d_alias) {
@@ -956,6 +1015,9 @@ struct dentry *d_find_alias(struct inode *inode)
 {
 	struct dentry *de = NULL;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_find_alias \n " );
+    }
 	if (!hlist_empty(&inode->i_dentry)) {
 		spin_lock(&inode->i_lock);
 		de = __d_find_alias(inode);
@@ -972,6 +1034,9 @@ EXPORT_SYMBOL(d_find_alias);
 void d_prune_aliases(struct inode *inode)
 {
 	struct dentry *dentry;
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_prune_aliases \n " );
+    }
 restart:
 	spin_lock(&inode->i_lock);
 	hlist_for_each_entry(dentry, &inode->i_dentry, d_u.d_alias) {
@@ -996,6 +1061,9 @@ static void shrink_dentry_list(struct list_head *list)
 {
 	struct dentry *dentry, *parent;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " shrink_dentry_list \n " );
+    }
 	while (!list_empty(list)) {
 		struct inode *inode;
 		dentry = list_entry(list->prev, struct dentry, d_lru);
@@ -1079,6 +1147,9 @@ static enum lru_status dentry_lru_isolate(struct list_head *item,
 	struct dentry	*dentry = container_of(item, struct dentry, d_lru);
 
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " dentry_lru_isolate \n " );
+    }
 	/*
 	 * we are inverting the lru lock/dentry->d_lock here,
 	 * so use a trylock. If we fail to get the lock, just skip
@@ -1147,6 +1218,9 @@ long prune_dcache_sb(struct super_block *sb, struct shrink_control *sc)
 	LIST_HEAD(dispose);
 	long freed;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " prune_dcache_sb \n " );
+    }
 	freed = list_lru_shrink_walk(&sb->s_dentry_lru, sc,
 				     dentry_lru_isolate, &dispose);
 	shrink_dentry_list(&dispose);
@@ -1159,6 +1233,9 @@ static enum lru_status dentry_lru_isolate_shrink(struct list_head *item,
 	struct list_head *freeable = arg;
 	struct dentry	*dentry = container_of(item, struct dentry, d_lru);
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " dentry_lru_isolate_shrink \n " );
+    }
 	/*
 	 * we are inverting the lru lock/dentry->d_lock here,
 	 * so use a trylock. If we fail to get the lock, just skip
@@ -1185,6 +1262,9 @@ void shrink_dcache_sb(struct super_block *sb)
 {
 	long freed;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " shrink_dcache_sb \n " );
+    }
 	do {
 		LIST_HEAD(dispose);
 
@@ -1231,6 +1311,9 @@ void d_walk(struct dentry *parent, void *data,
 	enum d_walk_ret ret;
 	bool retry = true;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_walk \n " );
+    }
 again:
 	read_seqbegin_or_lock(&rename_lock, &seq);
 	this_parent = parent;
@@ -1341,6 +1424,9 @@ static enum d_walk_ret path_check_mount(void *data, struct dentry *dentry)
 	struct check_mount *info = data;
 	struct path path = { .mnt = info->mnt, .dentry = dentry };
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " path_check_mount \n " );
+    }
 	if (likely(!d_mountpoint(dentry)))
 		return D_WALK_CONTINUE;
 	if (__path_is_mountpoint(&path)) {
@@ -1362,6 +1448,9 @@ int path_has_submounts(const struct path *parent)
 {
 	struct check_mount data = { .mnt = parent->mnt, .mounted = 0 };
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " path_has_submounts \n " );
+    }
 	read_seqlock_excl(&mount_lock);
 	d_walk(parent->dentry, &data, path_check_mount, NULL);
 	read_sequnlock_excl(&mount_lock);
@@ -1382,6 +1471,9 @@ int d_set_mounted(struct dentry *dentry)
 {
 	struct dentry *p;
 	int ret = -ENOENT;
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_set_mounted \n " );
+    }
 	write_seqlock(&rename_lock);
 	for (p = dentry->d_parent; !IS_ROOT(p); p = p->d_parent) {
 		/* Need exclusion wrt. d_invalidate() */
@@ -1432,6 +1524,9 @@ static enum d_walk_ret select_collect(void *_data, struct dentry *dentry)
 	struct select_data *data = _data;
 	enum d_walk_ret ret = D_WALK_CONTINUE;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " select_collect \n " );
+    }
 	if (data->start == dentry)
 		goto out;
 
@@ -1464,6 +1559,9 @@ out:
  */
 void shrink_dcache_parent(struct dentry *parent)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " shrink_dcache_parent \n " );
+    }
 	for (;;) {
 		struct select_data data;
 
@@ -1483,6 +1581,9 @@ EXPORT_SYMBOL(shrink_dcache_parent);
 
 static enum d_walk_ret umount_check(void *_data, struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " umount_check \n " );
+    }
 	/* it has busy descendents; complain about those instead */
 	if (!list_empty(&dentry->d_subdirs))
 		return D_WALK_CONTINUE;
@@ -1506,6 +1607,9 @@ static enum d_walk_ret umount_check(void *_data, struct dentry *dentry)
 
 static void do_one_tree(struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " do_one_tree \n " );
+    }
 	shrink_dcache_parent(dentry);
 	d_walk(dentry, dentry, umount_check, NULL);
 	d_drop(dentry);
@@ -1519,6 +1623,9 @@ void shrink_dcache_for_umount(struct super_block *sb)
 {
 	struct dentry *dentry;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " shrink_dcache_for_umount \n " );
+    }
 	WARN(down_read_trylock(&sb->s_umount), "s_umount should've been locked");
 
 	dentry = sb->s_root;
@@ -1539,6 +1646,9 @@ static enum d_walk_ret detach_and_collect(void *_data, struct dentry *dentry)
 {
 	struct detach_data *data = _data;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " detach_and_collect \n " );
+    }
 	if (d_mountpoint(dentry)) {
 		__dget_dlock(dentry);
 		data->mountpoint = dentry;
@@ -1552,6 +1662,9 @@ static void check_and_drop(void *_data)
 {
 	struct detach_data *data = _data;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " check_and_drop \n " );
+    }
 	if (!data->mountpoint && list_empty(&data->select.dispose))
 		__d_drop(data->select.start);
 }
@@ -1568,6 +1681,9 @@ static void check_and_drop(void *_data)
  */
 void d_invalidate(struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO "  d_invalidate\n " );
+    }
 	/*
 	 * If it's already been dropped, return OK.
 	 */
@@ -1625,6 +1741,9 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)
 	char *dname;
 	int err;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_alloc \n " );
+    }
 	dentry = kmem_cache_alloc(dentry_cache, GFP_KERNEL);
 	if (!dentry)
 		return NULL;
@@ -1715,6 +1834,9 @@ struct dentry *d_alloc(struct dentry * parent, const struct qstr *name)
 	struct dentry *dentry = __d_alloc(parent->d_sb, name);
 	if (!dentry)
 		return NULL;
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_alloc \n " );
+    }
 	dentry->d_flags |= DCACHE_RCUACCESS;
 	spin_lock(&parent->d_lock);
 	/*
@@ -1733,6 +1855,9 @@ EXPORT_SYMBOL(d_alloc);
 struct dentry *d_alloc_cursor(struct dentry * parent)
 {
 	struct dentry *dentry = __d_alloc(parent->d_sb, NULL);
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_alloc_cursor \n " );
+    }
 	if (dentry) {
 		dentry->d_flags |= DCACHE_RCUACCESS | DCACHE_DENTRY_CURSOR;
 		dentry->d_parent = dget(parent);
@@ -1766,6 +1891,9 @@ EXPORT_SYMBOL(d_alloc_name);
 
 void d_set_d_op(struct dentry *dentry, const struct dentry_operations *op)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_set_d_op \n " );
+    }
 	WARN_ON_ONCE(dentry->d_op);
 	WARN_ON_ONCE(dentry->d_flags & (DCACHE_OP_HASH	|
 				DCACHE_OP_COMPARE	|
@@ -1814,6 +1942,9 @@ static unsigned d_flags_for_inode(struct inode *inode)
 {
 	unsigned add_flags = DCACHE_REGULAR_TYPE;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_set_fallthru \n " );
+    }
 	if (!inode)
 		return DCACHE_MISS_TYPE;
 
@@ -1850,6 +1981,9 @@ static void __d_instantiate(struct dentry *dentry, struct inode *inode)
 	unsigned add_flags = d_flags_for_inode(inode);
 	WARN_ON(d_in_lookup(dentry));
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_instantiate \n " );
+    }
 	spin_lock(&dentry->d_lock);
 	hlist_add_head(&dentry->d_u.d_alias, &inode->i_dentry);
 	raw_write_seqcount_begin(&dentry->d_seq);
@@ -1876,6 +2010,9 @@ static void __d_instantiate(struct dentry *dentry, struct inode *inode)
  
 void d_instantiate(struct dentry *entry, struct inode * inode)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_instantiate \n " );
+    }
 	BUG_ON(!hlist_unhashed(&entry->d_u.d_alias));
 	if (inode) {
 		security_d_instantiate(entry, inode);
@@ -1894,6 +2031,9 @@ EXPORT_SYMBOL(d_instantiate);
  */
 void d_instantiate_new(struct dentry *entry, struct inode *inode)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_instantiate_new \n " );
+    }
 	BUG_ON(!hlist_unhashed(&entry->d_u.d_alias));
 	BUG_ON(!inode);
 	lockdep_annotate_inode_mutex_key(inode);
@@ -1921,6 +2061,9 @@ int d_instantiate_no_diralias(struct dentry *entry, struct inode *inode)
 {
 	BUG_ON(!hlist_unhashed(&entry->d_u.d_alias));
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_instantiate_no_diralias \n " );
+    }
 	security_d_instantiate(entry, inode);
 	spin_lock(&inode->i_lock);
 	if (S_ISDIR(inode->i_mode) && !hlist_empty(&inode->i_dentry)) {
@@ -1939,6 +2082,9 @@ struct dentry *d_make_root(struct inode *root_inode)
 {
 	struct dentry *res = NULL;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_make_root \n " );
+    }
 	if (root_inode) {
 		res = __d_alloc(root_inode->i_sb, NULL);
 		if (res) {
@@ -1956,6 +2102,9 @@ static struct dentry * __d_find_any_alias(struct inode *inode)
 {
 	struct dentry *alias;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_find_any_alias \n " );
+    }
 	if (hlist_empty(&inode->i_dentry))
 		return NULL;
 	alias = hlist_entry(inode->i_dentry.first, struct dentry, d_u.d_alias);
@@ -1974,6 +2123,9 @@ struct dentry *d_find_any_alias(struct inode *inode)
 {
 	struct dentry *de;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_find_any_alias \n " );
+    }
 	spin_lock(&inode->i_lock);
 	de = __d_find_any_alias(inode);
 	spin_unlock(&inode->i_lock);
@@ -1987,6 +2139,9 @@ static struct dentry *__d_obtain_alias(struct inode *inode, int disconnected)
 	struct dentry *res;
 	unsigned add_flags;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_obtain_alias \n " );
+    }
 	if (!inode)
 		return ERR_PTR(-ESTALE);
 	if (IS_ERR(inode))
@@ -2099,6 +2254,9 @@ struct dentry *d_add_ci(struct dentry *dentry, struct inode *inode,
 {
 	struct dentry *found, *res;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_add_ci \n " );
+    }
 	/*
 	 * First check if a dentry matching the name already exists,
 	 * if not go ahead and create it now.
@@ -2185,6 +2343,9 @@ struct dentry *__d_lookup_rcu(const struct dentry *parent,
 	struct hlist_bl_node *node;
 	struct dentry *dentry;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_lookup_rcu \n " );
+    }
 	/*
 	 * Note: There is significant duplication with __d_lookup_rcu which is
 	 * required to prevent single threaded performance regressions
@@ -2275,6 +2436,9 @@ struct dentry *d_lookup(const struct dentry *parent, const struct qstr *name)
 	struct dentry *dentry;
 	unsigned seq;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_lookup \n " );
+    }
 	do {
 		seq = read_seqbegin(&rename_lock);
 		dentry = __d_lookup(parent, name);
@@ -2308,6 +2472,9 @@ struct dentry *__d_lookup(const struct dentry *parent, const struct qstr *name)
 	struct dentry *found = NULL;
 	struct dentry *dentry;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_lookup \n " );
+    }
 	/*
 	 * Note: There is significant duplication with __d_lookup_rcu which is
 	 * required to prevent single threaded performance regressions
@@ -2365,6 +2532,9 @@ next:
  */
 struct dentry *d_hash_and_lookup(struct dentry *dir, struct qstr *name)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_hash_and_lookup \n " );
+    }
 	/*
 	 * Check for a fs-specific hash function. Note that we must
 	 * calculate the standard hash first, as the d_op->d_hash()
@@ -2408,6 +2578,9 @@ void d_delete(struct dentry * dentry)
 	/*
 	 * Are we the only user?
 	 */
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_delete \n " );
+    }
 again:
 	spin_lock(&dentry->d_lock);
 	inode = dentry->d_inode;
@@ -2475,6 +2648,9 @@ static inline void end_dir_add(struct inode *dir, unsigned n)
 
 static void d_wait_lookup(struct dentry *dentry)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_wait_lookup \n " );
+    }
 	if (d_in_lookup(dentry)) {
 		DECLARE_WAITQUEUE(wait, current);
 		add_wait_queue(dentry->d_wait, &wait);
@@ -2501,6 +2677,9 @@ struct dentry *d_alloc_parallel(struct dentry *parent,
 	if (unlikely(!new))
 		return ERR_PTR(-ENOMEM);
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_alloc_parallel \n " );
+    }
 retry:
 	rcu_read_lock();
 	seq = smp_load_acquire(&parent->d_inode->i_dir_seq);
@@ -2601,6 +2780,9 @@ void __d_lookup_done(struct dentry *dentry)
 {
 	struct hlist_bl_head *b = in_lookup_hash(dentry->d_parent,
 						 dentry->d_name.hash);
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_lookup_done \n " );
+    }
 	hlist_bl_lock(b);
 	dentry->d_flags &= ~DCACHE_PAR_LOOKUP;
 	__hlist_bl_del(&dentry->d_u.d_in_lookup_hash);
@@ -2618,6 +2800,9 @@ static inline void __d_add(struct dentry *dentry, struct inode *inode)
 {
 	struct inode *dir = NULL;
 	unsigned n;
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_add \n " );
+    }
 	spin_lock(&dentry->d_lock);
 	if (unlikely(d_in_lookup(dentry))) {
 		dir = dentry->d_parent->d_inode;
@@ -2675,6 +2860,9 @@ struct dentry *d_exact_alias(struct dentry *entry, struct inode *inode)
 	struct dentry *alias;
 	unsigned int hash = entry->d_name.hash;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_exact_alias \n " );
+    }
 	spin_lock(&inode->i_lock);
 	hlist_for_each_entry(alias, &inode->i_dentry, d_u.d_alias) {
 		/*
@@ -2724,6 +2912,9 @@ void dentry_update_name_case(struct dentry *dentry, const struct qstr *name)
 	BUG_ON(!inode_is_locked(dentry->d_parent->d_inode));
 	BUG_ON(dentry->d_name.len != name->len); /* d_lookup gives this */
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " dentry_update_name_case \n " );
+    }
 	spin_lock(&dentry->d_lock);
 	write_seqcount_begin(&dentry->d_seq);
 	memcpy((unsigned char *)dentry->d_name.name, name->name, name->len);
@@ -2734,6 +2925,9 @@ EXPORT_SYMBOL(dentry_update_name_case);
 
 static void swap_names(struct dentry *dentry, struct dentry *target)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " swap_names \n " );
+    }
 	if (unlikely(dname_external(target))) {
 		if (unlikely(dname_external(dentry))) {
 			/*
@@ -2795,6 +2989,9 @@ static void copy_name(struct dentry *dentry, struct dentry *target)
 
 static void dentry_lock_for_move(struct dentry *dentry, struct dentry *target)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " copy_name \n " );
+    }
 	/*
 	 * XXXX: do we really need to take target->d_lock?
 	 */
@@ -2822,6 +3019,9 @@ static void dentry_lock_for_move(struct dentry *dentry, struct dentry *target)
 
 static void dentry_unlock_for_move(struct dentry *dentry, struct dentry *target)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " dentry_unlock_for_move \n " );
+    }
 	if (target->d_parent != dentry->d_parent)
 		spin_unlock(&dentry->d_parent->d_lock);
 	if (target->d_parent != target)
@@ -2863,6 +3063,9 @@ static void __d_move(struct dentry *dentry, struct dentry *target,
 	if (!dentry->d_inode)
 		printk(KERN_WARNING "VFS: moving negative dcache entry\n");
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_move \n " );
+    }
 	BUG_ON(d_ancestor(dentry, target));
 	BUG_ON(d_ancestor(target, dentry));
 
@@ -2931,6 +3134,9 @@ static void __d_move(struct dentry *dentry, struct dentry *target,
  */
 void d_move(struct dentry *dentry, struct dentry *target)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_move \n " );
+    }
 	write_seqlock(&rename_lock);
 	__d_move(dentry, target, false);
 	write_sequnlock(&rename_lock);
@@ -2946,6 +3152,9 @@ void d_exchange(struct dentry *dentry1, struct dentry *dentry2)
 {
 	write_seqlock(&rename_lock);
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_exchange \n " );
+    }
 	WARN_ON(!dentry1->d_inode);
 	WARN_ON(!dentry2->d_inode);
 	WARN_ON(IS_ROOT(dentry1));
@@ -2969,6 +3178,9 @@ struct dentry *d_ancestor(struct dentry *p1, struct dentry *p2)
 {
 	struct dentry *p;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_ancestor \n " );
+    }
 	for (p = p2; !IS_ROOT(p); p = p->d_parent) {
 		if (p->d_parent == p1)
 			return p;
@@ -2992,6 +3204,9 @@ static int __d_unalias(struct inode *inode,
 	struct rw_semaphore *m2 = NULL;
 	int ret = -ESTALE;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_unalias \n " );
+    }
 	/* If alias and dentry share a parent, then no extra locks required */
 	if (alias->d_parent == dentry->d_parent)
 		goto out_unalias;
@@ -3044,6 +3259,9 @@ struct dentry *d_splice_alias(struct inode *inode, struct dentry *dentry)
 
 	BUG_ON(!d_unhashed(dentry));
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_splice_alias \n " );
+    }
 	if (!inode)
 		goto out;
 
@@ -3259,6 +3477,9 @@ char *__d_path(const struct path *path,
 	char *res = buf + buflen;
 	int error;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __d_path \n " );
+    }
 	prepend(&res, &buflen, "\0", 1);
 	error = prepend_path(path, root, &res, &buflen);
 
@@ -3340,6 +3561,9 @@ char *d_path(const struct path *path, char *buf, int buflen)
 	struct path root;
 	int error;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_path \n " );
+    }
 	/*
 	 * We have various synthetic filesystems that never get mounted.  On
 	 * these filesystems dentries are never used for lookup purposes, and
@@ -3409,6 +3633,9 @@ static char *__dentry_path(struct dentry *d, char *buf, int buflen)
 	int len, seq = 0;
 	int error = 0;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " __dentry_path \n " );
+    }
 	if (buflen < 2)
 		goto Elong;
 
@@ -3458,6 +3685,9 @@ char *dentry_path(struct dentry *dentry, char *buf, int buflen)
 	char *p = NULL;
 	char *retval;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " dentry_path \n " );
+    }
 	if (d_unlinked(dentry)) {
 		p = buf + buflen;
 		if (prepend(&p, &buflen, "//deleted", 10) != 0)
@@ -3476,6 +3706,9 @@ static void get_fs_root_and_pwd_rcu(struct fs_struct *fs, struct path *root,
 				    struct path *pwd)
 {
 	unsigned seq;
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " get_fs_root_and_pwd_rcu \n " );
+    }
 
 	do {
 		seq = read_seqcount_begin(&fs->seq);
@@ -3511,6 +3744,9 @@ SYSCALL_DEFINE2(getcwd, char __user *, buf, unsigned long, size)
 	if (!page)
 		return -ENOMEM;
 
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " getcwd \n " );
+    }
 	rcu_read_lock();
 	get_fs_root_and_pwd_rcu(current->fs, &root, &pwd);
 
@@ -3573,6 +3809,9 @@ bool is_subdir(struct dentry *new_dentry, struct dentry *old_dentry)
 
 	if (new_dentry == old_dentry)
 		return true;
+if( fs_trace_enable && fs_dcache_trace_enable ){
+    printk(KERN_INFO " is_subdir \n " );
+}
 
 	do {
 		/* for restarting inner loop in case of seq retry */
@@ -3595,6 +3834,9 @@ bool is_subdir(struct dentry *new_dentry, struct dentry *old_dentry)
 static enum d_walk_ret d_genocide_kill(void *data, struct dentry *dentry)
 {
 	struct dentry *root = data;
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO " d_genocide_kill \n " );
+    }
 	if (dentry != root) {
 		if (d_unhashed(dentry) || !dentry->d_inode)
 			return D_WALK_SKIP;
@@ -3660,6 +3902,9 @@ static void __init dcache_init_early(void)
 
 static void __init dcache_init(void)
 {
+    if( fs_trace_enable && fs_dcache_trace_enable ){
+        printk(KERN_INFO "  \n " );
+    }
 	/*
 	 * A constructor could be added for stable state like the lists,
 	 * but it is probably not worth it because of the cache nature

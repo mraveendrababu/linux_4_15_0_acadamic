@@ -23,6 +23,9 @@
 #include "ext4.h"
 #include "xattr.h"
 
+extern int ext4_trace_enable;
+extern int ext4_symlink_trace_enable;
+
 static const char *ext4_encrypted_get_link(struct dentry *dentry,
 					   struct inode *inode,
 					   struct delayed_call *done)
@@ -34,6 +37,9 @@ static const char *ext4_encrypted_get_link(struct dentry *dentry,
 	int res;
 	u32 max_size = inode->i_sb->s_blocksize;
 
+    if( ext4_trace_enable && ext4_symlink_trace_enable  ){
+        printk(KERN_INFO "ext4_encrypted_get_link \n" );
+    }
 	if (!dentry)
 		return ERR_PTR(-ECHILD);
 

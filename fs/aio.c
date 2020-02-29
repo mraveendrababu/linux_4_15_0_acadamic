@@ -204,12 +204,19 @@ static struct vfsmount *aio_mnt;
 static const struct file_operations aio_ring_fops;
 static const struct address_space_operations aio_ctx_aops;
 
+extern int fs_trace_enable;
+extern int fs_aio_trace_enable;
+
 static struct file *aio_private_file(struct kioctx *ctx, loff_t nr_pages)
 {
 	struct qstr this = QSTR_INIT("[aio]", 5);
 	struct file *file;
 	struct path path;
 	struct inode *inode = alloc_anon_inode(aio_mnt->mnt_sb);
+    
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " aio_private_file\n" );
+    }
 	if (IS_ERR(inode))
 		return ERR_CAST(inode);
 
@@ -244,6 +251,9 @@ static struct dentry *aio_mount(struct file_system_type *fs_type,
 	struct dentry *root = mount_pseudo(fs_type, "aio:", NULL, &ops,
 					   AIO_RING_MAGIC);
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "aio_mount \n" );
+    }
 	if (!IS_ERR(root))
 		root->d_sb->s_iflags |= SB_I_NOEXEC;
 	return root;
@@ -260,6 +270,9 @@ static int __init aio_setup(void)
 		.mount		= aio_mount,
 		.kill_sb	= kill_anon_super,
 	};
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "aio_setup \n" );
+    }
 	aio_mnt = kern_mount(&aio_fs);
 	if (IS_ERR(aio_mnt))
 		panic("Failed to create aio fs mount.");
@@ -278,6 +291,9 @@ static void put_aio_ring_file(struct kioctx *ctx)
 	struct file *aio_ring_file = ctx->aio_ring_file;
 	struct address_space *i_mapping;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "put_aio_ring_file \n" );
+    }
 	if (aio_ring_file) {
 		truncate_setsize(file_inode(aio_ring_file), 0);
 
@@ -301,6 +317,9 @@ static void aio_free_ring(struct kioctx *ctx)
 	 */
 	put_aio_ring_file(ctx);
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "aio_free_ring \n" );
+    }
 	for (i = 0; i < ctx->nr_pages; i++) {
 		struct page *page;
 		pr_debug("pid(%d) [%d] page->count=%d\n", current->pid, i,
@@ -325,6 +344,9 @@ static int aio_ring_mremap(struct vm_area_struct *vma)
 	struct kioctx_table *table;
 	int i, res = -EINVAL;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " aio_ring_mremap\n" );
+    }
 	spin_lock(&mm->ioctx_lock);
 	rcu_read_lock();
 	table = rcu_dereference(mm->ioctx_table);
@@ -375,6 +397,9 @@ static int aio_migratepage(struct address_space *mapping, struct page *new,
 	pgoff_t idx;
 	int rc;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "aio_migratepage \n" );
+    }
 	/*
 	 * We cannot support the _NO_COPY case here, because copy needs to
 	 * happen under the ctx->completion_lock. That does not work with the
@@ -460,6 +485,9 @@ static int aio_setup_ring(struct kioctx *ctx, unsigned int nr_events)
 	int i;
 	struct file *file;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " aio_setup_ring\n" );
+    }
 	/* Compensate for the ring buffer's head/tail overlap entry */
 	nr_events += 2;	/* 1 is required, 2 for good luck */
 
@@ -558,6 +586,9 @@ void kiocb_set_cancel_fn(struct kiocb *iocb, kiocb_cancel_fn *cancel)
 	struct kioctx *ctx = req->ki_ctx;
 	unsigned long flags;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "kiocb_set_cancel_fn \n" );
+    }
 	spin_lock_irqsave(&ctx->ctx_lock, flags);
 
 	if (!req->ki_list.next)
@@ -573,6 +604,9 @@ static int kiocb_cancel(struct aio_kiocb *kiocb)
 {
 	kiocb_cancel_fn *old, *cancel;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "kiocb_cancel \n" );
+    }
 	/*
 	 * Don't want to set kiocb->ki_cancel = KIOCB_CANCELLED unless it
 	 * actually has a cancel function, hence the cmpxchg()
@@ -600,6 +634,9 @@ static void free_ioctx(struct work_struct *work)
 {
 	struct kioctx *ctx = container_of(work, struct kioctx, free_work);
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " free_ioctx\n" );
+    }
 	pr_debug("freeing %p\n", ctx);
 
 	aio_free_ring(ctx);
@@ -613,6 +650,9 @@ static void free_ioctx_rcufn(struct rcu_head *head)
 {
 	struct kioctx *ctx = container_of(head, struct kioctx, free_rcu);
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "free_ioctx_rcufn \n" );
+    }
 	INIT_WORK(&ctx->free_work, free_ioctx);
 	schedule_work(&ctx->free_work);
 }
@@ -621,6 +661,9 @@ static void free_ioctx_reqs(struct percpu_ref *ref)
 {
 	struct kioctx *ctx = container_of(ref, struct kioctx, reqs);
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "free_ioctx_reqs \n" );
+    }
 	/* At this point we know that there are no any in-flight requests */
 	if (ctx->rq_wait && atomic_dec_and_test(&ctx->rq_wait->count))
 		complete(&ctx->rq_wait->comp);
@@ -639,6 +682,9 @@ static void free_ioctx_users(struct percpu_ref *ref)
 	struct kioctx *ctx = container_of(ref, struct kioctx, users);
 	struct aio_kiocb *req;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "free_ioctx_users \n" );
+    }
 	spin_lock_irq(&ctx->ctx_lock);
 
 	while (!list_empty(&ctx->active_reqs)) {
@@ -660,6 +706,9 @@ static int ioctx_add_table(struct kioctx *ctx, struct mm_struct *mm)
 	struct kioctx_table *table, *old;
 	struct aio_ring *ring;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " ioctx_add_table\n" );
+    }
 	spin_lock(&mm->ioctx_lock);
 	table = rcu_dereference_raw(mm->ioctx_table);
 
@@ -711,6 +760,9 @@ static int ioctx_add_table(struct kioctx *ctx, struct mm_struct *mm)
 
 static void aio_nr_sub(unsigned nr)
 {
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "aio_nr_sub \n" );
+    }
 	spin_lock(&aio_nr_lock);
 	if (WARN_ON(aio_nr - nr > aio_nr))
 		aio_nr = 0;
@@ -728,6 +780,9 @@ static struct kioctx *ioctx_alloc(unsigned nr_events)
 	struct kioctx *ctx;
 	int err = -ENOMEM;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "ioctx_alloc \n" );
+    }
 	/*
 	 * Store the original nr_events -- what userspace passed to io_setup(),
 	 * for counting against the global limit -- before it changes.
@@ -842,6 +897,9 @@ static int kill_ioctx(struct mm_struct *mm, struct kioctx *ctx,
 {
 	struct kioctx_table *table;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " kill_ioctx\n" );
+    }
 	spin_lock(&mm->ioctx_lock);
 	if (atomic_xchg(&ctx->dead, 1)) {
 		spin_unlock(&mm->ioctx_lock);
@@ -887,6 +945,9 @@ void exit_aio(struct mm_struct *mm)
 	struct ctx_rq_wait wait;
 	int i, skipped;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "exit_aio \n" );
+    }
 	if (!table)
 		return;
 
@@ -928,6 +989,9 @@ static void put_reqs_available(struct kioctx *ctx, unsigned nr)
 	struct kioctx_cpu *kcpu;
 	unsigned long flags;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " put_reqs_available\n" );
+    }
 	local_irq_save(flags);
 	kcpu = this_cpu_ptr(ctx->cpu);
 	kcpu->reqs_available += nr;
@@ -946,6 +1010,9 @@ static bool get_reqs_available(struct kioctx *ctx)
 	bool ret = false;
 	unsigned long flags;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " get_reqs_available\n" );
+    }
 	local_irq_save(flags);
 	kcpu = this_cpu_ptr(ctx->cpu);
 	if (!kcpu->reqs_available) {
@@ -982,6 +1049,9 @@ static void refill_reqs_available(struct kioctx *ctx, unsigned head,
 {
 	unsigned events_in_ring, completed;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "refill_reqs_available \n" );
+    }
 	/* Clamp head since userland can write to it. */
 	head %= ctx->nr_events;
 	if (head <= tail)
@@ -1008,6 +1078,9 @@ static void refill_reqs_available(struct kioctx *ctx, unsigned head,
  */
 static void user_refill_reqs_available(struct kioctx *ctx)
 {
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "user_refill_reqs_available \n" );
+    }
 	spin_lock_irq(&ctx->completion_lock);
 	if (ctx->completed_events) {
 		struct aio_ring *ring;
@@ -1040,6 +1113,9 @@ static inline struct aio_kiocb *aio_get_req(struct kioctx *ctx)
 {
 	struct aio_kiocb *req;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "aio_get_req \n" );
+    }
 	if (!get_reqs_available(ctx)) {
 		user_refill_reqs_available(ctx);
 		if (!get_reqs_available(ctx))
@@ -1061,6 +1137,9 @@ out_put:
 
 static void kiocb_free(struct aio_kiocb *req)
 {
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " kiocb_free\n" );
+    }
 	if (req->common.ki_filp)
 		fput(req->common.ki_filp);
 	if (req->ki_eventfd != NULL)
@@ -1076,6 +1155,9 @@ static struct kioctx *lookup_ioctx(unsigned long ctx_id)
 	struct kioctx_table *table;
 	unsigned id;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "lookup_ioctx \n" );
+    }
 	if (get_user(id, &ring->id))
 		return NULL;
 
@@ -1108,6 +1190,9 @@ static void aio_complete(struct kiocb *kiocb, long res, long res2)
 	unsigned tail, pos, head;
 	unsigned long	flags;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " aio_complete\n" );
+    }
 	if (kiocb->ki_flags & IOCB_WRITE) {
 		struct file *file = kiocb->ki_filp;
 
@@ -1222,6 +1307,9 @@ static long aio_read_events_ring(struct kioctx *ctx,
 	long ret = 0;
 	int copy_ret;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " aio_read_events_ring\n" );
+    }
 	/*
 	 * The mutex can block and wake us up and that will cause
 	 * wait_event_interruptible_hrtimeout() to schedule without sleeping
@@ -1300,6 +1388,9 @@ static bool aio_read_events(struct kioctx *ctx, long min_nr, long nr,
 {
 	long ret = aio_read_events_ring(ctx, event + *i, nr - *i);
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "aio_read_events \n" );
+    }
 	if (ret > 0)
 		*i += ret;
 
@@ -1318,6 +1409,9 @@ static long read_events(struct kioctx *ctx, long min_nr, long nr,
 {
 	long ret = 0;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " read_events\n" );
+    }
 	/*
 	 * Note that aio_read_events() is being called as the conditional - i.e.
 	 * we're calling it after prepare_to_wait() has set task state to
@@ -1364,6 +1458,9 @@ SYSCALL_DEFINE2(io_setup, unsigned, nr_events, aio_context_t __user *, ctxp)
 	unsigned long ctx;
 	long ret;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "io_setup \n" );
+    }
 	ret = get_user(ctx, ctxp);
 	if (unlikely(ret))
 		goto out;
@@ -1395,6 +1492,9 @@ COMPAT_SYSCALL_DEFINE2(io_setup, unsigned, nr_events, u32 __user *, ctx32p)
 	unsigned long ctx;
 	long ret;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "io_setup \n" );
+    }
 	ret = get_user(ctx, ctx32p);
 	if (unlikely(ret))
 		goto out;
@@ -1453,6 +1553,9 @@ SYSCALL_DEFINE1(io_destroy, aio_context_t, ctx)
 
 		return ret;
 	}
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " io_destroy\n" );
+    }
 	pr_debug("EINVAL: invalid context id\n");
 	return -EINVAL;
 }
@@ -1463,6 +1566,9 @@ static int aio_setup_rw(int rw, struct iocb *iocb, struct iovec **iovec,
 	void __user *buf = (void __user *)(uintptr_t)iocb->aio_buf;
 	size_t len = iocb->aio_nbytes;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " aio_setup_rw\n" );
+    }
 	if (!vectored) {
 		ssize_t ret = import_single_range(rw, buf, len, *iovec, iter);
 		*iovec = NULL;
@@ -1478,6 +1584,9 @@ static int aio_setup_rw(int rw, struct iocb *iocb, struct iovec **iovec,
 
 static inline ssize_t aio_ret(struct kiocb *req, ssize_t ret)
 {
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "aio_ret \n" );
+    }
 	switch (ret) {
 	case -EIOCBQUEUED:
 		return ret;
@@ -1505,6 +1614,9 @@ static ssize_t aio_read(struct kiocb *req, struct iocb *iocb, bool vectored,
 	struct iov_iter iter;
 	ssize_t ret;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "aio_read \n" );
+    }
 	if (unlikely(!(file->f_mode & FMODE_READ)))
 		return -EBADF;
 	if (unlikely(!file->f_op->read_iter))
@@ -1528,6 +1640,9 @@ static ssize_t aio_write(struct kiocb *req, struct iocb *iocb, bool vectored,
 	struct iov_iter iter;
 	ssize_t ret;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " aio_write\n" );
+    }
 	if (unlikely(!(file->f_mode & FMODE_WRITE)))
 		return -EBADF;
 	if (unlikely(!file->f_op->write_iter))
@@ -1560,6 +1675,9 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
 	struct file *file;
 	ssize_t ret;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "io_submit_one \n" );
+    }
 	/* enforce forwards compatibility on users */
 	if (unlikely(iocb->aio_reserved2)) {
 		pr_debug("EINVAL: reserve field set\n");
@@ -1661,6 +1779,9 @@ static long do_io_submit(aio_context_t ctx_id, long nr,
 	int i = 0;
 	struct blk_plug plug;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "do_io_submit \n" );
+    }
 	if (unlikely(nr < 0))
 		return -EINVAL;
 
@@ -1721,6 +1842,9 @@ static long do_io_submit(aio_context_t ctx_id, long nr,
 SYSCALL_DEFINE3(io_submit, aio_context_t, ctx_id, long, nr,
 		struct iocb __user * __user *, iocbpp)
 {
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " io_submit\n" );
+    }
 	return do_io_submit(ctx_id, nr, iocbpp, 0);
 }
 
@@ -1731,6 +1855,9 @@ copy_iocb(long nr, u32 __user *ptr32, struct iocb __user * __user *ptr64)
 	compat_uptr_t uptr;
 	int i;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " copy_iocb\n" );
+    }
 	for (i = 0; i < nr; ++i) {
 		if (get_user(uptr, ptr32 + i))
 			return -EFAULT;
@@ -1748,6 +1875,9 @@ COMPAT_SYSCALL_DEFINE3(io_submit, compat_aio_context_t, ctx_id,
 	struct iocb __user * __user *iocb64;
 	long ret;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "io_submit \n" );
+    }
 	if (unlikely(nr < 0))
 		return -EINVAL;
 
@@ -1770,6 +1900,9 @@ lookup_kiocb(struct kioctx *ctx, struct iocb __user *iocb, u32 key)
 {
 	struct aio_kiocb *kiocb;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " lookup_kiocb\n" );
+    }
 	assert_spin_locked(&ctx->ctx_lock);
 
 	if (key != KIOCB_KEY)
@@ -1801,6 +1934,9 @@ SYSCALL_DEFINE3(io_cancel, aio_context_t, ctx_id, struct iocb __user *, iocb,
 	u32 key;
 	int ret;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " io_cancel\n" );
+    }
 	ret = get_user(key, &iocb->aio_key);
 	if (unlikely(ret))
 		return -EFAULT;
@@ -1843,6 +1979,9 @@ static long do_io_getevents(aio_context_t ctx_id,
 	struct kioctx *ioctx = lookup_ioctx(ctx_id);
 	long ret = -EINVAL;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "do_io_getevents \n" );
+    }
 	if (likely(ioctx)) {
 		if (likely(min_nr <= nr && min_nr >= 0))
 			ret = read_events(ioctx, min_nr, nr, events, until);
@@ -1872,6 +2011,9 @@ SYSCALL_DEFINE5(io_getevents, aio_context_t, ctx_id,
 {
 	struct timespec64	ts;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO "io_getevents \n" );
+    }
 	if (timeout) {
 		if (unlikely(get_timespec64(&ts, timeout)))
 			return -EFAULT;
@@ -1889,6 +2031,9 @@ COMPAT_SYSCALL_DEFINE5(io_getevents, compat_aio_context_t, ctx_id,
 {
 	struct timespec64 t;
 
+    if ( fs_trace_enable && fs_aio_trace_enable ){
+        printk(KERN_INFO " io_getevents\n" );
+    }
 	if (timeout) {
 		if (compat_get_timespec64(&t, timeout))
 			return -EFAULT;

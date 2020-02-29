@@ -18,6 +18,9 @@
 #include <linux/backing-dev.h>
 #include "internal.h"
 
+extern int fs_trace_enable;
+extern int fs_sync_trace_enable;
+
 #define VALID_FLAGS (SYNC_FILE_RANGE_WAIT_BEFORE|SYNC_FILE_RANGE_WRITE| \
 			SYNC_FILE_RANGE_WAIT_AFTER)
 
@@ -30,6 +33,10 @@
  */
 int __sync_filesystem(struct super_block *sb, int wait)
 {
+
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " __sync_filesystem \n" );
+    }
 	if (wait)
 		sync_inodes_sb(sb);
 	else
@@ -50,6 +57,9 @@ int sync_filesystem(struct super_block *sb)
 {
 	int ret;
 
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " sync_filesystem \n" );
+    }
 	/*
 	 * We need to be protected against the filesystem going from
 	 * r/o to r/w or vice versa.
@@ -71,23 +81,35 @@ EXPORT_SYMBOL(sync_filesystem);
 
 static void sync_inodes_one_sb(struct super_block *sb, void *arg)
 {
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " sync_inodes_one_sb \n" );
+    }
 	if (!sb_rdonly(sb))
 		sync_inodes_sb(sb);
 }
 
 static void sync_fs_one_sb(struct super_block *sb, void *arg)
 {
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " sync_fs_one_sb \n" );
+    }
 	if (!sb_rdonly(sb) && sb->s_op->sync_fs)
 		sb->s_op->sync_fs(sb, *(int *)arg);
 }
 
 static void fdatawrite_one_bdev(struct block_device *bdev, void *arg)
 {
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " fdatawrite_one_bdev \n" );
+    }
 	filemap_fdatawrite(bdev->bd_inode->i_mapping);
 }
 
 static void fdatawait_one_bdev(struct block_device *bdev, void *arg)
 {
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " fdatawait_one_bdev \n" );
+    }
 	/*
 	 * We keep the error status of individual mapping so that
 	 * applications can catch the writeback error using fsync(2).
@@ -110,6 +132,9 @@ SYSCALL_DEFINE0(sync)
 {
 	int nowait = 0, wait = 1;
 
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " sync \n" );
+    }
 	wakeup_flusher_threads(WB_REASON_SYNC);
 	iterate_supers(sync_inodes_one_sb, NULL);
 	iterate_supers(sync_fs_one_sb, &nowait);
@@ -125,6 +150,9 @@ static void do_sync_work(struct work_struct *work)
 {
 	int nowait = 0;
 
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " do_sync_work \n" );
+    }
 	/*
 	 * Sync twice to reduce the possibility we skipped some inodes / pages
 	 * because they were temporarily locked
@@ -143,6 +171,9 @@ void emergency_sync(void)
 {
 	struct work_struct *work;
 
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " emergency_sync \n" );
+    }
 	work = kmalloc(sizeof(*work), GFP_ATOMIC);
 	if (work) {
 		INIT_WORK(work, do_sync_work);
@@ -159,6 +190,9 @@ SYSCALL_DEFINE1(syncfs, int, fd)
 	struct super_block *sb;
 	int ret;
 
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " syncfs \n" );
+    }
 	if (!f.file)
 		return -EBADF;
 	sb = f.file->f_path.dentry->d_sb;
@@ -186,6 +220,9 @@ int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
 {
 	struct inode *inode = file->f_mapping->host;
 
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " vfs_fsync_range \n" );
+    }
 	if (!file->f_op->fsync)
 		return -EINVAL;
 	if (!datasync && (inode->i_state & I_DIRTY_TIME)) {
@@ -208,6 +245,9 @@ EXPORT_SYMBOL(vfs_fsync_range);
  */
 int vfs_fsync(struct file *file, int datasync)
 {
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " vfs_fsync \n" );
+    }
 	return vfs_fsync_range(file, 0, LLONG_MAX, datasync);
 }
 EXPORT_SYMBOL(vfs_fsync);
@@ -217,6 +257,9 @@ static int do_fsync(unsigned int fd, int datasync)
 	struct fd f = fdget(fd);
 	int ret = -EBADF;
 
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " do_fsync \n" );
+    }
 	if (f.file) {
 		ret = vfs_fsync(f.file, datasync);
 		fdput(f);
@@ -226,11 +269,17 @@ static int do_fsync(unsigned int fd, int datasync)
 
 SYSCALL_DEFINE1(fsync, unsigned int, fd)
 {
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " fsync \n" );
+    }
 	return do_fsync(fd, 0);
 }
 
 SYSCALL_DEFINE1(fdatasync, unsigned int, fd)
 {
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " fdatasync \n" );
+    }
 	return do_fsync(fd, 1);
 }
 
@@ -290,6 +339,9 @@ SYSCALL_DEFINE4(sync_file_range, int, fd, loff_t, offset, loff_t, nbytes,
 	loff_t endbyte;			/* inclusive */
 	umode_t i_mode;
 
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " sync_file_range \n" );
+    }
 	ret = -EINVAL;
 	if (flags & ~VALID_FLAGS)
 		goto out;
@@ -365,5 +417,8 @@ out:
 SYSCALL_DEFINE4(sync_file_range2, int, fd, unsigned int, flags,
 				 loff_t, offset, loff_t, nbytes)
 {
+    if( fs_trace_enable && fs_sync_trace_enable ){
+        printk(KERN_INFO " sync_file_range2 \n" );
+    }
 	return sys_sync_file_range(fd, offset, nbytes, flags);
 }

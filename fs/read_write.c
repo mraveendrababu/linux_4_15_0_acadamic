@@ -25,6 +25,11 @@
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
 
+extern int fs_trace_enable;
+extern int fs_read_write_trace_enable;
+
+#define TRACE_FILE_INODE_NUM 15873378 
+
 const struct file_operations generic_ro_fops = {
 	.llseek		= generic_file_llseek,
 	.read_iter	= generic_file_read_iter,
@@ -53,6 +58,10 @@ static inline bool unsigned_offsets(struct file *file)
  */
 loff_t vfs_setpos(struct file *file, loff_t offset, loff_t maxsize)
 {
+
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " vfs_setpos  \n");
+    }
 	if (offset < 0 && !unsigned_offsets(file))
 		return -EINVAL;
 	if (offset > maxsize)
@@ -86,6 +95,9 @@ loff_t
 generic_file_llseek_size(struct file *file, loff_t offset, int whence,
 		loff_t maxsize, loff_t eof)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " generic_file_llseek_size \n");
+    }
 	switch (whence) {
 	case SEEK_END:
 		offset += eof;
@@ -145,6 +157,9 @@ loff_t generic_file_llseek(struct file *file, loff_t offset, int whence)
 {
 	struct inode *inode = file->f_mapping->host;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " generic_file_llseek \n");
+    }
 	return generic_file_llseek_size(file, offset, whence,
 					inode->i_sb->s_maxbytes,
 					i_size_read(inode));
@@ -161,6 +176,9 @@ EXPORT_SYMBOL(generic_file_llseek);
  */
 loff_t fixed_size_llseek(struct file *file, loff_t offset, int whence, loff_t size)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " fixed_size_llseek \n");
+    }
 	switch (whence) {
 	case SEEK_SET: case SEEK_CUR: case SEEK_END:
 		return generic_file_llseek_size(file, offset, whence,
@@ -180,6 +198,9 @@ EXPORT_SYMBOL(fixed_size_llseek);
  */
 loff_t no_seek_end_llseek(struct file *file, loff_t offset, int whence)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " no_seek_end_llseek  \n");
+    }
 	switch (whence) {
 	case SEEK_SET: case SEEK_CUR:
 		return generic_file_llseek_size(file, offset, whence,
@@ -200,6 +221,9 @@ EXPORT_SYMBOL(no_seek_end_llseek);
  */
 loff_t no_seek_end_llseek_size(struct file *file, loff_t offset, int whence, loff_t size)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "no_seek_end_llseek_size \n");
+    }
 	switch (whence) {
 	case SEEK_SET: case SEEK_CUR:
 		return generic_file_llseek_size(file, offset, whence,
@@ -223,12 +247,18 @@ EXPORT_SYMBOL(no_seek_end_llseek_size);
  */
 loff_t noop_llseek(struct file *file, loff_t offset, int whence)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "noop_llseek \n");
+    }
 	return file->f_pos;
 }
 EXPORT_SYMBOL(noop_llseek);
 
 loff_t no_llseek(struct file *file, loff_t offset, int whence)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "no_llseek  \n");
+    }
 	return -ESPIPE;
 }
 EXPORT_SYMBOL(no_llseek);
@@ -238,6 +268,9 @@ loff_t default_llseek(struct file *file, loff_t offset, int whence)
 	struct inode *inode = file_inode(file);
 	loff_t retval;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "default_llseek \n");
+    }
 	inode_lock(inode);
 	switch (whence) {
 		case SEEK_END:
@@ -292,6 +325,9 @@ loff_t vfs_llseek(struct file *file, loff_t offset, int whence)
 {
 	loff_t (*fn)(struct file *, loff_t, int);
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "vfs_llseek \n");
+    }
 	fn = no_llseek;
 	if (file->f_mode & FMODE_LSEEK) {
 		if (file->f_op->llseek)
@@ -305,6 +341,9 @@ SYSCALL_DEFINE3(lseek, unsigned int, fd, off_t, offset, unsigned int, whence)
 {
 	off_t retval;
 	struct fd f = fdget_pos(fd);
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " lseek \n");
+    }
 	if (!f.file)
 		return -EBADF;
 
@@ -322,6 +361,9 @@ SYSCALL_DEFINE3(lseek, unsigned int, fd, off_t, offset, unsigned int, whence)
 #ifdef CONFIG_COMPAT
 COMPAT_SYSCALL_DEFINE3(lseek, unsigned int, fd, compat_off_t, offset, unsigned int, whence)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " \n");
+    }
 	return sys_lseek(fd, offset, whence);
 }
 #endif
@@ -335,6 +377,9 @@ SYSCALL_DEFINE5(llseek, unsigned int, fd, unsigned long, offset_high,
 	struct fd f = fdget_pos(fd);
 	loff_t offset;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "llseek \n");
+    }
 	if (!f.file)
 		return -EBADF;
 
@@ -362,7 +407,13 @@ int rw_verify_area(int read_write, struct file *file, const loff_t *ppos, size_t
 	struct inode *inode;
 	loff_t pos;
 	int retval = -EINVAL;
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "rw_verify_area inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "rw_verify_area \n");
+    }
 	inode = file_inode(file);
 	if (unlikely((ssize_t) count < 0))
 		return retval;
@@ -393,7 +444,12 @@ static ssize_t new_sync_read(struct file *filp, char __user *buf, size_t len, lo
 	struct kiocb kiocb;
 	struct iov_iter iter;
 	ssize_t ret;
-
+	if( filp->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "new_sync_read  inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "new_sync_read \n");
+    }
 	init_sync_kiocb(&kiocb, filp);
 	kiocb.ki_pos = *ppos;
 	iov_iter_init(&iter, READ, &iov, 1, len);
@@ -407,6 +463,9 @@ static ssize_t new_sync_read(struct file *filp, char __user *buf, size_t len, lo
 ssize_t __vfs_read(struct file *file, char __user *buf, size_t count,
 		   loff_t *pos)
 {
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "__vfs_read for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
 	if (file->f_op->read)
 		return file->f_op->read(file, buf, count, pos);
 	else if (file->f_op->read_iter)
@@ -419,7 +478,12 @@ ssize_t kernel_read(struct file *file, void *buf, size_t count, loff_t *pos)
 {
 	mm_segment_t old_fs;
 	ssize_t result;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "kernel_read for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "kernel_read \n");
+    }
 	old_fs = get_fs();
 	set_fs(get_ds());
 	/* The cast to a user pointer is valid due to the set_fs() */
@@ -432,7 +496,12 @@ EXPORT_SYMBOL(kernel_read);
 ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 {
 	ssize_t ret;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "vfs_read for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "vfs_read \n");
+    }
 	if (!(file->f_mode & FMODE_READ))
 		return -EBADF;
 	if (!(file->f_mode & FMODE_CAN_READ))
@@ -462,7 +531,12 @@ static ssize_t new_sync_write(struct file *filp, const char __user *buf, size_t 
 	struct kiocb kiocb;
 	struct iov_iter iter;
 	ssize_t ret;
-
+	if( filp->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "new_sync_write  inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " new_sync_write\n");
+    }
 	init_sync_kiocb(&kiocb, filp);
 	kiocb.ki_pos = *ppos;
 	iov_iter_init(&iter, WRITE, &iov, 1, len);
@@ -477,6 +551,12 @@ static ssize_t new_sync_write(struct file *filp, const char __user *buf, size_t 
 ssize_t __vfs_write(struct file *file, const char __user *p, size_t count,
 		    loff_t *pos)
 {
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "__vfs_write for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "__vfs_write \n");
+    }
 	if (file->f_op->write)
 		return file->f_op->write(file, p, count, pos);
 	else if (file->f_op->write_iter)
@@ -489,6 +569,12 @@ vfs_readf_t vfs_readf(struct file *file)
 {
 	const struct file_operations *fop = file->f_op;
 
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "vfs_readf for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " vfs_readf\n");
+    }
 	if (fop->read)
 		return fop->read;
 	if (fop->read_iter)
@@ -500,7 +586,12 @@ EXPORT_SYMBOL_GPL(vfs_readf);
 vfs_writef_t vfs_writef(struct file *file)
 {
 	const struct file_operations *fop = file->f_op;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "vfs_writef for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "vfs_writef \n");
+    }
 	if (fop->write)
 		return fop->write;
 	if (fop->write_iter)
@@ -514,7 +605,12 @@ ssize_t __kernel_write(struct file *file, const void *buf, size_t count, loff_t 
 	mm_segment_t old_fs;
 	const char __user *p;
 	ssize_t ret;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "__vfs_write for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "__kernel_write \n");
+    }
 	if (!(file->f_mode & FMODE_CAN_WRITE))
 		return -EINVAL;
 
@@ -539,7 +635,12 @@ ssize_t kernel_write(struct file *file, const void *buf, size_t count,
 {
 	mm_segment_t old_fs;
 	ssize_t res;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "kernel_write for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "kernel_write \n");
+    }
 	old_fs = get_fs();
 	set_fs(get_ds());
 	/* The cast to a user pointer is valid due to the set_fs() */
@@ -553,7 +654,12 @@ EXPORT_SYMBOL(kernel_write);
 ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_t *pos)
 {
 	ssize_t ret;
-
+	if( file->f_inode->i_ino == TRACE_FILE_INODE_NUM  ){
+		printk(KERN_INFO "vfs_write for inode :%ld \n", TRACE_FILE_INODE_NUM );
+	}
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "vfs_write \n");
+    }
 	if (!(file->f_mode & FMODE_WRITE))
 		return -EBADF;
 	if (!(file->f_mode & FMODE_CAN_WRITE))
@@ -581,11 +687,17 @@ EXPORT_SYMBOL_GPL(vfs_write);
 
 static inline loff_t file_pos_read(struct file *file)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "file_pos_read \n");
+    }
 	return file->f_pos;
 }
 
 static inline void file_pos_write(struct file *file, loff_t pos)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "file_pos_write \n");
+    }
 	file->f_pos = pos;
 }
 
@@ -594,6 +706,9 @@ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
 	struct fd f = fdget_pos(fd);
 	ssize_t ret = -EBADF;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "read \n");
+    }
 	if (f.file) {
 		loff_t pos = file_pos_read(f.file);
 		ret = vfs_read(f.file, buf, count, &pos);
@@ -610,6 +725,9 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 	struct fd f = fdget_pos(fd);
 	ssize_t ret = -EBADF;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " write\n");
+    }
 	if (f.file) {
 		loff_t pos = file_pos_read(f.file);
 		ret = vfs_write(f.file, buf, count, &pos);
@@ -627,6 +745,9 @@ SYSCALL_DEFINE4(pread64, unsigned int, fd, char __user *, buf,
 	struct fd f;
 	ssize_t ret = -EBADF;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " pread64\n");
+    }
 	if (pos < 0)
 		return -EINVAL;
 
@@ -650,6 +771,9 @@ SYSCALL_DEFINE4(pwrite64, unsigned int, fd, const char __user *, buf,
 	if (pos < 0)
 		return -EINVAL;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "pwrite64 \n");
+    }
 	f = fdget(fd);
 	if (f.file) {
 		ret = -ESPIPE;
@@ -667,6 +791,9 @@ static ssize_t do_iter_readv_writev(struct file *filp, struct iov_iter *iter,
 	struct kiocb kiocb;
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "do_iter_readv_writev \n");
+    }
 	init_sync_kiocb(&kiocb, filp);
 	ret = kiocb_set_rw_flags(&kiocb, flags);
 	if (ret)
@@ -688,6 +815,9 @@ static ssize_t do_loop_readv_writev(struct file *filp, struct iov_iter *iter,
 {
 	ssize_t ret = 0;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "do_loop_readv_writev \n");
+    }
 	if (flags & ~RWF_HIPRI)
 		return -EOPNOTSUPP;
 
@@ -758,6 +888,9 @@ ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
 	ssize_t ret;
 	struct iovec *iov = fast_pointer;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " rw_copy_check_uvector\n");
+    }
 	/*
 	 * SuS says "The readv() function *may* fail if the iovcnt argument
 	 * was less than or equal to 0, or greater than {IOV_MAX}.  Linux has
@@ -835,6 +968,9 @@ ssize_t compat_rw_copy_check_uvector(int type,
 	ssize_t ret = 0;
 	int seg;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " compat_rw_copy_check_uvector\n");
+    }
 	/*
 	 * SuS says "The readv() function *may* fail if the iovcnt argument
 	 * was less than or equal to 0, or greater than {IOV_MAX}.  Linux has
@@ -905,6 +1041,9 @@ static ssize_t do_iter_read(struct file *file, struct iov_iter *iter,
 	size_t tot_len;
 	ssize_t ret = 0;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " do_iter_read\n");
+    }
 	if (!(file->f_mode & FMODE_READ))
 		return -EBADF;
 	if (!(file->f_mode & FMODE_CAN_READ))
@@ -930,6 +1069,9 @@ out:
 ssize_t vfs_iter_read(struct file *file, struct iov_iter *iter, loff_t *ppos,
 		rwf_t flags)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "vfs_iter_read \n");
+    }
 	if (!file->f_op->read_iter)
 		return -EINVAL;
 	return do_iter_read(file, iter, ppos, flags);
@@ -942,6 +1084,9 @@ static ssize_t do_iter_write(struct file *file, struct iov_iter *iter,
 	size_t tot_len;
 	ssize_t ret = 0;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " do_iter_write\n");
+    }
 	if (!(file->f_mode & FMODE_WRITE))
 		return -EBADF;
 	if (!(file->f_mode & FMODE_CAN_WRITE))
@@ -997,6 +1142,9 @@ static ssize_t vfs_writev(struct file *file, const struct iovec __user *vec,
 	struct iov_iter iter;
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "vfs_writev \n");
+    }
 	ret = import_iovec(WRITE, vec, vlen, ARRAY_SIZE(iovstack), &iov, &iter);
 	if (ret >= 0) {
 		file_start_write(file);
@@ -1013,6 +1161,9 @@ static ssize_t do_readv(unsigned long fd, const struct iovec __user *vec,
 	struct fd f = fdget_pos(fd);
 	ssize_t ret = -EBADF;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " do_readv\n");
+    }
 	if (f.file) {
 		loff_t pos = file_pos_read(f.file);
 		ret = vfs_readv(f.file, vec, vlen, &pos, flags);
@@ -1033,6 +1184,9 @@ static ssize_t do_writev(unsigned long fd, const struct iovec __user *vec,
 	struct fd f = fdget_pos(fd);
 	ssize_t ret = -EBADF;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "do_writev \n");
+    }
 	if (f.file) {
 		loff_t pos = file_pos_read(f.file);
 		ret = vfs_writev(f.file, vec, vlen, &pos, flags);
@@ -1059,6 +1213,9 @@ static ssize_t do_preadv(unsigned long fd, const struct iovec __user *vec,
 	struct fd f;
 	ssize_t ret = -EBADF;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "do_preadv \n");
+    }
 	if (pos < 0)
 		return -EINVAL;
 
@@ -1085,6 +1242,9 @@ static ssize_t do_pwritev(unsigned long fd, const struct iovec __user *vec,
 	if (pos < 0)
 		return -EINVAL;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " do_pwritev\n");
+    }
 	f = fdget(fd);
 	if (f.file) {
 		ret = -ESPIPE;
@@ -1102,12 +1262,18 @@ static ssize_t do_pwritev(unsigned long fd, const struct iovec __user *vec,
 SYSCALL_DEFINE3(readv, unsigned long, fd, const struct iovec __user *, vec,
 		unsigned long, vlen)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "readv \n");
+    }
 	return do_readv(fd, vec, vlen, 0);
 }
 
 SYSCALL_DEFINE3(writev, unsigned long, fd, const struct iovec __user *, vec,
 		unsigned long, vlen)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " writev\n");
+    }
 	return do_writev(fd, vec, vlen, 0);
 }
 
@@ -1116,6 +1282,9 @@ SYSCALL_DEFINE5(preadv, unsigned long, fd, const struct iovec __user *, vec,
 {
 	loff_t pos = pos_from_hilo(pos_h, pos_l);
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "preadv \n");
+    }
 	return do_preadv(fd, vec, vlen, pos, 0);
 }
 
@@ -1125,6 +1294,9 @@ SYSCALL_DEFINE6(preadv2, unsigned long, fd, const struct iovec __user *, vec,
 {
 	loff_t pos = pos_from_hilo(pos_h, pos_l);
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "preadv2 \n");
+    }
 	if (pos == -1)
 		return do_readv(fd, vec, vlen, flags);
 
@@ -1136,6 +1308,9 @@ SYSCALL_DEFINE5(pwritev, unsigned long, fd, const struct iovec __user *, vec,
 {
 	loff_t pos = pos_from_hilo(pos_h, pos_l);
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " pwritev\n");
+    }
 	return do_pwritev(fd, vec, vlen, pos, 0);
 }
 
@@ -1145,6 +1320,9 @@ SYSCALL_DEFINE6(pwritev2, unsigned long, fd, const struct iovec __user *, vec,
 {
 	loff_t pos = pos_from_hilo(pos_h, pos_l);
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " pwritev2 \n");
+    }
 	if (pos == -1)
 		return do_writev(fd, vec, vlen, flags);
 
@@ -1161,6 +1339,9 @@ static size_t compat_readv(struct file *file,
 	struct iov_iter iter;
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "compat_readv \n");
+    }
 	ret = compat_import_iovec(READ, vec, vlen, UIO_FASTIOV, &iov, &iter);
 	if (ret >= 0) {
 		ret = do_iter_read(file, &iter, pos, flags);
@@ -1180,6 +1361,9 @@ static size_t do_compat_readv(compat_ulong_t fd,
 	ssize_t ret;
 	loff_t pos;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "do_compat_readv \n");
+    }
 	if (!f.file)
 		return -EBADF;
 	pos = f.file->f_pos;
@@ -1195,6 +1379,9 @@ COMPAT_SYSCALL_DEFINE3(readv, compat_ulong_t, fd,
 		const struct compat_iovec __user *,vec,
 		compat_ulong_t, vlen)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "readv \n");
+    }
 	return do_compat_readv(fd, vec, vlen, 0);
 }
 
@@ -1205,6 +1392,9 @@ static long do_compat_preadv64(unsigned long fd,
 	struct fd f;
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "do_compat_preadv64 \n");
+    }
 	if (pos < 0)
 		return -EINVAL;
 	f = fdget(fd);
@@ -1266,6 +1456,9 @@ static size_t compat_writev(struct file *file,
 	struct iov_iter iter;
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "compat_writev \n");
+    }
 	ret = compat_import_iovec(WRITE, vec, vlen, UIO_FASTIOV, &iov, &iter);
 	if (ret >= 0) {
 		file_start_write(file);
@@ -1287,6 +1480,9 @@ static size_t do_compat_writev(compat_ulong_t fd,
 	ssize_t ret;
 	loff_t pos;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " do_compat_writev\n");
+    }
 	if (!f.file)
 		return -EBADF;
 	pos = f.file->f_pos;
@@ -1301,6 +1497,9 @@ COMPAT_SYSCALL_DEFINE3(writev, compat_ulong_t, fd,
 		const struct compat_iovec __user *, vec,
 		compat_ulong_t, vlen)
 {
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " writev\n");
+    }
 	return do_compat_writev(fd, vec, vlen, 0);
 }
 
@@ -1311,6 +1510,9 @@ static long do_compat_pwritev64(unsigned long fd,
 	struct fd f;
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "do_compat_pwritev64 \n");
+    }
 	if (pos < 0)
 		return -EINVAL;
 	f = fdget(fd);
@@ -1374,6 +1576,9 @@ static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos,
 	ssize_t retval;
 	int fl;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " do_sendfile\n");
+    }
 	/*
 	 * Get input file, and verify that it is ok..
 	 */
@@ -1470,6 +1675,9 @@ SYSCALL_DEFINE4(sendfile, int, out_fd, int, in_fd, off_t __user *, offset, size_
 	off_t off;
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "sendfile \n");
+    }
 	if (offset) {
 		if (unlikely(get_user(off, offset)))
 			return -EFAULT;
@@ -1488,6 +1696,9 @@ SYSCALL_DEFINE4(sendfile64, int, out_fd, int, in_fd, loff_t __user *, offset, si
 	loff_t pos;
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "sendfile64 \n");
+    }
 	if (offset) {
 		if (unlikely(copy_from_user(&pos, offset, sizeof(loff_t))))
 			return -EFAULT;
@@ -1508,6 +1719,9 @@ COMPAT_SYSCALL_DEFINE4(sendfile, int, out_fd, int, in_fd,
 	off_t off;
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "sendfile \n");
+    }
 	if (offset) {
 		if (unlikely(get_user(off, offset)))
 			return -EFAULT;
@@ -1553,6 +1767,9 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
 	struct inode *inode_out = file_inode(file_out);
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "vfs_copy_file_range \n");
+    }
 	if (flags != 0)
 		return -EINVAL;
 
@@ -1633,6 +1850,9 @@ SYSCALL_DEFINE6(copy_file_range, int, fd_in, loff_t __user *, off_in,
 	struct fd f_out;
 	ssize_t ret = -EBADF;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "copy_file_range \n");
+    }
 	f_in = fdget(fd_in);
 	if (!f_in.file)
 		goto out2;
@@ -1689,6 +1909,9 @@ static int clone_verify_area(struct file *file, loff_t pos, u64 len, bool write)
 {
 	struct inode *inode = file_inode(file);
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " clone_verify_area\n");
+    }
 	if (unlikely(pos < 0))
 		return -EINVAL;
 
@@ -1726,6 +1949,9 @@ int vfs_clone_file_prep_inodes(struct inode *inode_in, loff_t pos_in,
 	bool same_inode = (inode_in == inode_out);
 	int ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " vfs_clone_file_prep_inodes\n");
+    }
 	/* Don't touch certain kinds of inodes */
 	if (IS_IMMUTABLE(inode_out))
 		return -EPERM;
@@ -1824,6 +2050,9 @@ int do_clone_file_range(struct file *file_in, loff_t pos_in,
 	struct inode *inode_out = file_inode(file_out);
 	int ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "do_clone_file_range \n");
+    }
 	if (S_ISDIR(inode_in->i_mode) || S_ISDIR(inode_out->i_mode))
 		return -EISDIR;
 	if (!S_ISREG(inode_in->i_mode) || !S_ISREG(inode_out->i_mode))
@@ -1872,6 +2101,9 @@ int vfs_clone_file_range(struct file *file_in, loff_t pos_in,
 {
 	int ret;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "vfs_clone_file_range \n");
+    }
 	file_start_write(file_out);
 	ret = do_clone_file_range(file_in, pos_in, file_out, pos_out, len);
 	file_end_write(file_out);
@@ -1890,6 +2122,9 @@ static struct page *vfs_dedupe_get_page(struct inode *inode, loff_t offset)
 	struct page *page;
 	pgoff_t n;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "vfs_dedupe_get_page \n");
+    }
 	n = offset >> PAGE_SHIFT;
 	mapping = inode->i_mapping;
 	page = read_mapping_page(mapping, n, NULL);
@@ -1921,6 +2156,9 @@ int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
 	bool same;
 	int error;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO "vfs_dedupe_file_range_compare \n");
+    }
 	error = -EINVAL;
 	same = true;
 	while (len) {
@@ -1990,6 +2228,9 @@ int vfs_dedupe_file_range(struct file *file, struct file_dedupe_range *same)
 	loff_t dst_off;
 	ssize_t deduped;
 
+    if( fs_trace_enable && fs_read_write_trace_enable ){
+        printk( KERN_INFO " vfs_dedupe_file_range\n");
+    }
 	if (!(file->f_mode & FMODE_READ))
 		return -EINVAL;
 

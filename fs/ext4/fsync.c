@@ -34,6 +34,8 @@
 
 #include <trace/events/ext4.h>
 
+extern int ext4_trace_enable;
+extern int ext4_fsync_trace_enable;
 /*
  * If we're not journaling and this is a just-created file, we have to
  * sync our parent directory (if it was freshly created) since
@@ -48,6 +50,9 @@ static int ext4_sync_parent(struct inode *inode)
 	struct inode *next;
 	int ret = 0;
 
+    if( ext4_trace_enable && ext4_fsync_trace_enable ){
+        printk(KERN_INFO " ext4_sync_parent \n" );
+    }
 	if (!ext4_test_inode_state(inode, EXT4_STATE_NEWENTRY))
 		return 0;
 	inode = igrab(inode);
@@ -101,6 +106,9 @@ int ext4_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
 	tid_t commit_tid;
 	bool needs_barrier = false;
 
+    if( ext4_trace_enable && ext4_fsync_trace_enable ){
+        printk(KERN_INFO " ext4_sync_file \n" );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
 		return -EIO;
 

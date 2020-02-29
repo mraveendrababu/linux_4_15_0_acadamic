@@ -18,8 +18,14 @@
 #include <linux/evm.h>
 #include <linux/ima.h>
 
+extern int fs_trace_enable;
+extern int fs_attr_trace_enable;
+
 static bool chown_ok(const struct inode *inode, kuid_t uid)
 {
+    if( fs_trace_enable && fs_attr_trace_enable ){
+        printk(KERN_INFO " chown_ok \n"  );
+    }
 	if (uid_eq(current_fsuid(), inode->i_uid) &&
 	    uid_eq(uid, inode->i_uid))
 		return true;
@@ -32,6 +38,9 @@ static bool chown_ok(const struct inode *inode, kuid_t uid)
 
 static bool chgrp_ok(const struct inode *inode, kgid_t gid)
 {
+    if( fs_trace_enable && fs_attr_trace_enable ){
+        printk(KERN_INFO " chgrp_ok  \n"  );
+    }
 	if (uid_eq(current_fsuid(), inode->i_uid) &&
 	    (in_group_p(gid) || gid_eq(gid, inode->i_gid)))
 		return true;
@@ -61,6 +70,9 @@ int setattr_prepare(struct dentry *dentry, struct iattr *attr)
 	struct inode *inode = d_inode(dentry);
 	unsigned int ia_valid = attr->ia_valid;
 
+    if( fs_trace_enable && fs_attr_trace_enable ){
+        printk(KERN_INFO " setattr_prepare  \n"  );
+    }
 	/*
 	 * First check size constraints.  These can't be overriden using
 	 * ATTR_FORCE.
@@ -131,6 +143,9 @@ EXPORT_SYMBOL(setattr_prepare);
  */
 int inode_newsize_ok(const struct inode *inode, loff_t offset)
 {
+    if( fs_trace_enable && fs_attr_trace_enable ){
+        printk(KERN_INFO " inode_newsize_ok \n"  );
+    }
 	if (inode->i_size < offset) {
 		unsigned long limit;
 
@@ -176,6 +191,9 @@ void setattr_copy(struct inode *inode, const struct iattr *attr)
 {
 	unsigned int ia_valid = attr->ia_valid;
 
+    if( fs_trace_enable && fs_attr_trace_enable ){
+        printk(KERN_INFO " setattr_copy \n"  );
+    }
 	if (ia_valid & ATTR_UID)
 		inode->i_uid = attr->ia_uid;
 	if (ia_valid & ATTR_GID)
@@ -228,6 +246,9 @@ int notify_change(struct dentry * dentry, struct iattr * attr, struct inode **de
 	struct timespec now;
 	unsigned int ia_valid = attr->ia_valid;
 
+    if( fs_trace_enable && fs_attr_trace_enable ){
+        printk(KERN_INFO " notify_change  \n"  );
+    }
 	WARN_ON_ONCE(!inode_is_locked(inode));
 
 	if (ia_valid & (ATTR_MODE | ATTR_UID | ATTR_GID | ATTR_TIMES_SET)) {

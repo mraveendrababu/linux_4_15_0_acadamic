@@ -28,6 +28,9 @@
 #include "ext4.h"
 #include "xattr.h"
 
+extern int ext4_trace_enable;
+extern int ext4_dir_trace_enable;
+
 static int ext4_dx_readdir(struct file *, struct dir_context *);
 
 /**
@@ -41,6 +44,9 @@ static int is_dx_dir(struct inode *inode)
 {
 	struct super_block *sb = inode->i_sb;
 
+    if( ext4_trace_enable && ext4_dir_trace_enable ){
+        printk(KERN_INFO " is_dx_dir \n"  );
+    }
 	if (ext4_has_feature_dir_index(inode->i_sb) &&
 	    ((ext4_test_inode_flag(inode, EXT4_INODE_INDEX)) ||
 	     ((inode->i_size >> sb->s_blocksize_bits) == 1) ||
@@ -68,6 +74,9 @@ int __ext4_check_dir_entry(const char *function, unsigned int line,
 	const int rlen = ext4_rec_len_from_disk(de->rec_len,
 						dir->i_sb->s_blocksize);
 
+    if( ext4_trace_enable && ext4_dir_trace_enable ){
+        printk(KERN_INFO " __ext4_check_dir_entry\n"  );
+    }
 	if (unlikely(rlen < EXT4_DIR_REC_LEN(1)))
 		error_msg = "rec_len is smaller than minimal";
 	else if (unlikely(rlen % 4 != 0))
@@ -110,6 +119,9 @@ static int ext4_readdir(struct file *file, struct dir_context *ctx)
 	int dir_has_error = 0;
 	struct fscrypt_str fstr = FSTR_INIT(NULL, 0);
 
+    if( ext4_trace_enable && ext4_dir_trace_enable ){
+        printk(KERN_INFO " ext4_readdir\n"  );
+    }
 	if (ext4_encrypted_inode(inode)) {
 		err = fscrypt_get_encryption_info(inode);
 		if (err && err != -ENOKEY)
@@ -364,6 +376,9 @@ static loff_t ext4_dir_llseek(struct file *file, loff_t offset, int whence)
 	int dx_dir = is_dx_dir(inode);
 	loff_t ret, htree_max = ext4_get_htree_eof(file);
 
+    if( ext4_trace_enable && ext4_dir_trace_enable ){
+        printk(KERN_INFO "ext4_dir_llseek \n"  );
+    }
 	if (likely(dx_dir))
 		ret = generic_file_llseek_size(file, offset, whence,
 						    htree_max, htree_max);
@@ -396,6 +411,9 @@ static void free_rb_tree_fname(struct rb_root *root)
 {
 	struct fname *fname, *next;
 
+    if( ext4_trace_enable && ext4_dir_trace_enable ){
+        printk(KERN_INFO " free_rb_tree_fname\n"  );
+    }
 	rbtree_postorder_for_each_entry_safe(fname, next, root, rb_hash)
 		while (fname) {
 			struct fname *old = fname;
@@ -412,6 +430,9 @@ static struct dir_private_info *ext4_htree_create_dir_info(struct file *filp,
 {
 	struct dir_private_info *p;
 
+    if( ext4_trace_enable && ext4_dir_trace_enable ){
+        printk(KERN_INFO "ext4_htree_create_dir_info \n"  );
+    }
 	p = kzalloc(sizeof(*p), GFP_KERNEL);
 	if (!p)
 		return NULL;
@@ -446,6 +467,9 @@ int ext4_htree_store_dirent(struct file *dir_file, __u32 hash,
 	info = dir_file->private_data;
 	p = &info->root.rb_node;
 
+    if( ext4_trace_enable && ext4_dir_trace_enable ){
+        printk(KERN_INFO " ext4_htree_store_dirent\n"  );
+    }
 	/* Create and allocate the fname structure */
 	len = sizeof(struct fname) + ent_name->len + 1;
 	new_fn = kzalloc(len, GFP_KERNEL);
@@ -503,6 +527,9 @@ static int call_filldir(struct file *file, struct dir_context *ctx,
 	struct inode *inode = file_inode(file);
 	struct super_block *sb = inode->i_sb;
 
+    if( ext4_trace_enable && ext4_dir_trace_enable ){
+        printk(KERN_INFO " call_filldir\n"  );
+    }
 	if (!fname) {
 		ext4_msg(sb, KERN_ERR, "%s:%d: inode #%lu: comm %s: "
 			 "called with null fname?!?", __func__, __LINE__,
@@ -530,6 +557,9 @@ static int ext4_dx_readdir(struct file *file, struct dir_context *ctx)
 	struct fname *fname;
 	int	ret;
 
+    if( ext4_trace_enable && ext4_dir_trace_enable ){
+        printk(KERN_INFO " ext4_dx_readdir\n"  );
+    }
 	if (!info) {
 		info = ext4_htree_create_dir_info(file, ctx->pos);
 		if (!info)
@@ -633,6 +663,9 @@ int ext4_check_all_de(struct inode *dir, struct buffer_head *bh, void *buf,
 	unsigned int offset = 0;
 	char *top;
 
+    if( ext4_trace_enable && ext4_dir_trace_enable ){
+        printk(KERN_INFO " ext4_check_all_de\n"  );
+    }
 	de = (struct ext4_dir_entry_2 *)buf;
 	top = buf + buf_size;
 	while ((char *) de < top) {

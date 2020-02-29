@@ -25,10 +25,16 @@
 #include <linux/list_sort.h>
 #include <trace/events/ext4.h>
 
+extern int ext4_trace_enable;
+extern int ext4_fsmap_trace_enable;
+
 /* Convert an ext4_fsmap to an fsmap. */
 void ext4_fsmap_from_internal(struct super_block *sb, struct fsmap *dest,
 			      struct ext4_fsmap *src)
 {
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO "ext4_fsmap_from_internal  \n" );
+    }
 	dest->fmr_device = src->fmr_device;
 	dest->fmr_flags = src->fmr_flags;
 	dest->fmr_physical = src->fmr_physical << sb->s_blocksize_bits;
@@ -44,6 +50,9 @@ void ext4_fsmap_from_internal(struct super_block *sb, struct fsmap *dest,
 void ext4_fsmap_to_internal(struct super_block *sb, struct ext4_fsmap *dest,
 			    struct fsmap *src)
 {
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO " ext4_fsmap_to_internal \n" );
+    }
 	dest->fmr_device = src->fmr_device;
 	dest->fmr_flags = src->fmr_flags;
 	dest->fmr_physical = src->fmr_physical >> sb->s_blocksize_bits;
@@ -105,6 +114,9 @@ static int ext4_getfsmap_helper(struct super_block *sb,
 	ext4_grpblk_t cno;
 	int error;
 
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO " ext4_getfsmap_helper \n" );
+    }
 	if (fatal_signal_pending(current))
 		return -EINTR;
 
@@ -209,6 +221,9 @@ static int ext4_getfsmap_datadev_helper(struct super_block *sb,
 	ext4_fsblk_t fslen;
 	int error;
 
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO " ext4_getfsmap_datadev_helper \n" );
+    }
 	fsb = (EXT4_C2B(sbi, start) + ext4_group_first_block_no(sb, agno));
 	fslen = EXT4_C2B(sbi, len);
 
@@ -269,6 +284,9 @@ static int ext4_getfsmap_logdev(struct super_block *sb, struct ext4_fsmap *keys,
 	journal_t *journal = EXT4_SB(sb)->s_journal;
 	struct ext4_fsmap irec;
 
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO " ext4_getfsmap_logdev \n" );
+    }
 	/* Set up search keys */
 	info->gfi_low = keys[0];
 	info->gfi_low.fmr_length = 0;
@@ -304,6 +322,9 @@ static inline int ext4_getfsmap_fill(struct list_head *meta_list,
 {
 	struct ext4_fsmap *fsm;
 
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO " ext4_getfsmap_fill \n" );
+    }
 	fsm = kmalloc(sizeof(*fsm), GFP_NOFS);
 	if (!fsm)
 		return -ENOMEM;
@@ -332,6 +353,9 @@ static unsigned int ext4_getfsmap_find_sb(struct super_block *sb,
 	unsigned long metagroup = agno / EXT4_DESC_PER_BLOCK(sb);
 	int error;
 
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO " ext4_getfsmap_find_sb \n" );
+    }
 	/* Record the superblock. */
 	if (ext4_bg_has_super(sb, agno)) {
 		error = ext4_getfsmap_fill(meta_list, fsb, 1, EXT4_FMR_OWN_FS);
@@ -370,6 +394,9 @@ static int ext4_getfsmap_compare(void *priv,
 	struct ext4_fsmap *fa;
 	struct ext4_fsmap *fb;
 
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO " ext4_getfsmap_compare \n" );
+    }
 	fa = container_of(a, struct ext4_fsmap, fmr_list);
 	fb = container_of(b, struct ext4_fsmap, fmr_list);
 	if (fa->fmr_physical < fb->fmr_physical)
@@ -386,6 +413,9 @@ static void ext4_getfsmap_merge_fixed_metadata(struct list_head *meta_list)
 	struct ext4_fsmap *prev = NULL;
 	struct ext4_fsmap *tmp;
 
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO " ext4_getfsmap_merge_fixed_metadata \n" );
+    }
 	list_for_each_entry_safe(p, tmp, meta_list, fmr_list) {
 		if (!prev) {
 			prev = p;
@@ -422,6 +452,9 @@ int ext4_getfsmap_find_fixed_metadata(struct super_block *sb,
 	ext4_group_t agno;
 	int error;
 
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO " ext4_getfsmap_find_fixed_metadata \n" );
+    }
 	INIT_LIST_HEAD(meta_list);
 
 	/* Collect everything. */
@@ -488,6 +521,9 @@ static int ext4_getfsmap_datadev(struct super_block *sb,
 	ext4_grpblk_t last_cluster;
 	int error = 0;
 
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO " ext4_getfsmap_datadev \n" );
+    }
 	bofs = le32_to_cpu(sbi->s_es->s_first_data_block);
 	eofs = ext4_blocks_count(sbi->s_es);
 	if (keys[0].fmr_physical >= eofs)
@@ -643,6 +679,9 @@ int ext4_getfsmap(struct super_block *sb, struct ext4_fsmap_head *head,
 	int i;
 	int error = 0;
 
+    if( ext4_trace_enable && ext4_fsmap_trace_enable ){
+        printk( KERN_INFO " ext4_getfsmap \n" );
+    }
 	if (head->fmh_iflags & ~FMH_IF_VALID)
 		return -EINVAL;
 	if (!ext4_getfsmap_is_valid_device(sb, &head->fmh_keys[0]) ||

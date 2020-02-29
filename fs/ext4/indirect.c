@@ -28,6 +28,9 @@
 
 #include <trace/events/ext4.h>
 
+extern int ext4_trace_enable;
+extern int ext4_indirect_trace_enable;
+
 typedef struct {
 	__le32	*p;
 	__le32	key;
@@ -71,6 +74,7 @@ static inline void add_chain(Indirect *p, struct buffer_head *bh, __le32 *v)
  * get there at all.
  */
 
+
 static int ext4_block_to_path(struct inode *inode,
 			      ext4_lblk_t i_block,
 			      ext4_lblk_t offsets[4], int *boundary)
@@ -82,6 +86,10 @@ static int ext4_block_to_path(struct inode *inode,
 		double_blocks = (1 << (ptrs_bits * 2));
 	int n = 0;
 	int final = 0;
+
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO " ext4_block_to_path\n" );
+    }
 
 	if (i_block < direct_blocks) {
 		offsets[n++] = i_block;
@@ -150,6 +158,9 @@ static Indirect *ext4_get_branch(struct inode *inode, int depth,
 	struct buffer_head *bh;
 	int ret = -EIO;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO "ext4_get_branch \n" );
+    }
 	*err = 0;
 	/* i_data is not going away, no lock needed */
 	add_chain(chain, NULL, EXT4_I(inode)->i_data + *offsets);
@@ -213,6 +224,9 @@ static ext4_fsblk_t ext4_find_near(struct inode *inode, Indirect *ind)
 	__le32 *start = ind->bh ? (__le32 *) ind->bh->b_data : ei->i_data;
 	__le32 *p;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO "ext4_find_near \n" );
+    }
 	/* Try to find previous block */
 	for (p = ind->p - 1; p >= start; p--) {
 		if (*p)
@@ -246,6 +260,9 @@ static ext4_fsblk_t ext4_find_goal(struct inode *inode, ext4_lblk_t block,
 {
 	ext4_fsblk_t goal;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO "ext4_find_goal \n" );
+    }
 	/*
 	 * XXX need to get goal block from mballoc's data structures
 	 */
@@ -272,6 +289,9 @@ static int ext4_blks_to_allocate(Indirect *branch, int k, unsigned int blks,
 {
 	unsigned int count = 0;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO "ext4_blks_to_allocate \n" );
+    }
 	/*
 	 * Simple case, [t,d]Indirect block(s) has not allocated yet
 	 * then it's clear blocks on that path have not allocated
@@ -330,6 +350,9 @@ static int ext4_alloc_branch(handle_t *handle,
 	__le32				*p;
 	int				i, j, err, len = 1;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO " ext4_alloc_branch\n" );
+    }
 	for (i = 0; i <= indirect_blks; i++) {
 		if (i == indirect_blks) {
 			new_blocks[i] = ext4_mb_new_blocks(handle, ar, &err);
@@ -418,6 +441,9 @@ static int ext4_splice_branch(handle_t *handle,
 	int err = 0;
 	ext4_fsblk_t current_block;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO " ext4_splice_branch\n" );
+    }
 	/*
 	 * If we're splicing into a [td]indirect block (as opposed to the
 	 * inode) then we need to get write access to the [td]indirect block
@@ -527,6 +553,9 @@ int ext4_ind_map_blocks(handle_t *handle, struct inode *inode,
 	int count = 0;
 	ext4_fsblk_t first_block = 0;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO " ext4_ind_map_blocks\n" );
+    }
 	trace_ext4_ind_map_blocks_enter(inode, map->m_lblk, map->m_len, flags);
 	J_ASSERT(!(ext4_test_inode_flag(inode, EXT4_INODE_EXTENTS)));
 	J_ASSERT(handle != NULL || (flags & EXT4_GET_BLOCKS_CREATE) == 0);
@@ -665,6 +694,9 @@ int ext4_ind_calc_metadata_amount(struct inode *inode, sector_t lblock)
 	sector_t dind_mask = ~((sector_t)EXT4_ADDR_PER_BLOCK(inode->i_sb) - 1);
 	int blk_bits;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO " ext4_ind_calc_metadata_amount\n" );
+    }
 	if (lblock < EXT4_NDIR_BLOCKS)
 		return 0;
 
@@ -709,6 +741,9 @@ int ext4_ind_trans_blocks(struct inode *inode, int nrblocks)
  */
 static int try_to_extend_transaction(handle_t *handle, struct inode *inode)
 {
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO " try_to_extend_transaction\n" );
+    }
 	if (!ext4_handle_valid(handle))
 		return 0;
 	if (ext4_handle_has_enough_credits(handle, EXT4_RESERVE_TRANS_BLOCKS+1))
@@ -773,6 +808,9 @@ static Indirect *ext4_find_shared(struct inode *inode, int depth,
 	Indirect *partial, *p;
 	int k, err;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO " ext4_find_shared\n" );
+    }
 	*top = 0;
 	/* Make k index the deepest non-null offset + 1 */
 	for (k = depth; k > 1 && !offsets[k-1]; k--)
@@ -836,6 +874,9 @@ static int ext4_clear_blocks(handle_t *handle, struct inode *inode,
 	int	flags = EXT4_FREE_BLOCKS_VALIDATED;
 	int	err;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO " ext4_clear_blocks\n" );
+    }
 	if (S_ISDIR(inode->i_mode) || S_ISLNK(inode->i_mode) ||
 	    ext4_test_inode_flag(inode, EXT4_INODE_EA_INODE))
 		flags |= EXT4_FREE_BLOCKS_FORGET | EXT4_FREE_BLOCKS_METADATA;
@@ -915,6 +956,9 @@ static void ext4_free_data(handle_t *handle, struct inode *inode,
 					       for current block */
 	int err = 0;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO "ext4_free_data \n" );
+    }
 	if (this_bh) {				/* For indirect block */
 		BUFFER_TRACE(this_bh, "get_write_access");
 		err = ext4_journal_get_write_access(handle, this_bh);
@@ -993,6 +1037,9 @@ static void ext4_free_branches(handle_t *handle, struct inode *inode,
 	ext4_fsblk_t nr;
 	__le32 *p;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO "ext4_free_branches \n" );
+    }
 	if (ext4_handle_is_aborted(handle))
 		return;
 
@@ -1111,6 +1158,9 @@ void ext4_ind_truncate(handle_t *handle, struct inode *inode)
 	ext4_lblk_t last_block, max_block;
 	unsigned blocksize = inode->i_sb->s_blocksize;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO "ext4_ind_truncate \n" );
+    }
 	last_block = (inode->i_size + blocksize-1)
 					>> EXT4_BLOCK_SIZE_BITS(inode->i_sb);
 	max_block = (EXT4_SB(inode->i_sb)->s_bitmap_maxbytes + blocksize-1)
@@ -1224,6 +1274,9 @@ int ext4_ind_remove_space(handle_t *handle, struct inode *inode,
 	int n = 0, n2 = 0;
 	unsigned blocksize = inode->i_sb->s_blocksize;
 
+    if(ext4_trace_enable &&  ext4_indirect_trace_enable ){
+        printk(KERN_INFO " ext4_ind_remove_space\n" );
+    }
 	max_block = (EXT4_SB(inode->i_sb)->s_bitmap_maxbytes + blocksize-1)
 					>> EXT4_BLOCK_SIZE_BITS(inode->i_sb);
 	if (end >= max_block)

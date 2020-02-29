@@ -11,6 +11,8 @@
 #include <linux/uaccess.h>
 
 static struct vfsmount *nsfs_mnt;
+extern int fs_trace_enable;
+extern int fs_nsfs_trace_enable;
 
 static long ns_ioctl(struct file *filp, unsigned int ioctl,
 			unsigned long arg);
@@ -23,7 +25,9 @@ static char *ns_dname(struct dentry *dentry, char *buffer, int buflen)
 {
 	struct inode *inode = d_inode(dentry);
 	const struct proc_ns_operations *ns_ops = dentry->d_fsdata;
-
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO " ns_dname\n");
+    }
 	return dynamic_dname(dentry, buffer, buflen, "%s:[%lu]",
 		ns_ops->name, inode->i_ino);
 }
@@ -31,6 +35,9 @@ static char *ns_dname(struct dentry *dentry, char *buffer, int buflen)
 static void ns_prune_dentry(struct dentry *dentry)
 {
 	struct inode *inode = d_inode(dentry);
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO "ns_prune_dentry \n");
+    }
 	if (inode) {
 		struct ns_common *ns = inode->i_private;
 		atomic_long_set(&ns->stashed, 0);
@@ -47,6 +54,9 @@ const struct dentry_operations ns_dentry_operations =
 static void nsfs_evict(struct inode *inode)
 {
 	struct ns_common *ns = inode->i_private;
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO "nsfs_evict \n");
+    }
 	clear_inode(inode);
 	ns->ops->put(ns);
 }
@@ -58,6 +68,9 @@ static void *__ns_get_path(struct path *path, struct ns_common *ns)
 	struct inode *inode;
 	unsigned long d;
 
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO "__ns_get_path \n");
+    }
 	rcu_read_lock();
 	d = atomic_long_read(&ns->stashed);
 	if (!d)
@@ -109,6 +122,9 @@ void *ns_get_path(struct path *path, struct task_struct *task,
 	struct ns_common *ns;
 	void *ret;
 
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO "ns_get_path \n");
+    }
 again:
 	ns = ns_ops->get(task);
 	if (!ns)
@@ -128,6 +144,9 @@ int open_related_ns(struct ns_common *ns,
 	void *err;
 	int fd;
 
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO " open_related_ns\n");
+    }
 	fd = get_unused_fd_flags(O_CLOEXEC);
 	if (fd < 0)
 		return fd;
@@ -170,6 +189,9 @@ static long ns_ioctl(struct file *filp, unsigned int ioctl,
 	uid_t __user *argp;
 	uid_t uid;
 
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO "ns_ioctl \n");
+    }
 	switch (ioctl) {
 	case NS_GET_USERNS:
 		return open_related_ns(ns, ns_get_owner);
@@ -197,6 +219,9 @@ int ns_get_name(char *buf, size_t size, struct task_struct *task,
 	struct ns_common *ns;
 	int res = -ENOENT;
 	const char *name;
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO "ns_get_name \n");
+    }
 	ns = ns_ops->get(task);
 	if (ns) {
 		name = ns_ops->real_ns_name ? : ns_ops->name;
@@ -210,6 +235,9 @@ struct file *proc_ns_fget(int fd)
 {
 	struct file *file;
 
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO "proc_ns_fget \n");
+    }
 	file = fget(fd);
 	if (!file)
 		return ERR_PTR(-EBADF);
@@ -229,6 +257,9 @@ static int nsfs_show_path(struct seq_file *seq, struct dentry *dentry)
 	struct inode *inode = d_inode(dentry);
 	const struct proc_ns_operations *ns_ops = dentry->d_fsdata;
 
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO "nsfs_show_path \n");
+    }
 	seq_printf(seq, "%s:[%lu]", ns_ops->name, inode->i_ino);
 	return 0;
 }
@@ -241,6 +272,9 @@ static const struct super_operations nsfs_ops = {
 static struct dentry *nsfs_mount(struct file_system_type *fs_type,
 			int flags, const char *dev_name, void *data)
 {
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO " nsfs_mount\n");
+    }
 	return mount_pseudo(fs_type, "nsfs:", &nsfs_ops,
 			&ns_dentry_operations, NSFS_MAGIC);
 }
@@ -253,6 +287,9 @@ static struct file_system_type nsfs = {
 void __init nsfs_init(void)
 {
 	nsfs_mnt = kern_mount(&nsfs);
+    if( fs_trace_enable && fs_nsfs_trace_enable){
+        printk( KERN_INFO "nsfs_init \n");
+    }
 	if (IS_ERR(nsfs_mnt))
 		panic("can't set nsfs up\n");
 	nsfs_mnt->mnt_sb->s_flags &= ~SB_NOUSER;

@@ -34,12 +34,18 @@
 #include "xattr.h"
 #include "acl.h"
 
+extern int ext4_trace_enable;
+extern int ext4_file_trace_enable;
+
 #ifdef CONFIG_FS_DAX
 static ssize_t ext4_dax_read_iter(struct kiocb *iocb, struct iov_iter *to)
 {
 	struct inode *inode = file_inode(iocb->ki_filp);
 	ssize_t ret;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_dax_read_iter \n"  );
+    }
 	if (!inode_trylock_shared(inode)) {
 		if (iocb->ki_flags & IOCB_NOWAIT)
 			return -EAGAIN;
@@ -64,9 +70,17 @@ static ssize_t ext4_dax_read_iter(struct kiocb *iocb, struct iov_iter *to)
 
 static ssize_t ext4_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
 {
+	struct inode *inode=NULL;
+
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(file_inode(iocb->ki_filp)->i_sb))))
 		return -EIO;
-
+	inode = file_inode(iocb->ki_filp);
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_read_iter is called \n" );
+	}
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_file_read_iter \n"  );
+    }
 	if (!iov_iter_count(to))
 		return 0; /* skip atime */
 
@@ -84,6 +98,9 @@ static ssize_t ext4_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
  */
 static int ext4_release_file(struct inode *inode, struct file *filp)
 {
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_release_file\n"  );
+    }
 	if (ext4_test_inode_state(inode, EXT4_STATE_DA_ALLOC_CLOSE)) {
 		ext4_alloc_da_blocks(inode);
 		ext4_clear_inode_state(inode, EXT4_STATE_DA_ALLOC_CLOSE);
@@ -125,6 +142,9 @@ ext4_unaligned_aio(struct inode *inode, struct iov_iter *from, loff_t pos)
 	struct super_block *sb = inode->i_sb;
 	int blockmask = sb->s_blocksize - 1;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_unaligned_aio \n"  );
+    }
 	if (pos >= i_size_read(inode))
 		return 0;
 
@@ -141,6 +161,9 @@ static bool ext4_overwrite_io(struct inode *inode, loff_t pos, loff_t len)
 	unsigned int blkbits = inode->i_blkbits;
 	int err, blklen;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_overwrite_io \n"  );
+    }
 	if (pos + len > i_size_read(inode))
 		return false;
 
@@ -162,6 +185,9 @@ static ssize_t ext4_write_checks(struct kiocb *iocb, struct iov_iter *from)
 	struct inode *inode = file_inode(iocb->ki_filp);
 	ssize_t ret;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_write_checks \n"  );
+    }
 	ret = generic_write_checks(iocb, from);
 	if (ret <= 0)
 		return ret;
@@ -186,6 +212,9 @@ ext4_dax_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	struct inode *inode = file_inode(iocb->ki_filp);
 	ssize_t ret;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_dax_write_iter\n"  );
+    }
 	if (!inode_trylock(inode)) {
 		if (iocb->ki_flags & IOCB_NOWAIT)
 			return -EAGAIN;
@@ -218,7 +247,16 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	int unaligned_aio = 0;
 	int overwrite = 0;
 	ssize_t ret;
-
+	static int in_cs=0;
+	static long int linecount=0;
+	int *p=NULL;
+	
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter is called inode number: %ld \n", inode->i_ino );
+	}
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_file_write_iter\n"  );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
 		return -EIO;
 
@@ -229,16 +267,39 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	if (!o_direct && (iocb->ki_flags & IOCB_NOWAIT))
 		return -EOPNOTSUPP;
 
-	if (!inode_trylock(inode)) {
-		if (iocb->ki_flags & IOCB_NOWAIT)
-			return -EAGAIN;
-		inode_lock(inode);
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter  STEP1   inodeNo: %ld \n", inode->i_ino );
+	}
+
+	if( inode->i_ino != MY_EXT4_INODE_NUM ){
+		if (!inode_trylock(inode)) {
+			if (iocb->ki_flags & IOCB_NOWAIT)
+				return -EAGAIN;
+			inode_lock(inode);
+		}
+	}
+	else{
+		printk(KERN_DEBUG "skipping inode lock for inode numer : %ld \n", inode->i_ino );
+		++in_cs;
+	}
+
+	if( in_cs > 1 ){
+		printk(KERN_DEBUG " BUG_ON  -  in_cs : %d  inode numer : %ld \n", in_cs, inode->i_ino );
+		BUG_ON( in_cs > 1 );
+		printk(KERN_DEBUG " Now accessing the invalid pointer  \n" );
+		*p=1000;
+	}
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter STEP2  inode number: %ld \n", inode->i_ino );
 	}
 
 	ret = ext4_write_checks(iocb, from);
 	if (ret <= 0)
 		goto out;
 
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter STEP3  inode number: %ld \n", inode->i_ino );
+	}
 	/*
 	 * Unaligned direct AIO must be serialized among each other as zeroing
 	 * of partial blocks of two competing unaligned AIOs can result in data
@@ -249,6 +310,10 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	    ext4_unaligned_aio(inode, from, iocb->ki_pos)) {
 		unaligned_aio = 1;
 		ext4_unwritten_wait(inode);
+	}
+	++linecount;
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter STEP4 inode number: %ld   linecount :  %ld  \n", inode->i_ino, linecount );
 	}
 
 	iocb->private = &overwrite;
@@ -263,11 +328,35 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 		}
 	}
 
-	ret = __generic_file_write_iter(iocb, from);
-	inode_unlock(inode);
 
-	if (ret > 0)
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter STEP5  inode number: %ld \n", inode->i_ino );
+	}
+
+
+
+	ret = __generic_file_write_iter(iocb, from);
+
+
+	if( inode->i_ino == MY_EXT4_INODE_NUM ){
+		printk(KERN_DEBUG "ext4_file_write_iter STEP6   inode number: %ld \n", inode->i_ino );
+	}
+
+
+	if( inode->i_ino != MY_EXT4_INODE_NUM ){
+		inode_unlock(inode);
+	}
+	else{
+		printk(KERN_DEBUG "skipping inode unlock for inode numer : %ld \n", inode->i_ino );
+		--in_cs;
+	}
+
+	if (ret > 0){
+		if( inode->i_ino == MY_EXT4_INODE_NUM ){
+			printk(KERN_DEBUG "ext4_file_write_iter STEP7   inode number: %ld \n", inode->i_ino );
+		}
 		ret = generic_write_sync(iocb, ret);
+	}
 
 	return ret;
 
@@ -285,6 +374,9 @@ static int ext4_dax_huge_fault(struct vm_fault *vmf,
 	struct inode *inode = file_inode(vmf->vma->vm_file);
 	struct super_block *sb = inode->i_sb;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_dax_huge_fault\n"  );
+    }
 	/*
 	 * We have to distinguish real writes from writes which will result in a
 	 * COW page; COW writes should *not* poke the journal (the file will not
@@ -331,6 +423,9 @@ static int ext4_dax_huge_fault(struct vm_fault *vmf,
 
 static int ext4_dax_fault(struct vm_fault *vmf)
 {
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_dax_fault\n"  );
+    }
 	return ext4_dax_huge_fault(vmf, PE_SIZE_PTE);
 }
 
@@ -354,6 +449,9 @@ static int ext4_file_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	struct inode *inode = file->f_mapping->host;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_file_mmap \n"  );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
 		return -EIO;
 
@@ -383,6 +481,9 @@ static int ext4_file_open(struct inode * inode, struct file * filp)
 	char buf[64], *cp;
 	int ret;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO " ext4_file_open\n"  );
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
 		return -EIO;
 
@@ -447,6 +548,9 @@ loff_t ext4_llseek(struct file *file, loff_t offset, int whence)
 	struct inode *inode = file->f_mapping->host;
 	loff_t maxbytes;
 
+    if( ext4_trace_enable && ext4_file_trace_enable ){
+        printk(KERN_INFO "ext4_llseek \n"  );
+    }
 	if (!(ext4_test_inode_flag(inode, EXT4_INODE_EXTENTS)))
 		maxbytes = EXT4_SB(inode->i_sb)->s_bitmap_maxbytes;
 	else

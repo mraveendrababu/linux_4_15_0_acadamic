@@ -11,10 +11,15 @@
 #include "ext4_jbd2.h"
 #include "ext4.h"
 #include "xattr.h"
+extern int ext4_trace_enable;
+extern int ext4_xattr_user_trace_enable;
 
 static bool
 ext4_xattr_user_list(struct dentry *dentry)
 {
+    if ( ext4_trace_enable && ext4_xattr_user_trace_enable){
+        printk(KERN_INFO " ext4_xattr_user_list\n" );
+    }
 	return test_opt(dentry->d_sb, XATTR_USER);
 }
 
@@ -23,6 +28,9 @@ ext4_xattr_user_get(const struct xattr_handler *handler,
 		    struct dentry *unused, struct inode *inode,
 		    const char *name, void *buffer, size_t size)
 {
+    if ( ext4_trace_enable && ext4_xattr_user_trace_enable){
+        printk(KERN_INFO "ext4_xattr_user_get \n" );
+    }
 	if (!test_opt(inode->i_sb, XATTR_USER))
 		return -EOPNOTSUPP;
 	return ext4_xattr_get(inode, EXT4_XATTR_INDEX_USER,
@@ -35,6 +43,9 @@ ext4_xattr_user_set(const struct xattr_handler *handler,
 		    const char *name, const void *value,
 		    size_t size, int flags)
 {
+    if ( ext4_trace_enable && ext4_xattr_user_trace_enable){
+        printk(KERN_INFO "ext4_xattr_user_set \n" );
+    }
 	if (!test_opt(inode->i_sb, XATTR_USER))
 		return -EOPNOTSUPP;
 	return ext4_xattr_set(inode, EXT4_XATTR_INDEX_USER,

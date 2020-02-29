@@ -32,6 +32,8 @@
 
 #include "internal.h"
 
+#define  VFS_FILE_TABLE_INODE_NUM    15873378
+
 /* sysctl tunables... */
 struct files_stat_struct files_stat = {
 	.max_files = NR_FILE
@@ -191,7 +193,9 @@ static void __fput(struct file *file)
 	struct dentry *dentry = file->f_path.dentry;
 	struct vfsmount *mnt = file->f_path.mnt;
 	struct inode *inode = file->f_inode;
-
+	if( inode->i_ino == VFS_FILE_TABLE_INODE_NUM ){
+		printk(KERN_INFO "__fput \n" );
+	}
 	might_sleep();
 
 	fsnotify_close(file);
@@ -265,6 +269,11 @@ static DECLARE_DELAYED_WORK(delayed_fput_work, delayed_fput);
 
 void fput(struct file *file)
 {
+	struct inode *inode = locks_inode(file);
+
+	if( inode->i_ino == VFS_FILE_TABLE_INODE_NUM ){
+		printk(KERN_INFO " fput\n" );
+	}
 	if (atomic_long_dec_and_test(&file->f_count)) {
 		struct task_struct *task = current;
 

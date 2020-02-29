@@ -11,6 +11,9 @@
 #include <linux/buffer_head.h>
 #include "ext4.h"
 
+extern int ext4_trace_enable;
+extern int ext4_bitmap_trace_enable;
+
 unsigned int ext4_count_free(char *bitmap, unsigned int numchars)
 {
 	return numchars * BITS_PER_BYTE - memweight(bitmap, numchars);
@@ -24,6 +27,9 @@ int ext4_inode_bitmap_csum_verify(struct super_block *sb, ext4_group_t group,
 	__u32 provided, calculated;
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_bitmap_trace_enable ){
+        printk( KERN_INFO "ext4_inode_bitmap_csum_verify \n" );
+    }
 	if (!ext4_has_metadata_csum(sb))
 		return 1;
 
@@ -45,6 +51,9 @@ void ext4_inode_bitmap_csum_set(struct super_block *sb, ext4_group_t group,
 	__u32 csum;
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_bitmap_trace_enable ){
+        printk( KERN_INFO "ext4_inode_bitmap_csum_set \n" );
+    }
 	if (!ext4_has_metadata_csum(sb))
 		return;
 
@@ -63,6 +72,9 @@ int ext4_block_bitmap_csum_verify(struct super_block *sb, ext4_group_t group,
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	int sz = EXT4_CLUSTERS_PER_GROUP(sb) / 8;
 
+    if( ext4_trace_enable && ext4_bitmap_trace_enable ){
+        printk( KERN_INFO " ext4_block_bitmap_csum_verify\n" );
+    }
 	if (!ext4_has_metadata_csum(sb))
 		return 1;
 
@@ -88,6 +100,9 @@ void ext4_block_bitmap_csum_set(struct super_block *sb, ext4_group_t group,
 	__u32 csum;
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 
+    if( ext4_trace_enable && ext4_bitmap_trace_enable ){
+        printk( KERN_INFO "ext4_block_bitmap_csum_set \n" );
+    }
 	if (!ext4_has_metadata_csum(sb))
 		return;
 

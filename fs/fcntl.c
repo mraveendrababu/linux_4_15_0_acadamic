@@ -30,6 +30,9 @@
 #include <asm/siginfo.h>
 #include <linux/uaccess.h>
 
+extern int fs_trace_enable;
+extern int fs_fcntl_trace_enable;
+
 #define SETFL_MASK (O_APPEND | O_NONBLOCK | O_NDELAY | O_DIRECT | O_NOATIME)
 
 int setfl(int fd, struct file * filp, unsigned long arg)
@@ -37,6 +40,9 @@ int setfl(int fd, struct file * filp, unsigned long arg)
 	struct inode * inode = file_inode(filp);
 	int error = 0;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " setfl \n" );
+    }
 	/*
 	 * O_APPEND cannot be cleared if the file is marked as append-only
 	 * and the file is open for write.
@@ -90,6 +96,9 @@ EXPORT_SYMBOL_GPL(setfl);
 static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
                      int force)
 {
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " f_modown\n" );
+    }
 	write_lock_irq(&filp->f_owner.lock);
 	if (force || !filp->f_owner.pid) {
 		put_pid(filp->f_owner.pid);
@@ -108,6 +117,9 @@ static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
 void __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
 		int force)
 {
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " __f_setown\n" );
+    }
 	security_file_set_fowner(filp);
 	f_modown(filp, pid, type, force);
 }
@@ -119,6 +131,9 @@ int f_setown(struct file *filp, unsigned long arg, int force)
 	struct pid *pid = NULL;
 	int who = arg, ret = 0;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " f_setown \n" );
+    }
 	type = PIDTYPE_PID;
 	if (who < 0) {
 		/* avoid overflow below */
@@ -146,6 +161,9 @@ EXPORT_SYMBOL(f_setown);
 
 void f_delown(struct file *filp)
 {
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " f_delown\n" );
+    }
 	f_modown(filp, NULL, PIDTYPE_PID, 1);
 }
 
@@ -154,6 +172,9 @@ pid_t f_getown(struct file *filp)
 	pid_t pid;
 	read_lock(&filp->f_owner.lock);
 	pid = pid_vnr(filp->f_owner.pid);
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " f_getown \n" );
+    }
 	if (filp->f_owner.pid_type == PIDTYPE_PGID)
 		pid = -pid;
 	read_unlock(&filp->f_owner.lock);
@@ -168,6 +189,9 @@ static int f_setown_ex(struct file *filp, unsigned long arg)
 	int type;
 	int ret;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " f_setown_ex\n" );
+    }
 	ret = copy_from_user(&owner, owner_p, sizeof(owner));
 	if (ret)
 		return -EFAULT;
@@ -206,6 +230,9 @@ static int f_getown_ex(struct file *filp, unsigned long arg)
 	struct f_owner_ex owner;
 	int ret = 0;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " f_getown_ex\n" );
+    }
 	read_lock(&filp->f_owner.lock);
 	owner.pid = pid_vnr(filp->f_owner.pid);
 	switch (filp->f_owner.pid_type) {
@@ -244,6 +271,9 @@ static int f_getowner_uids(struct file *filp, unsigned long arg)
 	uid_t src[2];
 	int err;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO "f_getowner_uids \n" );
+    }
 	read_lock(&filp->f_owner.lock);
 	src[0] = from_kuid(user_ns, filp->f_owner.uid);
 	src[1] = from_kuid(user_ns, filp->f_owner.euid);
@@ -263,6 +293,9 @@ static int f_getowner_uids(struct file *filp, unsigned long arg)
 
 static bool rw_hint_valid(enum rw_hint hint)
 {
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " rw_hint_valid\n" );
+    }
 	switch (hint) {
 	case RWF_WRITE_LIFE_NOT_SET:
 	case RWH_WRITE_LIFE_NONE:
@@ -283,6 +316,10 @@ static long fcntl_rw_hint(struct file *file, unsigned int cmd,
 	u64 *argp = (u64 __user *)arg;
 	enum rw_hint hint;
 	u64 h;
+
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO "fcntl_rw_hint \n" );
+    }
 
 	switch (cmd) {
 	case F_GET_FILE_RW_HINT:
@@ -329,6 +366,9 @@ static long do_fcntl(int fd, unsigned int cmd, unsigned long arg,
 	struct flock flock;
 	long err = -EINVAL;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " do_fcntl\n" );
+    }
 	switch (cmd) {
 	case F_DUPFD:
 		err = f_dupfd(arg, filp, 0);
@@ -437,6 +477,9 @@ static long do_fcntl(int fd, unsigned int cmd, unsigned long arg,
 
 static int check_fcntl_cmd(unsigned cmd)
 {
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " \n" );
+    }
 	switch (cmd) {
 	case F_DUPFD:
 	case F_DUPFD_CLOEXEC:
@@ -453,6 +496,9 @@ SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
 	struct fd f = fdget_raw(fd);
 	long err = -EBADF;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " fcntl\n" );
+    }
 	if (!f.file)
 		goto out;
 
@@ -480,6 +526,9 @@ SYSCALL_DEFINE3(fcntl64, unsigned int, fd, unsigned int, cmd,
 	struct flock64 flock;
 	long err = -EBADF;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO "fcntl64 \n" );
+    }
 	if (!f.file)
 		goto out;
 
@@ -535,6 +584,9 @@ static int get_compat_flock(struct flock *kfl, const struct compat_flock __user 
 {
 	struct compat_flock fl;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO "get_compat_flock \n" );
+    }
 	if (copy_from_user(&fl, ufl, sizeof(struct compat_flock)))
 		return -EFAULT;
 	copy_flock_fields(kfl, &fl);
@@ -545,6 +597,9 @@ static int get_compat_flock64(struct flock *kfl, const struct compat_flock64 __u
 {
 	struct compat_flock64 fl;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO "get_compat_flock64 \n" );
+    }
 	if (copy_from_user(&fl, ufl, sizeof(struct compat_flock64)))
 		return -EFAULT;
 	copy_flock_fields(kfl, &fl);
@@ -566,6 +621,9 @@ static int put_compat_flock64(const struct flock *kfl, struct compat_flock64 __u
 {
 	struct compat_flock64 fl;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " put_compat_flock64\n" );
+    }
 	BUILD_BUG_ON(sizeof(kfl->l_start) > sizeof(ufl->l_start));
 	BUILD_BUG_ON(sizeof(kfl->l_len) > sizeof(ufl->l_len));
 
@@ -580,6 +638,9 @@ static int put_compat_flock64(const struct flock *kfl, struct compat_flock64 __u
 static unsigned int
 convert_fcntl_cmd(unsigned int cmd)
 {
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " convert_fcntl_cmd \n" );
+    }
 	switch (cmd) {
 	case F_GETLK64:
 		return F_GETLK;
@@ -603,6 +664,9 @@ convert_fcntl_cmd(unsigned int cmd)
  */
 static int fixup_compat_flock(struct flock *flock)
 {
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " fixup_compat_flock \n" );
+    }
 	if (flock->l_start > COMPAT_OFF_T_MAX)
 		return -EOVERFLOW;
 	if (flock->l_len > COMPAT_OFF_T_MAX)
@@ -617,6 +681,9 @@ COMPAT_SYSCALL_DEFINE3(fcntl64, unsigned int, fd, unsigned int, cmd,
 	struct flock flock;
 	long err = -EBADF;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO "fcntl64 \n" );
+    }
 	if (!f.file)
 		return err;
 
@@ -678,6 +745,9 @@ out_put:
 COMPAT_SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd,
 		       compat_ulong_t, arg)
 {
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " fcntl\n" );
+    }
 	switch (cmd) {
 	case F_GETLK64:
 	case F_SETLK64:
@@ -708,6 +778,9 @@ static inline int sigio_perm(struct task_struct *p,
 	const struct cred *cred;
 	int ret;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " sigio_perm\n" );
+    }
 	rcu_read_lock();
 	cred = __task_cred(p);
 	ret = ((uid_eq(fown->euid, GLOBAL_ROOT_UID) ||
@@ -722,6 +795,9 @@ static void send_sigio_to_task(struct task_struct *p,
 			       struct fown_struct *fown,
 			       int fd, int reason, int group)
 {
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " send_sigio_to_task\n" );
+    }
 	/*
 	 * F_SETSIG can change ->signum lockless in parallel, make
 	 * sure we read it once and use the same value throughout.
@@ -778,6 +854,9 @@ void send_sigio(struct fown_struct *fown, int fd, int band)
 	struct pid *pid;
 	int group = 1;
 	
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " send_sigio\n" );
+    }
 	read_lock(&fown->lock);
 
 	type = fown->pid_type;
@@ -802,6 +881,9 @@ void send_sigio(struct fown_struct *fown, int fd, int band)
 static void send_sigurg_to_task(struct task_struct *p,
 				struct fown_struct *fown, int group)
 {
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO "send_sigurg_to_task \n" );
+    }
 	if (sigio_perm(p, fown, SIGURG))
 		do_send_sig_info(SIGURG, SEND_SIG_PRIV, p, group);
 }
@@ -814,6 +896,9 @@ int send_sigurg(struct fown_struct *fown)
 	int group = 1;
 	int ret = 0;
 	
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO "send_sigurg \n" );
+    }
 	read_lock(&fown->lock);
 
 	type = fown->pid_type;
@@ -861,6 +946,9 @@ int fasync_remove_entry(struct file *filp, struct fasync_struct **fapp)
 	struct fasync_struct *fa, **fp;
 	int result = 0;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO " fasync_remove_entry\n" );
+    }
 	spin_lock(&filp->f_lock);
 	spin_lock(&fasync_lock);
 	for (fp = fapp; (fa = *fp) != NULL; fp = &fa->fa_next) {
@@ -908,6 +996,9 @@ struct fasync_struct *fasync_insert_entry(int fd, struct file *filp, struct fasy
 {
         struct fasync_struct *fa, **fp;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO "fasync_insert_entry \n" );
+    }
 	spin_lock(&filp->f_lock);
 	spin_lock(&fasync_lock);
 	for (fp = fapp; (fa = *fp) != NULL; fp = &fa->fa_next) {
@@ -942,6 +1033,9 @@ static int fasync_add_entry(int fd, struct file *filp, struct fasync_struct **fa
 {
 	struct fasync_struct *new;
 
+    if( fs_trace_enable && fs_fcntl_trace_enable ){
+        printk(KERN_INFO "fasync_add_entry \n" );
+    }
 	new = fasync_alloc();
 	if (!new)
 		return -ENOMEM;

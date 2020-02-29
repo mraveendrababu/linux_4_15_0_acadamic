@@ -13,6 +13,9 @@
 #include "internal.h"
 #include "pnode.h"
 
+extern int fs_trace_enable;
+extern int fs_pnode_trace_enable;
+
 /* return the next shared peer mount of @p */
 static inline struct mount *next_peer(struct mount *p)
 {
@@ -40,6 +43,9 @@ static struct mount *get_peer_under_root(struct mount *mnt,
 {
 	struct mount *m = mnt;
 
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO " get_peer_under_root\n" );
+    }
 	do {
 		/* Check the namespace first for optimization */
 		if (m->mnt_ns == ns && is_path_reachable(m, m->mnt.mnt_root, root))
@@ -61,6 +67,9 @@ int get_dominating_id(struct mount *mnt, const struct path *root)
 {
 	struct mount *m;
 
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "get_dominating_id \n" );
+    }
 	for (m = mnt->mnt_master; m != NULL; m = m->mnt_master) {
 		struct mount *d = get_peer_under_root(m, mnt->mnt_ns, root);
 		if (d)
@@ -74,6 +83,9 @@ static int do_make_slave(struct mount *mnt)
 {
 	struct mount *master, *slave_mnt;
 
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "do_make_slave \n" );
+    }
 	if (list_empty(&mnt->mnt_share)) {
 		if (IS_MNT_SHARED(mnt)) {
 			mnt_release_group_id(mnt);
@@ -121,6 +133,9 @@ static int do_make_slave(struct mount *mnt)
  */
 void change_mnt_propagation(struct mount *mnt, int type)
 {
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "change_mnt_propagation \n" );
+    }
 	if (type == MS_SHARED) {
 		set_mnt_shared(mnt);
 		return;
@@ -149,6 +164,9 @@ void change_mnt_propagation(struct mount *mnt, int type)
 static struct mount *propagation_next(struct mount *m,
 					 struct mount *origin)
 {
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO " propagation_next\n" );
+    }
 	/* are there any slaves of this mount? */
 	if (!IS_MNT_NEW(m) && !list_empty(&m->mnt_slave_list))
 		return first_slave(m);
@@ -170,6 +188,9 @@ static struct mount *propagation_next(struct mount *m,
 static struct mount *skip_propagation_subtree(struct mount *m,
 						struct mount *origin)
 {
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO " skip_propagation_subtree\n" );
+    }
 	/*
 	 * Advance m such that propagation_next will not return
 	 * the slaves of m.
@@ -182,6 +203,9 @@ static struct mount *skip_propagation_subtree(struct mount *m,
 
 static struct mount *next_group(struct mount *m, struct mount *origin)
 {
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "next_group \n" );
+    }
 	while (1) {
 		while (1) {
 			struct mount *next;
@@ -220,6 +244,9 @@ static struct hlist_head *list;
 
 static inline bool peers(struct mount *m1, struct mount *m2)
 {
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO " peers\n" );
+    }
 	return m1->mnt_group_id == m2->mnt_group_id && m1->mnt_group_id;
 }
 
@@ -227,6 +254,9 @@ static int propagate_one(struct mount *m)
 {
 	struct mount *child;
 	int type;
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "propagate_one \n" );
+    }
 	/* skip ones added by this propagate_mnt() */
 	if (IS_MNT_NEW(m))
 		return 0;
@@ -297,6 +327,9 @@ int propagate_mnt(struct mount *dest_mnt, struct mountpoint *dest_mp,
 	struct mount *m, *n;
 	int ret = 0;
 
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "propagate_mnt \n" );
+    }
 	/*
 	 * we don't want to bother passing tons of arguments to
 	 * propagate_one(); everything is serialized by namespace_sem,
@@ -345,6 +378,12 @@ static struct mount *find_topper(struct mount *mnt)
 	/* If there is exactly one mount covering mnt completely return it. */
 	struct mount *child;
 
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO " find_topper\n" );
+    }
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO " \n" );
+    }
 	if (!list_is_singular(&mnt->mnt_mounts))
 		return NULL;
 
@@ -360,6 +399,9 @@ static struct mount *find_topper(struct mount *mnt)
  */
 static inline int do_refcount_check(struct mount *mnt, int count)
 {
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "do_refcount_check \n" );
+    }
 	return mnt_get_count(mnt) > count;
 }
 
@@ -378,6 +420,9 @@ int propagate_mount_busy(struct mount *mnt, int refcnt)
 	struct mount *m, *child, *topper;
 	struct mount *parent = mnt->mnt_parent;
 
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "propagate_mount_busy \n" );
+    }
 	if (mnt == parent)
 		return do_refcount_check(mnt, refcnt);
 
@@ -421,6 +466,9 @@ void propagate_mount_unlock(struct mount *mnt)
 	struct mount *parent = mnt->mnt_parent;
 	struct mount *m, *child;
 
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "propagate_mount_unlock \n" );
+    }
 	BUG_ON(parent == mnt);
 
 	for (m = propagation_next(parent, parent); m;
@@ -433,6 +481,9 @@ void propagate_mount_unlock(struct mount *mnt)
 
 static void umount_one(struct mount *mnt, struct list_head *to_umount)
 {
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "umount_one \n" );
+    }
 	CLEAR_MNT_MARK(mnt);
 	mnt->mnt.mnt_flags |= MNT_UMOUNT;
 	list_del_init(&mnt->mnt_child);
@@ -451,6 +502,9 @@ static bool __propagate_umount(struct mount *mnt,
 	bool progress = false;
 	struct mount *child;
 
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "__propagate_umount \n" );
+    }
 	/*
 	 * The state of the parent won't change if this mount is
 	 * already unmounted or marked as without children.
@@ -489,6 +543,9 @@ static void umount_list(struct list_head *to_umount,
 			struct list_head *to_restore)
 {
 	struct mount *mnt, *child, *tmp;
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO " umount_list\n" );
+    }
 	list_for_each_entry(mnt, to_umount, mnt_list) {
 		list_for_each_entry_safe(child, tmp, &mnt->mnt_mounts, mnt_child) {
 			/* topper? */
@@ -502,6 +559,9 @@ static void umount_list(struct list_head *to_umount,
 
 static void restore_mounts(struct list_head *to_restore)
 {
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO " restore_mounts\n" );
+    }
 	/* Restore mounts to a clean working state */
 	while (!list_empty(to_restore)) {
 		struct mount *mnt, *parent;
@@ -525,6 +585,9 @@ static void restore_mounts(struct list_head *to_restore)
 
 static void cleanup_umount_visitations(struct list_head *visited)
 {
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "cleanup_umount_visitations \n" );
+    }
 	while (!list_empty(visited)) {
 		struct mount *mnt =
 			list_first_entry(visited, struct mount, mnt_umounting);
@@ -546,6 +609,9 @@ int propagate_umount(struct list_head *list)
 	LIST_HEAD(to_umount);
 	LIST_HEAD(visited);
 
+    if( fs_trace_enable && fs_pnode_trace_enable ){
+        printk(KERN_INFO "propagate_umount \n" );
+    }
 	/* Find candidates for unmounting */
 	list_for_each_entry_reverse(mnt, list, mnt_list) {
 		struct mount *parent = mnt->mnt_parent;

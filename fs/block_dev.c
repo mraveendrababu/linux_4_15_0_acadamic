@@ -43,6 +43,9 @@ struct bdev_inode {
 
 static const struct address_space_operations def_blk_aops;
 
+extern int fs_blockdev_trace_enable;
+extern int fs_trace_enable;
+
 static inline struct bdev_inode *BDEV_I(struct inode *inode)
 {
 	return container_of(inode, struct bdev_inode, vfs_inode);
@@ -58,7 +61,9 @@ static void bdev_write_inode(struct block_device *bdev)
 {
 	struct inode *inode = bdev->bd_inode;
 	int ret;
-
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "bdev_write_inode \n" );
+    }
 	spin_lock(&inode->i_lock);
 	while (inode->i_state & I_DIRTY) {
 		spin_unlock(&inode->i_lock);
@@ -79,6 +84,9 @@ void kill_bdev(struct block_device *bdev)
 {
 	struct address_space *mapping = bdev->bd_inode->i_mapping;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " kill_bdev\n" );
+    }
 	if (mapping->nrpages == 0 && mapping->nrexceptional == 0)
 		return;
 
@@ -92,6 +100,9 @@ void invalidate_bdev(struct block_device *bdev)
 {
 	struct address_space *mapping = bdev->bd_inode->i_mapping;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "invalidate_bdev \n" );
+    }
 	if (mapping->nrpages) {
 		invalidate_bh_lrus();
 		lru_add_drain_all();	/* make sure all lru add caches are flushed */
@@ -106,6 +117,9 @@ EXPORT_SYMBOL(invalidate_bdev);
 
 int set_blocksize(struct block_device *bdev, int size)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "set_blocksize \n" );
+    }
 	/* Size must be a power of two, and between 512 and PAGE_SIZE */
 	if (size > PAGE_SIZE || size < 512 || !is_power_of_2(size))
 		return -EINVAL;
@@ -128,6 +142,9 @@ EXPORT_SYMBOL(set_blocksize);
 
 int sb_set_blocksize(struct super_block *sb, int size)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " sb_set_blocksize\n" );
+    }
 	if (set_blocksize(sb->s_bdev, size))
 		return 0;
 	/* If we get here, we know size is power of two
@@ -142,6 +159,9 @@ EXPORT_SYMBOL(sb_set_blocksize);
 int sb_min_blocksize(struct super_block *sb, int size)
 {
 	int minsize = bdev_logical_block_size(sb->s_bdev);
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "sb_min_blocksize \n" );
+    }
 	if (size < minsize)
 		size = minsize;
 	return sb_set_blocksize(sb, size);
@@ -153,6 +173,9 @@ static int
 blkdev_get_block(struct inode *inode, sector_t iblock,
 		struct buffer_head *bh, int create)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " blkdev_get_block\n" );
+    }
 	bh->b_bdev = I_BDEV(inode);
 	bh->b_blocknr = iblock;
 	set_buffer_mapped(bh);
@@ -161,6 +184,9 @@ blkdev_get_block(struct inode *inode, sector_t iblock,
 
 static struct inode *bdev_file_inode(struct file *file)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "bdev_file_inode \n" );
+    }
 	return file->f_mapping->host;
 }
 
@@ -168,6 +194,9 @@ static unsigned int dio_bio_write_op(struct kiocb *iocb)
 {
 	unsigned int op = REQ_OP_WRITE | REQ_SYNC | REQ_IDLE;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "dio_bio_write_op \n" );
+    }
 	/* avoid the need for a I/O completion work item */
 	if (iocb->ki_flags & IOCB_DSYNC)
 		op |= REQ_FUA;
@@ -180,6 +209,9 @@ static void blkdev_bio_end_io_simple(struct bio *bio)
 {
 	struct task_struct *waiter = bio->bi_private;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " blkdev_bio_end_io_simple\n" );
+    }
 	WRITE_ONCE(bio->bi_private, NULL);
 	wake_up_process(waiter);
 }
@@ -198,6 +230,9 @@ __blkdev_direct_IO_simple(struct kiocb *iocb, struct iov_iter *iter,
 	blk_qc_t qc;
 	int i;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "__blkdev_direct_IO_simple \n" );
+    }
 	if ((pos | iov_iter_alignment(iter)) &
 	    (bdev_logical_block_size(bdev) - 1))
 		return -EINVAL;
@@ -280,6 +315,9 @@ static void blkdev_bio_end_io(struct bio *bio)
 	struct blkdev_dio *dio = bio->bi_private;
 	bool should_dirty = dio->should_dirty;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_bio_end_io \n" );
+    }
 	if (dio->multi_bio && !atomic_dec_and_test(&dio->ref)) {
 		if (bio->bi_status && !dio->bio.bi_status)
 			dio->bio.bi_status = bio->bi_status;
@@ -331,6 +369,9 @@ __blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter, int nr_pages)
 	blk_qc_t qc = BLK_QC_T_NONE;
 	int ret = 0;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "__blkdev_direct_IO \n" );
+    }
 	if ((pos | iov_iter_alignment(iter)) &
 	    (bdev_logical_block_size(bdev) - 1))
 		return -EINVAL;
@@ -422,6 +463,9 @@ blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 {
 	int nr_pages;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_direct_IO \n" );
+    }
 	nr_pages = iov_iter_npages(iter, BIO_MAX_PAGES + 1);
 	if (!nr_pages)
 		return 0;
@@ -434,6 +478,9 @@ blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 static __init int blkdev_init(void)
 {
 	blkdev_dio_pool = bioset_create(4, offsetof(struct blkdev_dio, bio), BIOSET_NEED_BVECS);
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_init \n" );
+    }
 	if (!blkdev_dio_pool)
 		return -ENOMEM;
 	return 0;
@@ -442,6 +489,9 @@ module_init(blkdev_init);
 
 int __sync_blockdev(struct block_device *bdev, int wait)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "__sync_blockdev \n" );
+    }
 	if (!bdev)
 		return 0;
 	if (!wait)
@@ -467,6 +517,9 @@ EXPORT_SYMBOL(sync_blockdev);
 int fsync_bdev(struct block_device *bdev)
 {
 	struct super_block *sb = get_super(bdev);
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "fsync_bdev \n" );
+    }
 	if (sb) {
 		int res = sync_filesystem(sb);
 		drop_super(sb);
@@ -493,6 +546,9 @@ struct super_block *freeze_bdev(struct block_device *bdev)
 	struct super_block *sb;
 	int error = 0;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "freeze_bdev \n" );
+    }
 	mutex_lock(&bdev->bd_fsfreeze_mutex);
 	if (++bdev->bd_fsfreeze_count > 1) {
 		/*
@@ -539,6 +595,9 @@ int thaw_bdev(struct block_device *bdev, struct super_block *sb)
 {
 	int error = -EINVAL;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " thaw_bdev\n" );
+    }
 	mutex_lock(&bdev->bd_fsfreeze_mutex);
 	if (!bdev->bd_fsfreeze_count)
 		goto out;
@@ -564,17 +623,26 @@ EXPORT_SYMBOL(thaw_bdev);
 
 static int blkdev_writepage(struct page *page, struct writeback_control *wbc)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_writepage \n" );
+    }
 	return block_write_full_page(page, blkdev_get_block, wbc);
 }
 
 static int blkdev_readpage(struct file * file, struct page * page)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_readpage \n" );
+    }
 	return block_read_full_page(page, blkdev_get_block);
 }
 
 static int blkdev_readpages(struct file *file, struct address_space *mapping,
 			struct list_head *pages, unsigned nr_pages)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_readpages \n" );
+    }
 	return mpage_readpages(mapping, pages, nr_pages, blkdev_get_block);
 }
 
@@ -582,6 +650,9 @@ static int blkdev_write_begin(struct file *file, struct address_space *mapping,
 			loff_t pos, unsigned len, unsigned flags,
 			struct page **pagep, void **fsdata)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " blkdev_write_begin\n" );
+    }
 	return block_write_begin(mapping, pos, len, flags, pagep,
 				 blkdev_get_block);
 }
@@ -593,6 +664,9 @@ static int blkdev_write_end(struct file *file, struct address_space *mapping,
 	int ret;
 	ret = block_write_end(file, mapping, pos, len, copied, page, fsdata);
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_write_end \n" );
+    }
 	unlock_page(page);
 	put_page(page);
 
@@ -609,6 +683,9 @@ static loff_t block_llseek(struct file *file, loff_t offset, int whence)
 	struct inode *bd_inode = bdev_file_inode(file);
 	loff_t retval;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "block_llseek \n" );
+    }
 	inode_lock(bd_inode);
 	retval = fixed_size_llseek(file, offset, whence, i_size_read(bd_inode));
 	inode_unlock(bd_inode);
@@ -621,6 +698,9 @@ int blkdev_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
 	struct block_device *bdev = I_BDEV(bd_inode);
 	int error;
 	
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " blkdev_fsync\n" );
+    }
 	error = file_write_and_wait_range(filp, start, end);
 	if (error)
 		return error;
@@ -660,6 +740,9 @@ int bdev_read_page(struct block_device *bdev, sector_t sector,
 	const struct block_device_operations *ops = bdev->bd_disk->fops;
 	int result = -EOPNOTSUPP;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " bdev_read_page\n" );
+    }
 	if (!ops->rw_page || bdev_get_integrity(bdev))
 		return result;
 
@@ -697,6 +780,9 @@ int bdev_write_page(struct block_device *bdev, sector_t sector,
 	int result;
 	const struct block_device_operations *ops = bdev->bd_disk->fops;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " bdev_write_page\n" );
+    }
 	if (!ops->rw_page || bdev_get_integrity(bdev))
 		return -EOPNOTSUPP;
 	result = blk_queue_enter(bdev->bd_queue, 0);
@@ -726,6 +812,9 @@ static struct kmem_cache * bdev_cachep __read_mostly;
 static struct inode *bdev_alloc_inode(struct super_block *sb)
 {
 	struct bdev_inode *ei = kmem_cache_alloc(bdev_cachep, GFP_KERNEL);
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " bdev_alloc_inode\n" );
+    }
 	if (!ei)
 		return NULL;
 	return &ei->vfs_inode;
@@ -736,6 +825,9 @@ static void bdev_i_callback(struct rcu_head *head)
 	struct inode *inode = container_of(head, struct inode, i_rcu);
 	struct bdev_inode *bdi = BDEV_I(inode);
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "bdev_i_callback \n" );
+    }
 	kmem_cache_free(bdev_cachep, bdi);
 }
 
@@ -749,6 +841,9 @@ static void init_once(void *foo)
 	struct bdev_inode *ei = (struct bdev_inode *) foo;
 	struct block_device *bdev = &ei->bdev;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " init_once\n" );
+    }
 	memset(bdev, 0, sizeof(*bdev));
 	mutex_init(&bdev->bd_mutex);
 	INIT_LIST_HEAD(&bdev->bd_list);
@@ -764,6 +859,9 @@ static void init_once(void *foo)
 static void bdev_evict_inode(struct inode *inode)
 {
 	struct block_device *bdev = &BDEV_I(inode)->bdev;
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " bdev_evict_inode\n" );
+    }
 	truncate_inode_pages_final(&inode->i_data);
 	invalidate_inode_buffers(inode); /* is it needed here? */
 	clear_inode(inode);
@@ -790,6 +888,9 @@ static struct dentry *bd_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {
 	struct dentry *dent;
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " \n" );
+    }
 	dent = mount_pseudo(fs_type, "bdev:", &bdev_sops, NULL, BDEVFS_MAGIC);
 	if (!IS_ERR(dent))
 		dent->d_sb->s_iflags |= SB_I_CGROUPWB;
@@ -810,6 +911,9 @@ void __init bdev_cache_init(void)
 	int err;
 	static struct vfsmount *bd_mnt;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " bdev_cache_init\n" );
+    }
 	bdev_cachep = kmem_cache_create("bdev_cache", sizeof(struct bdev_inode),
 			0, (SLAB_HWCACHE_ALIGN|SLAB_RECLAIM_ACCOUNT|
 				SLAB_MEM_SPREAD|SLAB_ACCOUNT|SLAB_PANIC),
@@ -854,6 +958,9 @@ void bdev_unhash_inode(dev_t dev)
 {
 	struct inode *inode;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "bdev_unhash_inode \n" );
+    }
 	inode = ilookup5(blockdev_superblock, hash(dev), bdev_test, &dev);
 	if (inode) {
 		remove_inode_hash(inode);
@@ -866,6 +973,9 @@ struct block_device *bdget(dev_t dev)
 	struct block_device *bdev;
 	struct inode *inode;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "bdget \n" );
+    }
 	inode = iget5_locked(blockdev_superblock, hash(dev),
 			bdev_test, bdev_set, &dev);
 
@@ -911,6 +1021,9 @@ long nr_blockdev_pages(void)
 {
 	struct block_device *bdev;
 	long ret = 0;
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " nr_blockdev_pages\n" );
+    }
 	spin_lock(&bdev_lock);
 	list_for_each_entry(bdev, &all_bdevs, bd_list) {
 		ret += bdev->bd_inode->i_mapping->nrpages;
@@ -930,6 +1043,9 @@ static struct block_device *bd_acquire(struct inode *inode)
 {
 	struct block_device *bdev;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "bd_acquire \n" );
+    }
 	spin_lock(&bdev_lock);
 	bdev = inode->i_bdev;
 	if (bdev && !inode_unhashed(bdev->bd_inode)) {
@@ -973,6 +1089,9 @@ void bd_forget(struct inode *inode)
 {
 	struct block_device *bdev = NULL;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " bd_forget\n" );
+    }
 	spin_lock(&bdev_lock);
 	if (!sb_is_blkdev_sb(inode->i_sb))
 		bdev = inode->i_bdev;
@@ -1001,6 +1120,9 @@ void bd_forget(struct inode *inode)
 static bool bd_may_claim(struct block_device *bdev, struct block_device *whole,
 			 void *holder)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "bd_may_claim \n" );
+    }
 	if (bdev->bd_holder == holder)
 		return true;	 /* already a holder */
 	else if (bdev->bd_holder != NULL)
@@ -1037,6 +1159,9 @@ static bool bd_may_claim(struct block_device *bdev, struct block_device *whole,
 static int bd_prepare_to_claim(struct block_device *bdev,
 			       struct block_device *whole, void *holder)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "bd_prepare_to_claim \n" );
+    }
 retry:
 	/* if someone else claimed, fail */
 	if (!bd_may_claim(bdev, whole, holder))
@@ -1089,6 +1214,9 @@ static struct block_device *bd_start_claiming(struct block_device *bdev,
 	struct block_device *whole;
 	int partno, err;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " bd_start_claiming\n" );
+    }
 	might_sleep();
 
 	/*
@@ -1144,6 +1272,9 @@ static struct bd_holder_disk *bd_find_holder_disk(struct block_device *bdev,
 {
 	struct bd_holder_disk *holder;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " bd_find_holder_disk\n" );
+    }
 	list_for_each_entry(holder, &bdev->bd_holder_disks, list)
 		if (holder->disk == disk)
 			return holder;
@@ -1152,11 +1283,17 @@ static struct bd_holder_disk *bd_find_holder_disk(struct block_device *bdev,
 
 static int add_symlink(struct kobject *from, struct kobject *to)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " add_symlink\n" );
+    }
 	return sysfs_create_link(from, to, kobject_name(to));
 }
 
 static void del_symlink(struct kobject *from, struct kobject *to)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "del_symlink \n" );
+    }
 	sysfs_remove_link(from, kobject_name(to));
 }
 
@@ -1193,6 +1330,9 @@ int bd_link_disk_holder(struct block_device *bdev, struct gendisk *disk)
 	struct bd_holder_disk *holder;
 	int ret = 0;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "bd_link_disk_holder \n" );
+    }
 	mutex_lock(&bdev->bd_mutex);
 
 	WARN_ON_ONCE(!bdev->bd_holder);
@@ -1257,6 +1397,9 @@ void bd_unlink_disk_holder(struct block_device *bdev, struct gendisk *disk)
 {
 	struct bd_holder_disk *holder;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "bd_unlink_disk_holder \n" );
+    }
 	mutex_lock(&bdev->bd_mutex);
 
 	holder = bd_find_holder_disk(bdev, disk);
@@ -1287,6 +1430,9 @@ EXPORT_SYMBOL_GPL(bd_unlink_disk_holder);
  */
 static void flush_disk(struct block_device *bdev, bool kill_dirty)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "flush_disk \n" );
+    }
 	if (__invalidate_device(bdev, kill_dirty)) {
 		printk(KERN_WARNING "VFS: busy inodes on changed media or "
 		       "resized disk %s\n",
@@ -1311,6 +1457,9 @@ void check_disk_size_change(struct gendisk *disk, struct block_device *bdev)
 {
 	loff_t disk_size, bdev_size;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "check_disk_size_change \n" );
+    }
 	disk_size = (loff_t)get_capacity(disk) << 9;
 	bdev_size = i_size_read(bdev->bd_inode);
 	if (disk_size != bdev_size) {
@@ -1336,6 +1485,9 @@ int revalidate_disk(struct gendisk *disk)
 	struct block_device *bdev;
 	int ret = 0;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " revalidate_disk\n" );
+    }
 	if (disk->fops->revalidate_disk)
 		ret = disk->fops->revalidate_disk(disk);
 	bdev = bdget_disk(disk, 0);
@@ -1366,6 +1518,9 @@ int check_disk_change(struct block_device *bdev)
 	const struct block_device_operations *bdops = disk->fops;
 	unsigned int events;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " check_disk_change\n" );
+    }
 	events = disk_clear_events(disk, DISK_EVENT_MEDIA_CHANGE |
 				   DISK_EVENT_EJECT_REQUEST);
 	if (!(events & DISK_EVENT_MEDIA_CHANGE))
@@ -1383,6 +1538,9 @@ void bd_set_size(struct block_device *bdev, loff_t size)
 {
 	unsigned bsize = bdev_logical_block_size(bdev);
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "bd_set_size \n" );
+    }
 	inode_lock(bdev->bd_inode);
 	i_size_write(bdev->bd_inode, size);
 	inode_unlock(bdev->bd_inode);
@@ -1413,6 +1571,9 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
 	int partno;
 	int perm = 0;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " __blkdev_get\n" );
+    }
 	if (mode & FMODE_READ)
 		perm |= MAY_READ;
 	if (mode & FMODE_WRITE)
@@ -1579,6 +1740,9 @@ int blkdev_get(struct block_device *bdev, fmode_t mode, void *holder)
 	struct block_device *whole = NULL;
 	int res;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_get \n" );
+    }
 	WARN_ON_ONCE((mode & FMODE_EXCL) && !holder);
 
 	if ((mode & FMODE_EXCL) && holder) {
@@ -1664,6 +1828,9 @@ struct block_device *blkdev_get_by_path(const char *path, fmode_t mode,
 	int perm = 0;
 	int err;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " blkdev_get_by_path\n" );
+    }
 	if (mode & FMODE_READ)
 		perm |= MAY_READ;
 	if (mode & FMODE_WRITE)
@@ -1712,6 +1879,9 @@ struct block_device *blkdev_get_by_dev(dev_t dev, fmode_t mode, void *holder)
 	struct block_device *bdev;
 	int err;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_get_by_dev \n" );
+    }
 	bdev = bdget(dev);
 	if (!bdev)
 		return ERR_PTR(-ENOMEM);
@@ -1728,6 +1898,9 @@ static int blkdev_open(struct inode * inode, struct file * filp)
 {
 	struct block_device *bdev;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " blkdev_open\n" );
+    }
 	/*
 	 * Preserve backwards compatibility and allow large file access
 	 * even if userspace doesn't ask for it explicitly. Some mkfs
@@ -1774,6 +1947,9 @@ static void __blkdev_put(struct block_device *bdev, fmode_t mode, int for_part)
 	struct gendisk *disk = bdev->bd_disk;
 	struct block_device *victim = NULL;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "__blkdev_put \n" );
+    }
 	mutex_lock_nested(&bdev->bd_mutex, for_part);
 	if (for_part)
 		bdev->bd_part_count--;
@@ -1812,6 +1988,9 @@ void blkdev_put(struct block_device *bdev, fmode_t mode)
 {
 	mutex_lock(&bdev->bd_mutex);
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_put \n" );
+    }
 	if (mode & FMODE_EXCL) {
 		bool bdev_free;
 
@@ -1859,6 +2038,9 @@ EXPORT_SYMBOL(blkdev_put);
 static int blkdev_close(struct inode * inode, struct file * filp)
 {
 	struct block_device *bdev = I_BDEV(bdev_file_inode(filp));
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " blkdev_close\n" );
+    }
 	if (filp->f_mode & FMODE_WRITE &&
 	    !file_ns_capable(filp, &init_user_ns, CAP_SYS_ADMIN))
 		atomic_dec(&bdev->bd_inode->i_writecount);
@@ -1871,6 +2053,9 @@ static long block_ioctl(struct file *file, unsigned cmd, unsigned long arg)
 	struct block_device *bdev = I_BDEV(bdev_file_inode(file));
 	fmode_t mode = file->f_mode;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "block_ioctl \n" );
+    }
 	/*
 	 * O_NDELAY can be altered using fcntl(.., F_SETFL, ..), so we have
 	 * to updated it before every ioctl.
@@ -1898,6 +2083,9 @@ ssize_t blkdev_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	struct blk_plug plug;
 	ssize_t ret;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_write_iter \n" );
+    }
 	if (bdev_read_only(I_BDEV(bd_inode)))
 		return -EPERM;
 
@@ -1928,6 +2116,9 @@ ssize_t blkdev_read_iter(struct kiocb *iocb, struct iov_iter *to)
 	loff_t size = i_size_read(bd_inode);
 	loff_t pos = iocb->ki_pos;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_read_iter \n" );
+    }
 	if (pos >= size)
 		return 0;
 
@@ -1945,6 +2136,9 @@ static int blkdev_releasepage(struct page *page, gfp_t wait)
 {
 	struct super_block *super = BDEV_I(page->mapping->host)->bdev.bd_super;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " blkdev_releasepage\n" );
+    }
 	if (super && super->s_op->bdev_try_to_free_page)
 		return super->s_op->bdev_try_to_free_page(super, page, wait);
 
@@ -1954,6 +2148,9 @@ static int blkdev_releasepage(struct page *page, gfp_t wait)
 static int blkdev_writepages(struct address_space *mapping,
 			     struct writeback_control *wbc)
 {
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " blkdev_writepages\n" );
+    }
 	if (dax_mapping(mapping)) {
 		struct block_device *bdev = I_BDEV(mapping->host);
 
@@ -1987,6 +2184,9 @@ static long blkdev_fallocate(struct file *file, int mode, loff_t start,
 	loff_t isize;
 	int error;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "blkdev_fallocate \n" );
+    }
 	/* Fail if we don't recognize the flags. */
 	if (mode & ~BLKDEV_FALLOC_FL_SUPPORTED)
 		return -EOPNOTSUPP;
@@ -2089,6 +2289,9 @@ struct block_device *lookup_bdev(const char *pathname, int mask)
 	struct path path;
 	int error;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " lookup_bdev\n" );
+    }
 	if (!pathname || !*pathname)
 		return ERR_PTR(-EINVAL);
 
@@ -2126,6 +2329,9 @@ int __invalidate_device(struct block_device *bdev, bool kill_dirty)
 	struct super_block *sb = get_super(bdev);
 	int res = 0;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO "__invalidate_device \n" );
+    }
 	if (sb) {
 		/*
 		 * no need to lock the super, get_super holds the
@@ -2146,6 +2352,9 @@ void iterate_bdevs(void (*func)(struct block_device *, void *), void *arg)
 {
 	struct inode *inode, *old_inode = NULL;
 
+    if( fs_trace_enable && fs_blockdev_trace_enable ){
+        printk(KERN_INFO " iterate_bdevs\n" );
+    }
 	spin_lock(&blockdev_superblock->s_inode_list_lock);
 	list_for_each_entry(inode, &blockdev_superblock->s_inodes, i_sb_list) {
 		struct address_space *mapping = inode->i_mapping;

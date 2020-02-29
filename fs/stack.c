@@ -2,6 +2,9 @@
 #include <linux/fs.h>
 #include <linux/fs_stack.h>
 
+extern int fs_trace_enable;
+extern int fs_stack_trace_enable;
+
 /* does _NOT_ require i_mutex to be held.
  *
  * This function cannot be inlined since i_size_{read,write} is rather
@@ -12,6 +15,9 @@ void fsstack_copy_inode_size(struct inode *dst, struct inode *src)
 	loff_t i_size;
 	blkcnt_t i_blocks;
 
+    if( fs_trace_enable && fs_stack_trace_enable ){
+        printk(KERN_INFO "fsstack_copy_inode_size \n" );
+    }
 	/*
 	 * i_size_read() includes its own seqlocking and protection from
 	 * preemption (see include/linux/fs.h): we need nothing extra for

@@ -11,6 +11,8 @@
 #include "xattr.h"
 #include "acl.h"
 
+extern int ext4_trace_enable;
+extern int ext4_acl_trace_enable;
 /*
  * Convert from filesystem to in-memory representation.
  */
@@ -21,6 +23,9 @@ ext4_acl_from_disk(struct super_block *sb, const void *value, size_t size)
 	int n, count;
 	struct posix_acl *acl;
 
+    if(ext4_trace_enable && ext4_acl_trace_enable ){
+        printk(KERN_INFO " ext4_acl_from_disk\n" );
+    }
 	if (!value)
 		return NULL;
 	if (size < sizeof(ext4_acl_header))
@@ -101,6 +106,9 @@ ext4_acl_to_disk(struct super_block *sb, const struct posix_acl *acl,
 	uid_t uid;
 	gid_t gid;
 
+    if(ext4_trace_enable && ext4_acl_trace_enable ){
+        printk(KERN_INFO "ext4_acl_to_disk \n" );
+    }
 	*size = ext4_acl_size(acl->a_count);
 	ext_acl = kmalloc(sizeof(ext4_acl_header) + acl->a_count *
 			sizeof(ext4_acl_entry), GFP_NOFS);
@@ -160,6 +168,9 @@ ext4_get_acl(struct inode *inode, int type)
 	struct posix_acl *acl;
 	int retval;
 
+    if(ext4_trace_enable && ext4_acl_trace_enable ){
+        printk(KERN_INFO " ext4_get_acl\n" );
+    }
 	switch (type) {
 	case ACL_TYPE_ACCESS:
 		name_index = EXT4_XATTR_INDEX_POSIX_ACL_ACCESS;
@@ -202,6 +213,9 @@ __ext4_set_acl(handle_t *handle, struct inode *inode, int type,
 	size_t size = 0;
 	int error;
 
+    if(ext4_trace_enable && ext4_acl_trace_enable ){
+        printk(KERN_INFO "__ext4_set_acl \n" );
+    }
 	switch (type) {
 	case ACL_TYPE_ACCESS:
 		name_index = EXT4_XATTR_INDEX_POSIX_ACL_ACCESS;
@@ -242,6 +256,9 @@ ext4_set_acl(struct inode *inode, struct posix_acl *acl, int type)
 	umode_t mode = inode->i_mode;
 	int update_mode = 0;
 
+    if(ext4_trace_enable && ext4_acl_trace_enable ){
+        printk(KERN_INFO " ext4_set_acl\n" );
+    }
 	error = dquot_initialize(inode);
 	if (error)
 		return error;
@@ -287,6 +304,9 @@ ext4_init_acl(handle_t *handle, struct inode *inode, struct inode *dir)
 	struct posix_acl *default_acl, *acl;
 	int error;
 
+    if(ext4_trace_enable && ext4_acl_trace_enable ){
+        printk(KERN_INFO " ext4_init_acl\n" );
+    }
 	error = posix_acl_create(dir, &inode->i_mode, &default_acl, &acl);
 	if (error)
 		return error;

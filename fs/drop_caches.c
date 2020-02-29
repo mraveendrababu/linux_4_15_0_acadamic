@@ -14,10 +14,15 @@
 /* A global variable is a bit ugly, but it keeps the code simple */
 int sysctl_drop_caches;
 
+extern int fs_trace_enable;
+extern int fs_dropcaches_trace_enable;
+
 static void drop_pagecache_sb(struct super_block *sb, void *unused)
 {
 	struct inode *inode, *toput_inode = NULL;
-
+    if(fs_trace_enable && fs_dropcaches_trace_enable ){
+        printk(KERN_INFO "drop_pagecache_sb \n" );
+    }
 	spin_lock(&sb->s_inode_list_lock);
 	list_for_each_entry(inode, &sb->s_inodes, i_sb_list) {
 		spin_lock(&inode->i_lock);
@@ -45,6 +50,9 @@ int drop_caches_sysctl_handler(struct ctl_table *table, int write,
 {
 	int ret;
 
+    if(fs_trace_enable && fs_dropcaches_trace_enable ){
+        printk(KERN_INFO "drop_caches_sysctl_handler \n" );
+    }
 	ret = proc_dointvec_minmax(table, write, buffer, length, ppos);
 	if (ret)
 		return ret;

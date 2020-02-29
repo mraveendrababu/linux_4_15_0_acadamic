@@ -7,12 +7,18 @@
 
 #include <trace/events/ext4.h>
 
+extern int ext4_trace_enable;
+extern int ext4_ext4_jbd2_trace_enable;
+
 /* Just increment the non-pointer handle value */
 static handle_t *ext4_get_nojournal(void)
 {
 	handle_t *handle = current->journal_info;
 	unsigned long ref_cnt = (unsigned long)handle;
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO "  ext4_get_nojournal\n");
+    }
 	BUG_ON(ref_cnt >= EXT4_NOJOURNAL_MAX_REF_COUNT);
 
 	ref_cnt++;
@@ -30,6 +36,9 @@ static void ext4_put_nojournal(handle_t *handle)
 
 	BUG_ON(ref_cnt == 0);
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO " ext4_put_nojournal \n");
+    }
 	ref_cnt--;
 	handle = (handle_t *)ref_cnt;
 
@@ -45,6 +54,9 @@ static int ext4_journal_check_start(struct super_block *sb)
 
 	might_sleep();
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO " ext4_journal_check_start \n");
+    }
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(sb))))
 		return -EIO;
 
@@ -70,6 +82,9 @@ handle_t *__ext4_journal_start_sb(struct super_block *sb, unsigned int line,
 	journal_t *journal;
 	int err;
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO " __ext4_journal_start_sb \n");
+    }
 	trace_ext4_journal_start(sb, blocks, rsv_blocks, _RET_IP_);
 	err = ext4_journal_check_start(sb);
 	if (err < 0)
@@ -88,6 +103,9 @@ int __ext4_journal_stop(const char *where, unsigned int line, handle_t *handle)
 	int err;
 	int rc;
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO " __ext4_journal_stop \n");
+    }
 	if (!ext4_handle_valid(handle)) {
 		ext4_put_nojournal(handle);
 		return 0;
@@ -115,6 +133,9 @@ handle_t *__ext4_journal_start_reserved(handle_t *handle, unsigned int line,
 	struct super_block *sb;
 	int err;
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO " __ext4_journal_start_reserved \n");
+    }
 	if (!ext4_handle_valid(handle))
 		return ext4_get_nojournal();
 
@@ -141,6 +162,9 @@ static void ext4_journal_abort_handle(const char *caller, unsigned int line,
 	char nbuf[16];
 	const char *errstr = ext4_decode_error(NULL, err, nbuf);
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO " ext4_journal_abort_handle \n");
+    }
 	BUG_ON(!ext4_handle_valid(handle));
 
 	if (bh)
@@ -163,6 +187,9 @@ int __ext4_journal_get_write_access(const char *where, unsigned int line,
 {
 	int err = 0;
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO " __ext4_journal_get_write_access \n");
+    }
 	might_sleep();
 
 	if (ext4_handle_valid(handle)) {
@@ -194,6 +221,9 @@ int __ext4_forget(const char *where, unsigned int line, handle_t *handle,
 
 	might_sleep();
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO " __ext4_forget \n");
+    }
 	trace_ext4_forget(inode, is_metadata, blocknr);
 	BUFFER_TRACE(bh, "enter");
 
@@ -246,6 +276,9 @@ int __ext4_journal_get_create_access(const char *where, unsigned int line,
 {
 	int err = 0;
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO " __ext4_journal_get_create_access \n");
+    }
 	if (ext4_handle_valid(handle)) {
 		err = jbd2_journal_get_create_access(handle, bh);
 		if (err)
@@ -263,6 +296,9 @@ int __ext4_handle_dirty_metadata(const char *where, unsigned int line,
 
 	might_sleep();
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO " __ext4_handle_dirty_metadata \n");
+    }
 	set_buffer_meta(bh);
 	set_buffer_prio(bh);
 	if (ext4_handle_valid(handle)) {
@@ -320,6 +356,9 @@ int __ext4_handle_dirty_super(const char *where, unsigned int line,
 	struct buffer_head *bh = EXT4_SB(sb)->s_sbh;
 	int err = 0;
 
+    if( ext4_trace_enable && ext4_ext4_jbd2_trace_enable ){
+        printk( KERN_INFO " __ext4_handle_dirty_super \n");
+    }
 	ext4_superblock_csum_set(sb);
 	if (ext4_handle_valid(handle)) {
 		err = jbd2_journal_dirty_metadata(handle, bh);
